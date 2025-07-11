@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  fl_chart: ^0.64.0
   cupertino_icons: ^1.0.8
   fl_chart: ^1.0.0
   google_fonts: ^6.1.0
