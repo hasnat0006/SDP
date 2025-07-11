@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'mood/Mood_spin.dart';
+import 'mood/Mood_intensity.dart';
 import './todo_list/todo_list_main.dart';
 
 void main() {
