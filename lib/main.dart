@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'mood/Mood_spin.dart';
+import 'mood/Mood_intensity.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,12 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('MindOra'),
-          centerTitle: true,
-        ),
-      ),
+      home: const MoodPage(), 
     );
   }
 }
