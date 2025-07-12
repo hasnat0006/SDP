@@ -1,3 +1,4 @@
+import 'package:client/appointment/bookappt.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -17,12 +18,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('MindOra'),
-          centerTitle: true,
-        ),
-      ),
+      home: BookAppt(),
     );
   }
 }
