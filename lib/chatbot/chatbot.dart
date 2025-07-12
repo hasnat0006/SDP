@@ -41,15 +41,29 @@ class _ChatbotState extends State<Chatbot> {
             ChatbotBubbleuser(),
             Spacer(), // Pushes the TextField to the bottom
             Container(
-              padding: EdgeInsets.all(0.8),
+              padding: EdgeInsets.all(1),
               color: Colors.white,
               child: TextField(
                 decoration: InputDecoration(
                   suffixIcon: Icon(Icons.send),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      30,
+                    ), // Makes the field round
+                    borderSide: BorderSide(),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide(),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide(),
+                  ),
                 ),
               ),
             ),
+            SizedBox(height: 20),
           ],
         ),
       ),

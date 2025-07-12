@@ -20,9 +20,7 @@ class _ChatbotBubbleState extends State<ChatbotBubble> {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         CircleAvatar(
-          backgroundImage: AssetImage(
-            'lib/assets/ChatGPT Image Jul 8, 2025, 09_27_55 PM.png',
-          ),
+          backgroundImage: AssetImage('assets/therapist.png'),
           backgroundColor: Colors.white,
         ),
         Container(
