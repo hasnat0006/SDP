@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../journal/journal_history.dart';
 
 class JournalPage extends StatelessWidget {
   const JournalPage({Key? key}) : super(key: key);
@@ -23,7 +24,12 @@ class JournalPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.history, color: Colors.black54),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const JournalHistoryPage()),
+  );
+            },
           ),
         ],
       ),
