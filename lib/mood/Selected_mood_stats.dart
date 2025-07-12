@@ -103,8 +103,8 @@ class MoodStatsPage extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
-                        'assets/insights.png',
-                        height: 140,
+                        'assets/sunrise.png',
+                        height: 165,
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),

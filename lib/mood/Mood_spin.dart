@@ -268,7 +268,7 @@ class LabeledArcPainter extends CustomPainter {
   ).createShader(arcRect)
   ..style = PaintingStyle.stroke
   ..strokeWidth = arcThickness
-  ..strokeCap = StrokeCap.round; // Use round caps for a softer 3D feel
+  ..strokeCap = StrokeCap.round; // round caps for a softer 3D feel
 
       canvas.drawArc(arcRect, rotatedStart, sweepPerMood, false, arcPaint);
 

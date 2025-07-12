@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'mood/Mood_spin.dart';
+ import 'mood/Mood_spin.dart';
 // import 'mood/Mood_intensity.dart';
 import './todo_list/todo_list_main.dart';
 
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: const ToDoApp(),
+      home: const MoodPage(),
     );
   }
 } 

@@ -229,7 +229,7 @@ Divider(
 
 
 Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
   decoration: BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(32),
@@ -253,23 +253,24 @@ Container(
           });
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFB79E91) : Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Text(
-            filters[index],
-            style: GoogleFonts.poppins(
-              color: isSelected ? Colors.white : Colors.brown.shade700,
-              fontWeight: FontWeight.w500,
-              fontSize: 13.5,
-            ),
-          ),
-        ),
+  duration: const Duration(milliseconds: 200),
+  curve: Curves.easeOut,
+  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8), // tighter
+  margin: const EdgeInsets.symmetric(horizontal: 3), // tighter
+  decoration: BoxDecoration(
+    color: isSelected ? const Color(0xFFB79E91) : Colors.transparent,
+    borderRadius: BorderRadius.circular(24),
+  ),
+  child: Text(
+    filters[index],
+    style: GoogleFonts.poppins(
+      color: isSelected ? Colors.white : Colors.brown.shade700,
+      fontWeight: FontWeight.w500,
+      fontSize: 12.5,
+    ),
+  ),
+),
+
       );
     }),
   ),
@@ -280,19 +281,18 @@ Container(
 
 const SizedBox(height: 16),
 
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEE6FA),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "Graph Coming Soon",
-                  style: GoogleFonts.poppins(color: Colors.deepPurple.shade200),
-                ),
-              ),
+
+ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/graph.png',
+                        height: 310,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
 
               const SizedBox(height: 20),
               Row(
