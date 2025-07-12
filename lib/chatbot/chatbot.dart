@@ -1,5 +1,7 @@
-import 'package:client/chatbot/chatbubble.dart';
+import 'package:client/chatbot/chatbot.dart';
 import 'package:flutter/material.dart';
+import 'package:client/chatbot/chatbubble.dart';
+import 'package:client/chatbot/chatbubbleuser.dart';
 
 void main() {
   runApp(const Chatbot());
@@ -24,10 +26,20 @@ class _ChatbotState extends State<Chatbot> {
       ),
 
       body: Container(
+        color: const Color.fromARGB(
+          255,
+          247,
+          244,
+          242,
+        ), // Optional: background color
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SizedBox(height: 16), // Space below AppBar
             ChatbotBubble(),
-            SizedBox(height: 10),
+            SizedBox(height: 16),
+            ChatbotBubbleuser(),
+            Spacer(), // Pushes the TextField to the bottom
             Container(
               padding: EdgeInsets.all(0.8),
               color: Colors.white,
