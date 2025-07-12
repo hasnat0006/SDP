@@ -104,7 +104,7 @@ class MoodStatsPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
                         'assets/sunrise.png',
-                        height: 165,
+                        height: 190,
                         width: double.infinity,
                         fit: BoxFit.cover,
                       ),
