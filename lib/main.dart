@@ -1,6 +1,7 @@
 import 'package:client/appointment/bookappt.dart';
 import 'package:client/chatbot/chatbot.dart';
 import 'package:flutter/material.dart';
+import 'chatbot/startpage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: Chatbot(),
+      home: Startpage(),
     );
   }
 }
