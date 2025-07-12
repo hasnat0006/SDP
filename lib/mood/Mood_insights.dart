@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'Selected_mood_stats.dart';
 
 class MoodInsightsPage extends StatefulWidget {
   const MoodInsightsPage({Key? key}) : super(key: key);
@@ -11,35 +12,46 @@ class MoodInsightsPage extends StatefulWidget {
 
 class _MoodInsightsPageState extends State<MoodInsightsPage> {
   DateTime? selectedDate;
-int selectedFilterIndex = 1; // Default selected: "1 Week"
-final List<String> filters = ["1 Day", "1 Week", "1 Month", "1 Year", "All Time"];
+// Filter Tabs
+final List<String> filters = ["1 Week", "1 Month", "1 Year", "All Time"];
+int selectedFilterIndex = 0; // Default to "1 Week"
 
 
-  void _pickDate() async {
-    DateTime now = DateTime.now();
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? now,
-      firstDate: DateTime(now.year - 2),
-      lastDate: DateTime(now.year + 2),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFB79AE0),
-              onPrimary: Colors.white,
-              surface: Color(0xFFFFF9F4),
-              onSurface: Colors.brown,
-            ),
+
+ void _pickDate() async {
+  DateTime now = DateTime.now();
+  DateTime? picked = await showDatePicker(
+    context: context,
+    initialDate: selectedDate ?? now,
+    firstDate: DateTime(now.year - 2),
+    lastDate: DateTime(now.year + 2),
+    builder: (context, child) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFFB79AE0),
+            onPrimary: Colors.white,
+            surface: Color(0xFFFFF9F4),
+            onSurface: Colors.brown,
           ),
-          child: child!,
-        );
-      },
+        ),
+        child: child!,
+      );
+    },
+  );
+
+  if (picked != null) {
+    setState(() => selectedDate = picked);
+
+    // Navigate to MoodStatsPage after selection
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MoodStatsPage(selectedDate: picked),
+      ),
     );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +225,11 @@ Divider(
                 style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 20),
-              Container(
-  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+
+
+
+Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
   decoration: BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(32),
@@ -243,7 +258,7 @@ Divider(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           margin: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: isSelected ? const Color.fromARGB(255, 170, 134, 121) : Colors.transparent,
+            color: isSelected ? const Color(0xFFB79E91) : Colors.transparent,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Text(
@@ -259,6 +274,10 @@ Divider(
     }),
   ),
 ),
+
+
+
+
 const SizedBox(height: 16),
 
               Container(
@@ -347,18 +366,18 @@ Row(
 
 
 
-              const SizedBox(height: 40),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB79AE0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  ),
-                  child: Text("Check Mood Stats →", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
-                ),
-              )
+              // const SizedBox(height: 40),
+              // Center(
+              //   child: ElevatedButton(
+              //     onPressed: () {},
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: const Color(0xFFB79AE0),
+              //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              //       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              //     ),
+              //     child: Text("Check Mood Stats →", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+              //   ),
+              // )
             ],
           ),
         ),
