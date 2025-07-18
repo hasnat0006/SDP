@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../dashboard/p_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -77,7 +78,9 @@ class _LoginPageState extends State<LoginPage> {
             const CircleAvatar(
               radius: 30,
               backgroundColor: Colors.white,
-              backgroundImage: AssetImage('assets/mindora_logo.png'), // Replace with your logo
+              backgroundImage: AssetImage(
+                'assets/mindora_logo.png',
+              ), // Replace with your logo
             ),
             const SizedBox(height: 8),
             const Text(
@@ -150,7 +153,11 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: ElevatedButton(
         onPressed: () {
-          // handle login
+          // Navigate to dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardPage()),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFCBB994),
@@ -196,10 +203,7 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         const Text(
           "Forgot Password",
-          style: TextStyle(
-            color: Colors.orange,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Row(
