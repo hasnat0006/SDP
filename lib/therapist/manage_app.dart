@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pending_req.dart';  // Import your PendingRequestsPage here
 
 class ManageAppointments extends StatefulWidget {
   const ManageAppointments({Key? key}) : super(key: key);
@@ -69,89 +70,88 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
   }
 
   void _showRescheduleDialog(BuildContext context, int index) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Appointment Details'),
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.pop(context),
-            )
-          ],
-        ),
-        content: Table(
-          columnWidths: const {
-            0: IntrinsicColumnWidth(),
-            1: FlexColumnWidth(),
-          },
-          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-          children: [
-            _buildTableRow("Patient Name:", appointments[index]["name"] ?? ""),
-            _buildTableRow("Age:", appointments[index]["age"] ?? ""),
-            _buildTableRow("Gender:", appointments[index]["gender"] ?? ""),
-            _buildTableRow("Profession:", appointments[index]["profession"] ?? ""),
-            _buildTableRow("Date:", appointments[index]["date"] ?? ""),
-            _buildTableRow("Time:", appointments[index]["time"] ?? ""),
-            _buildTableRow("Reason:", appointments[index]["reason"] ?? ""),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () {
-              // Show confirmation dialog before deleting
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    title: const Text("Confirm Cancellation"),
-                    content: const Text("Are you sure you want to cancel this appointment?"),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Close confirmation dialog
-                        },
-                        child: const Text("No"),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            appointments.removeAt(index);
-                            reminders.removeAt(index);
-                          });
-                          Navigator.pop(context); // Close confirmation dialog
-                          Navigator.pop(context); // Close reschedule dialog
-                        },
-                        child: const Text("Yes"),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            child: const Text('Cancel Appointment'),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Appointment Details'),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              )
+            ],
           ),
-        ],
-      );
-    },
-  );
-}
+          content: Table(
+            columnWidths: const {
+              0: IntrinsicColumnWidth(),
+              1: FlexColumnWidth(),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              _buildTableRow("Patient Name:", appointments[index]["name"] ?? ""),
+              _buildTableRow("Age:", appointments[index]["age"] ?? ""),
+              _buildTableRow("Gender:", appointments[index]["gender"] ?? ""),
+              _buildTableRow("Profession:", appointments[index]["profession"] ?? ""),
+              _buildTableRow("Date:", appointments[index]["date"] ?? ""),
+              _buildTableRow("Time:", appointments[index]["time"] ?? ""),
+              _buildTableRow("Reason:", appointments[index]["reason"] ?? ""),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      title: const Text("Confirm Cancellation"),
+                      content: const Text("Are you sure you want to cancel this appointment?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close confirmation dialog
+                          },
+                          child: const Text("No"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              appointments.removeAt(index);
+                              reminders.removeAt(index);
+                            });
+                            Navigator.pop(context); // Close confirmation dialog
+                            Navigator.pop(context); // Close reschedule dialog
+                          },
+                          child: const Text("Yes"),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('Cancel Appointment'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _buildAppointmentCard(int index) {
     final appt = appointments[index];
@@ -216,57 +216,71 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
     );
   }
 
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFFF8F6F6),
-    body: SafeArea(
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 16), // Increased vertical padding
-            decoration: BoxDecoration(
-              color: const Color(0xFFD09ED4),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.arrow_back),
-                const SizedBox(width: 10),
-                const Text(
-                  "Appointments",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-              ],
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD9CBA4),
-                foregroundColor: Colors.black,
-                minimumSize: const Size.fromHeight(45),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F6F6),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD09ED4),
+                borderRadius: BorderRadius.circular(20),
               ),
-              onPressed: () {},
-              child: const Text("Appointment Requests"),
+              child: Row(
+                children: [
+                  const Icon(Icons.arrow_back),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Appointments",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: ListView.builder(
-              itemCount: appointments.length,
-              itemBuilder: (context, index) => _buildAppointmentCard(index),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD9CBA4),
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size.fromHeight(45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        const begin = Offset(1.0, 0.0);
+                        const end = Offset.zero;
+                        const curve = Curves.ease;
+                        final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                        return SlideTransition(position: animation.drive(tween), child: child);
+                      },
+                    ),
+                  );
+                },
+                child: const Text("Appointment Requests"),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: appointments.length,
+                itemBuilder: (context, index) => _buildAppointmentCard(index),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
   }
+}

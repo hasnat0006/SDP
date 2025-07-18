@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import './todo_list/todo_list_main.dart';
 import './dashboard/t_dashboard.dart';
 import './therapist/manage_app.dart';
+import 'therapist/pending_req.dart';
 
 void main() {
   runApp(const MyApp());
