@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 // import 'p_dashboard.dart';
 import 'Mood_intensity.dart';
+import 'package:flutter/services.dart';
 
 
 class MoodPage extends StatefulWidget {
@@ -27,96 +28,107 @@ class _MoodPageState extends State<MoodPage> {
   Offset? startSwipe;
   bool isHovering = false;
 
-  void _snapToClosestMood() {
-    final adjustedAngle = (angle + 2 * pi) % (2 * pi);
-    final topAngle = (3 * pi / 2);
-    final index = ((adjustedAngle + segmentAngle / 2 - topAngle) ~/ segmentAngle) % moods.length;
-    setState(() {
-      selectedIndex = index;
-      angle = (index * segmentAngle + 2 * pi - topAngle) % (2 * pi);
-    });
-  }
+void _snapToClosestMood() {
+  final adjustedAngle = (angle + 2 * pi) % (2 * pi);
+  final topAngle = 3 * pi / 2; // 270 degrees, top center
+
+  // Shift arc so the center aligns with top, then calculate index
+  double diff = (adjustedAngle - topAngle + 2 * pi) % (2 * pi);
+  int index = ((diff + segmentAngle / 2) / segmentAngle).floor() % moods.length;
+
+  setState(() {
+    selectedIndex = index;
+    // Snap exactly so mood at index centers at top
+    angle = (index * segmentAngle + 2 * pi - topAngle) % (2 * pi);
+  });
+  HapticFeedback.mediumImpact();
+}
+
 
   @override
   Widget build(BuildContext context) {
     final currentMood = moods[selectedIndex];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF9F4),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              const SizedBox(height: 50),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.brown),
-                      onPressed: () {
-                        // Navigator.pushReplacement(
-                        //   context,
-                        //   MaterialPageRoute(builder: (context) => const P_Dashboard()),
-                        // );
-                      },
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Mood Tracker',
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.brown.shade700,
-                      ),
-                    ),
-                    const Spacer(),
-                    MouseRegion(
-                      onEnter: (_) => setState(() => isHovering = true),
-                      onExit: (_) => setState(() => isHovering = false),
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MoodIntensityPage(
-        moodLabel: moods[selectedIndex]['label'],
-        moodEmoji: moods[selectedIndex]['emoji'],
+return Scaffold(
+  backgroundColor: const Color(0xFFFFF9F4),
+  appBar: AppBar(
+    backgroundColor: const Color(0xFFD39AD5), // pink AppBar
+    toolbarHeight: 88,
+    centerTitle: true,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+    ),
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 0, 0, 0)),
+      onPressed: () {
+        // Your back action here
+      },
+    ),
+    title: Text(
+      'Mood Tracker',
+      style: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: const Color.fromARGB(255, 3, 3, 3),
       ),
     ),
-  );
-},
-
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isHovering ? const Color.fromARGB(255, 119, 83, 71) : const Color.fromARGB(255, 165, 123, 109),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              if (isHovering)
-                                BoxShadow(
-                                  color: Colors.brown.withOpacity(0.5),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                            ],
-                          ),
-                          child: Text(
-                            "Next →",
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
+    actions: [
+      Padding(
+        padding: const EdgeInsets.only(right: 8.0),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => isHovering = true),
+          onExit: (_) => setState(() => isHovering = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MoodIntensityPage(
+                    moodLabel: moods[selectedIndex]['label'],
+                    moodEmoji: moods[selectedIndex]['emoji'],
+                  ),
+                ),
+              );
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: isHovering
+                    ? const Color.fromARGB(255, 119, 83, 71)
+                    : const Color.fromARGB(255, 165, 123, 109),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  if (isHovering)
+                    BoxShadow(
+                      color: Colors.brown.withOpacity(0.5),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  ],
+                ],
+              ),
+              child: Text(
+                "Next →",
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+  body: Stack(
+    children: [
+      Column(
+        children: [
+          const SizedBox(height: 20), // optional spacing after AppBar
+
               const SizedBox(height: 20),
               Text(
   'How would you\ndescribe your mood today?',
@@ -164,7 +176,7 @@ class _MoodPageState extends State<MoodPage> {
                   if (startSwipe == null) return;
                   final dx = event.position.dx - startSwipe!.dx;
                   setState(() {
-                    angle = (angle - dx * 0.005) % (2 * pi);
+                    angle = (angle - dx * 0.008) % (2 * pi);
                   });
                   startSwipe = event.position;
                 },
@@ -187,34 +199,57 @@ class _MoodPageState extends State<MoodPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 0.5),
             ],
           ),
-          Positioned(
-            top: 360,
-            left: MediaQuery.of(context).size.width / 2 - 22,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.orange.shade300,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.orange.withOpacity(0.5),
-                    blurRadius: 12,
-                    spreadRadius: 4,
-                  ),
-                ],
+       Positioned(
+  top: 360,
+  left: 0,
+  right: 0,
+  child: Column(
+    children: [
+      Center(
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.orange.shade300,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.5),
+                blurRadius: 12,
+                spreadRadius: 4,
               ),
-              child: const Icon(Icons.expand_more, size: 28, color: Colors.white),
-            ),
-          )
+            ],
+          ),
+          child: const Icon(Icons.expand_more, size: 28, color: Colors.white),
+        ),
+      ),
+      const SizedBox(height: 10),
+      Center(
+        child: Text(
+          'Spin below to select one',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: Colors.grey.shade500,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ),
+    ],
+  ),
+),
+
+
+          
         ],
       ),
     );
   }
 }
+
 
 class LabeledArcPainter extends CustomPainter {
   final List<Map<String, dynamic>> moods;
