@@ -13,6 +13,9 @@
 .vscode/
 migrate_working_dir/
 
+
+/macos/
+
 # IntelliJ related
 *.iml
 *.ipr
