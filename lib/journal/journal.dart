@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'journal_history.dart';
+import '../journal/journal_history.dart';
 
 class JournalPage extends StatelessWidget {
   const JournalPage({super.key});
@@ -26,29 +26,9 @@ class JournalPage extends StatelessWidget {
             icon: const Icon(Icons.history, color: Colors.black54),
             onPressed: () {
               Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const JournalHistoryPage(),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
-
-                        var tween = Tween(
-                          begin: begin,
-                          end: end,
-                        ).chain(CurveTween(curve: curve));
-
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
-                        );
-                      },
-                  transitionDuration: const Duration(milliseconds: 300),
-                ),
-              );
+    context,
+    MaterialPageRoute(builder: (context) => const JournalHistoryPage()),
+  );
             },
           ),
         ],
