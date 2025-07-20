@@ -72,82 +72,75 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9F4),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFD39AD5),
+        toolbarHeight: 80,
+        centerTitle: true,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 12, 12, 12)),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        title: Text(
+          'Mood Tracker',
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: const Color.fromARGB(255, 2, 2, 2),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.brown),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Mood Tracker',
-                    style: GoogleFonts.poppins(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 75), 
-
-
+            const SizedBox(height: 130), 
             SlideTransition(
               position: _slideAnimation,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-  color: const Color(0xFFEDE4F6),
-  borderRadius: BorderRadius.circular(28),
-  boxShadow: [
-    // Soft outer shadow
-    BoxShadow(
-      color: const Color(0xFFCEB6E1).withOpacity(0.3),
-      blurRadius: 20,
-      offset: const Offset(0, 12),
-      spreadRadius: 2,
-    ),
-    // Inner glow to mimic a light source
-    BoxShadow(
-      color: Colors.white.withOpacity(0.5),
-      blurRadius: 8,
-      offset: const Offset(0, -4),
-      spreadRadius: -4,
-    ),
-    // Slight bottom reflection
-    BoxShadow(
-      color: const Color(0xFF8E72C7).withOpacity(0.15),
-      blurRadius: 30,
-      offset: const Offset(0, 30),
-    ),
-  ],
-),
-
+                  color: const Color(0xFFEFD1F5),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD39AD5).withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 12),
+                      spreadRadius: 2,
+                    ),
+                    BoxShadow(
+                      color: Colors.white.withOpacity(0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, -4),
+                      spreadRadius: -4,
+                    ),
+                    BoxShadow(
+                      color: const Color.fromARGB(255, 214, 168, 216).withOpacity(0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 30),
+                    ),
+                  ],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'How intense is this feeling\nfor you today?',
+                      'How ${widget.moodLabel.toLowerCase()} are \n you feeling today?',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8E72C7),
+                        color: const Color.fromARGB(255, 109, 54, 112),
                         shadows: const [
                           Shadow(
                             blurRadius: 4,
-                            color: Color(0xFF8E72C7),
+                            color: Color.fromARGB(255, 125, 100, 177),
                             offset: Offset(0.5, 1),
                           ),
                         ],
@@ -159,7 +152,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                       style: GoogleFonts.poppins(
                         fontSize: 90,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF8666B8),
+                        color: const Color(0xFF8E72C7),
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -171,7 +164,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                         borderRadius: BorderRadius.circular(48),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFBFA9E0).withOpacity(0.12),
+                            color: const Color(0xFFCEB5F4).withOpacity(0.12),
                             blurRadius: 18,
                             offset: const Offset(0, 5),
                           ),
@@ -194,12 +187,12 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                               height: 42,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFCEB5F4) : Colors.transparent,
+                                color: isSelected ? const Color(0xFFD39AD5) : Colors.transparent,
                                 shape: BoxShape.circle,
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: const Color(0xFFD7C9ED),
+                                          color: const Color(0xFFD39AD5).withOpacity(0.4),
                                           blurRadius: 10,
                                           offset: const Offset(0, 4),
                                         )
@@ -239,9 +232,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                 ),
               ),
             ),
-
             const SizedBox(height: 35),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: MouseRegion(
@@ -252,7 +243,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const MoodInsightsPage(), // Navigate to the new page
+                        builder: (context) => const MoodInsightsPage(),
                       ),
                     );
                   },
@@ -262,27 +253,31 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isHovering
-                            ? [const Color(0xFFDCCBF4), const Color(0xFFBFA5E6)]
-                            : [const Color(0xFFCEB5F4), const Color(0xFFA58BD4)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
-                          blurRadius: isHovering ? 16 : 10,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
+gradient: LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: isHovering
+      ? [Color.fromARGB(255, 233, 188, 240), Color.fromARGB(255, 207, 126, 228)] // Light hover blend
+      : [Color(0xFFD6A6E1), Color(0xFFB78ED3)], // Base gradient
+),
+
+  borderRadius: BorderRadius.circular(20),
+  boxShadow: [
+    BoxShadow(
+      color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
+      blurRadius: isHovering ? 16 : 10,
+      offset: const Offset(0, 6),
+    ),
+  ],
+),
+
                     child: Center(
                       child: Text(
                         "Continue →",
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: const Color.fromARGB(255, 250, 247, 247),
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -291,7 +286,6 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
           ],
         ),

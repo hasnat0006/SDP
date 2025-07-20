@@ -10,42 +10,44 @@ class MoodStatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String formattedDate = DateFormat.yMMMMd().format(selectedDate);
+    final String selectedMonth = DateFormat.yMMMM().format(selectedDate); // e.g., July 2025
 
     final List<Map<String, String>> weeklyOverview = [
-      {"week": "Week 1", "range": "Jan 1-7", "summary": "Mostly Happy"},
-      {"week": "Week 2", "range": "Jan 8-14", "summary": "Mixed Feelings"},
-      {"week": "Week 3", "range": "Jan 15-21", "summary": "Improving"},
-      {"week": "Week 4", "range": "Jan 22-28", "summary": "Steady"},
+      {"week": "Week 1", "range": "Jul 1-7", "summary": "Mostly Happy"},
+      {"week": "Week 2", "range": "Jul 8-14", "summary": "Mixed Feelings"},
+      {"week": "Week 3", "range": "Jul 15-21", "summary": "Improving"},
+      {"week": "Week 4", "range": "Jul 22-28", "summary": "Steady"},
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9F4),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFD39AD5),
+        elevation: 0,
+        toolbarHeight: 80,
+        centerTitle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 10, 10, 10)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Mood Stats",
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: const Color.fromARGB(255, 10, 10, 10),
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.brown),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Mood Stats",
-                    style: GoogleFonts.poppins(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown.shade800,
-                    ),
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.bar_chart, color: Colors.brown),
-                ],
-              ),
-              const SizedBox(height: 16),
               Text(
                 "See your mood trend for selected date",
                 style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
@@ -67,13 +69,16 @@ class MoodStatsPage extends StatelessWidget {
                   ),
                   child: Text(
                     formattedDate,
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.brown),
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.brown,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Info Cards Section
+              // Info Cards
               Column(
                 children: [
                   _InfoCard(
@@ -96,24 +101,20 @@ class MoodStatsPage extends StatelessWidget {
                     icon: Icons.nightlight_round,
                     color: Colors.deepPurple,
                   ),
-                  const SizedBox(height: 12),
-
-                  // Image container styled like a card
-            const SizedBox(height: 14),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/sunrise.png',
-                        height: 190,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                  const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/sunrise.png',
+                      height: 190,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 20),
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
               Text(
                 "Remember to take deep breaths and stay calm",
                 style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade700),
@@ -121,7 +122,7 @@ class MoodStatsPage extends StatelessWidget {
 
               const SizedBox(height: 30),
               Text(
-                "Weekly Overview",
+                "Weekly Overview for $selectedMonth",
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -143,16 +144,26 @@ class MoodStatsPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(weekData["week"]!,
-                            style: GoogleFonts.poppins(
-                                fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
-                        Text(weekData["range"]!,
-                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500)),
+                        Text(
+                          weekData["week"]!,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          weekData["range"]!,
+                          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500),
+                        ),
                         const SizedBox(height: 6),
                         Text(
                           weekData["summary"]!,
                           style: GoogleFonts.poppins(
-                              fontSize: 14, fontWeight: FontWeight.w600, color: Colors.deepPurple),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.deepPurple,
+                          ),
                         )
                       ],
                     ),

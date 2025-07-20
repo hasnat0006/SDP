@@ -15,6 +15,13 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
 // Filter Tabs
 final List<String> filters = ["1 Week", "1 Month", "1 Year", "All Time"];
 int selectedFilterIndex = 0; // Default to "1 Week"
+String getCurrentWeekRange() {
+  final now = DateTime.now();
+  final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+  final endOfWeek = startOfWeek.add(const Duration(days: 6));
+  final formatter = DateFormat.MMMd();
+  return "${formatter.format(startOfWeek)} - ${formatter.format(endOfWeek)}";
+}
 
 
 
@@ -75,32 +82,37 @@ int selectedFilterIndex = 0; // Default to "1 Week"
       Colors.purpleAccent,
     ];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF9F4),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.brown),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Mood Today",
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown.shade700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+return Scaffold(
+  backgroundColor: const Color(0xFFFFF9F4),
+  appBar: AppBar(
+    backgroundColor: const Color(0xFFD39AD5),
+    elevation: 0,
+    toolbarHeight: 80,
+    centerTitle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+    ),
+    leading: IconButton(
+      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 2, 2, 2)),
+      onPressed: () => Navigator.pop(context),
+    ),
+    title: Text(
+      "Mood Today",
+      style: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: const Color.fromARGB(255, 15, 15, 15),
+      ),
+    ),
+  ),
+  body: SafeArea(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+  
 
               Container(
                 padding: const EdgeInsets.all(20),
@@ -209,6 +221,41 @@ Divider(
                   ],
                 ),
               ),
+              const SizedBox(height: 10),
+              Align(
+  alignment: Alignment.centerLeft,
+  child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        "History: ",
+        style: GoogleFonts.poppins(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Colors.grey.shade700,
+        ),
+      ),
+      GestureDetector(
+        onTap: _pickDate,
+        child: const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
+      ),
+      const SizedBox(width: 4),
+      GestureDetector(
+        onTap: _pickDate,
+        child: Text(
+          selectedDate == null
+              ? DateFormat.MMMd().format(DateTime.now())
+              : DateFormat.MMMd().format(selectedDate!),
+          style: GoogleFonts.poppins(
+            color: Colors.deepPurple,
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      )
+    ],
+  ),
+),
 
               const SizedBox(height: 30),
               Text(
@@ -295,35 +342,26 @@ ClipRRect(
 
 
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Mood History",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.brown,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _pickDate,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
-                        const SizedBox(width: 4),
-                        Text(
-                          selectedDate == null ? "Jul 11" : DateFormat.MMMd().format(selectedDate!),
-                          style: GoogleFonts.poppins(color: Colors.deepPurple, fontWeight: FontWeight.w500),
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
+              // Right-aligned: History: [calendar icon] [date]
+
+const SizedBox(height: 10),
+
+// Title: Mood History + current week range
+Text(
+  "Mood History (${getCurrentWeekRange()})",
+  style: GoogleFonts.poppins(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: Colors.brown,
+  ),
+),
+
+const SizedBox(height: 8),
+
+
               const SizedBox(height: 12),
 
-              // Updated Mood History Icons
+              //Mood History Icons
 
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
