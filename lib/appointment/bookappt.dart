@@ -30,7 +30,7 @@ class _BookAppt extends State<BookAppt> {
     Therapist(
       name: 'Yusuf Reza',
       institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'lib/assets/WhatsApp Image 2025-06-18 at 11.27.32 PM.jpeg',
+      imagepath: 'assets/therapist.png',
     ),
     Therapist(
       name: 'Nazifa Zahin Ifrit',
@@ -40,7 +40,7 @@ class _BookAppt extends State<BookAppt> {
     Therapist(
       name: 'Tanvin Sarkar',
       institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'lib/assets/WhatsApp Image 2025-06-18 at 11.27.32 PM.jpeg',
+      imagepath: 'assets/therapist.png',
     ),
   ];
 
