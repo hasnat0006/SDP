@@ -1,10 +1,13 @@
+import 'package:client/journal/journal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../mood/Mood_spin.dart';
+import '../appointment/bookappt.dart';
+import '../todo_list/todo_list_main.dart';
+import '../journal/journal_history.dart';
+import '../chatbot/startpage.dart';
 // import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(const MyApp());
-}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -59,7 +62,9 @@ class DashboardPage extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 30,
-            backgroundImage: AssetImage('assets/zaima.jpg'), // Replace with real image
+            backgroundImage: AssetImage(
+              'assets/zaima.jpg',
+            ), // Replace with real image
           ),
           const SizedBox(width: 16),
           Column(
@@ -71,7 +76,11 @@ class DashboardPage extends StatelessWidget {
               ),
               Text(
                 "Hi, Zaima!",
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -107,8 +116,12 @@ class DashboardPage extends StatelessWidget {
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.white,
-              child: Text('80\nHealthy', textAlign: TextAlign.center, style: TextStyle(color: Colors.green)),
-            )
+              child: Text(
+                '80\nHealthy',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.green),
+              ),
+            ),
           ],
         ),
       ),
@@ -138,7 +151,9 @@ class DashboardPage extends StatelessWidget {
                       x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: (index + 1) * 2.0, // Example data, replace with actual mood scores
+                          toY:
+                              (index + 1) *
+                              2.0, // Example data, replace with actual mood scores
                           color: Colors.deepPurple,
                           width: 20,
                           borderRadius: BorderRadius.circular(8),
@@ -151,7 +166,7 @@ class DashboardPage extends StatelessWidget {
                   gridData: FlGridData(show: false),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -161,24 +176,100 @@ class DashboardPage extends StatelessWidget {
   Widget _buildTrackers(BuildContext context) {
     return Column(
       children: [
-        _trackerTile(Icons.mood, 'Mood Tracker', 'Sad → Happy → Neutral', context),
-        _trackerTile(Icons.bedtime, 'Sleep Quality', 'Insomniac (~2h Avg)', context),
-        _trackerTile(Icons.edit_note, 'Thought Journal', '64 Day Streak', context),
-        _trackerTile(Icons.emoji_emotions_outlined, 'Stress Level', 'Level 3 | Normal', context),
-        _trackerTile(Icons.calendar_month, 'Book an Appointment', 'Get professional help', context),
-        _trackerTile(Icons.check_circle_outline, 'To Do List', '3/5 Completed', context),
-        _trackerTile(Icons.self_improvement, 'Virtual Therapist', 'Ease your mind', context),
+        _trackerTile(
+          Icons.mood,
+          'Mood Tracker',
+          'Sad → Happy → Neutral',
+          context,
+        ),
+        _trackerTile(
+          Icons.bedtime,
+          'Sleep Quality',
+          'Insomniac (~2h Avg)',
+          context,
+        ),
+        _trackerTile(
+          Icons.edit_note,
+          'Thought Journal',
+          '64 Day Streak',
+          context,
+        ),
+        _trackerTile(
+          Icons.emoji_emotions_outlined,
+          'Stress Level',
+          'Level 3 | Normal',
+          context,
+        ),
+        _trackerTile(
+          Icons.calendar_month,
+          'Book an Appointment',
+          'Get professional help',
+          context,
+        ),
+        _trackerTile(
+          Icons.check_circle_outline,
+          'To Do List',
+          '3/5 Completed',
+          context,
+        ),
+        _trackerTile(
+          Icons.self_improvement,
+          'Virtual Therapist',
+          'Ease your mind',
+          context,
+        ),
         _trackerTile(Icons.forum, 'Forum', 'Share your thought', context),
       ],
     );
   }
 
-  Widget _trackerTile(IconData icon, String title, String subtitle, BuildContext context) {
+  Widget _trackerTile(
+    IconData icon,
+    String title,
+    String subtitle,
+    BuildContext context,
+  ) {
     return GestureDetector(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title tapped!')),
-        );
+        // Navigate to specific pages based on title
+        switch (title) {
+          case 'Mood Tracker':
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MoodPage()),
+            );
+            break;
+          case 'Book an Appointment':
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BookAppt()),
+            );
+            break;
+          case 'To Do List':
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ToDoPage()),
+            );
+            break;
+          case 'Thought Journal':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const JournalPage(),
+              ),
+            );
+            break;
+          case 'Virtual Therapist':
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Startpage()),
+            );
+            break;
+          default:
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('$title tapped!')));
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -196,7 +287,10 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   Text(subtitle, style: const TextStyle(color: Colors.grey)),
                 ],
               ),

@@ -51,7 +51,12 @@ class _Startpage extends State<Startpage> {
             ),
             SizedBox(height: 80),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Chatbot()),
+                );
+              },
 
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 194, 178, 128),

@@ -1,3 +1,4 @@
+import 'package:client/appointment/bookappt.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/journal/journal_history.dart';
 import 'package:flutter/material.dart';

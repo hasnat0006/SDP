@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:client/chatbot/chatbubble.dart';
 import 'package:client/chatbot/chatbubbleuser.dart';
 
-void main() {
-  runApp(const Chatbot());
-}
 
 class Chatbot extends StatefulWidget {
   const Chatbot({super.key});
