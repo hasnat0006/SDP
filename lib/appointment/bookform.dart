@@ -8,6 +8,10 @@ class BookForm extends StatefulWidget {
   final String institution;
   final String imagepath;
   final String shortbio;
+  final String education;
+  final String description;
+  final String special;
+  final String exp; // <-- Add this
 
   const BookForm({
     Key? key,
@@ -15,6 +19,10 @@ class BookForm extends StatefulWidget {
     required this.institution,
     required this.imagepath,
     required this.shortbio,
+    required this.education,
+    required this.description,
+    required this.special,
+    required this.exp, // <-- Add this
   }) : super(key: key);
 
   @override
