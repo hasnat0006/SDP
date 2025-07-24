@@ -1,5 +1,6 @@
 import 'package:client/dashboard/p_dashboard.dart';
 import 'package:client/appointment/bookappt.dart';
+import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/journal/journal_history.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: const DoctorDashboard(),
+      home: const LoginPage(),
     );
   }
 }
