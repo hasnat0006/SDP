@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class JournalHistoryPage extends StatefulWidget {
-  const JournalHistoryPage({Key? key}) : super(key: key);
+  const JournalHistoryPage({super.key});
 
   @override
   State<JournalHistoryPage> createState() => _JournalHistoryPageState();

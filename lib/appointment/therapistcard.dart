@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'bookform.dart';
 
 class TherapistCard extends StatelessWidget {
   final String name;
   final String institution;
   final String imagepath;
+  final String shortbio;
 
   const TherapistCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.institution,
     required this.imagepath,
-  }) : super(key: key);
+    required this.shortbio,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +56,19 @@ class TherapistCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookForm(
+                            name: name,
+                            institution: institution,
+                            imagepath: imagepath,
+                            shortbio: shortbio,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 194, 178, 128),
                       padding: EdgeInsets.symmetric(vertical: 10),

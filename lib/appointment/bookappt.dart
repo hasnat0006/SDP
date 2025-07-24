@@ -5,11 +5,13 @@ class Therapist {
   final String name;
   final String institution;
   final String imagepath;
+  final String shortbio;
 
   Therapist({
     required this.name,
     required this.institution,
     required this.imagepath,
+    required this.shortbio,
   });
 }
 
@@ -26,21 +28,29 @@ class _BookAppt extends State<BookAppt> {
       name: 'Nabiha Parvez',
       institution: 'National Institute of Mental Health and Hospital',
       imagepath: 'assets/nabiha.jpeg',
+      shortbio:
+          'Dr Nabiha is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. She specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
     ),
     Therapist(
       name: 'Yusuf Reza',
       institution: 'National Institute of Mental Health and Hospital',
       imagepath: 'assets/hasnat.jpg',
+      shortbio:
+          'Dr Yusuf is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. He specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
     ),
     Therapist(
       name: 'Nazifa Zahin Ifrit',
       institution: 'National Institute of Mental Health and Hospital',
       imagepath: 'assets/ifrit.jpeg',
+      shortbio:
+          'Dr Ifrit is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. She specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
     ),
     Therapist(
       name: 'Tanvin Sarkar',
       institution: 'National Institute of Mental Health and Hospital',
       imagepath: 'assets/therapist.png',
+      shortbio:
+          'Dr Tanvin is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. He specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
     ),
   ];
 
@@ -95,6 +105,7 @@ class _BookAppt extends State<BookAppt> {
                   name: therapistinfo[index].name,
                   institution: therapistinfo[index].institution,
                   imagepath: therapistinfo[index].imagepath,
+                  shortbio: therapistinfo[index].shortbio,
                 ),
               ),
             ),

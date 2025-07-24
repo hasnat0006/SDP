@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'Selected_mood_stats.dart';
 
 class MoodInsightsPage extends StatefulWidget {
-  const MoodInsightsPage({Key? key}) : super(key: key);
+  const MoodInsightsPage({super.key});
 
   @override
   State<MoodInsightsPage> createState() => _MoodInsightsPageState();
