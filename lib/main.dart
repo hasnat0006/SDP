@@ -12,6 +12,8 @@ import './therapist/manage_app.dart';
 import 'therapist/pending_req.dart';
 import './navbar/navbar.dart';
 import './login/signup/login.dart';
+//import './stress/stress_tracker.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -30,7 +32,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: const LoginPage(),
+     home: const LoginPage(),
+     //home: const StressTrackerPage(),
     );
   }
 }
