@@ -105,12 +105,12 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text('Freud Score', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Average Sleep', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.white,
-              child: Text('80\nHealthy', textAlign: TextAlign.center, style: TextStyle(color: Colors.green)),
+              child: Text('5.5\nHours', textAlign: TextAlign.center, style: TextStyle(color: Colors.green)),
             )
           ],
         ),
@@ -181,7 +181,7 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
-        _trackerTile(Icons.bedtime, 'Sleep Quality', 'Insomniac (~2h Avg)', context),
+        _trackerTile(Icons.bedtime, 'Sleep Quality', 'Healthy (~5.5h Avg)', context),
         _trackerTile(Icons.edit_note, 'Thought Journal', '64 Day Streak', context,
           onTap: () {
             Navigator.push(
