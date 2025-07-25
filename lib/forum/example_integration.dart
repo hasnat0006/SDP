@@ -8,10 +8,12 @@ class CustomBottomNavBarWithForum extends StatefulWidget {
   const CustomBottomNavBarWithForum({super.key});
 
   @override
-  State<CustomBottomNavBarWithForum> createState() => _CustomBottomNavBarWithForumState();
+  State<CustomBottomNavBarWithForum> createState() =>
+      _CustomBottomNavBarWithForumState();
 }
 
-class _CustomBottomNavBarWithForumState extends State<CustomBottomNavBarWithForum> {
+class _CustomBottomNavBarWithForumState
+    extends State<CustomBottomNavBarWithForum> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -40,23 +42,17 @@ class _CustomBottomNavBarWithForumState extends State<CustomBottomNavBarWithForu
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined), 
+            icon: Icon(Icons.home_outlined),
             label: 'Home',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.mood), label: 'Mood'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.mood), 
-            label: 'Mood',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.forum_outlined), 
+            icon: Icon(Icons.forum_outlined),
             label: 'Forum',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Tasks'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list), 
-            label: 'Tasks',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline), 
+            icon: Icon(Icons.person_outline),
             label: 'Profile',
           ),
         ],

@@ -11,15 +11,14 @@ class ForumPage extends StatefulWidget {
   State<ForumPage> createState() => _ForumPageState();
 }
 
-class _ForumPageState extends State<ForumPage>
-    with TickerProviderStateMixin {
+class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-  
+
   List<ForumPost> posts = [];
   List<ForumPost> savedPosts = [];
   String selectedMoodFilter = 'All';
-  
+
   @override
   void initState() {
     super.initState();
@@ -27,14 +26,10 @@ class _ForumPageState extends State<ForumPage>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
     _loadMockData();
     _fadeController.forward();
   }
@@ -50,7 +45,8 @@ class _ForumPageState extends State<ForumPage>
       posts = [
         ForumPost(
           id: '1',
-          content: 'Feeling grateful today for the small moments that bring joy. Sometimes it\'s just about appreciating what we have.',
+          content:
+              'Feeling grateful today for the small moments that bring joy. Sometimes it\'s just about appreciating what we have.',
           mood: MoodType.happy,
           timestamp: DateTime.now().subtract(const Duration(hours: 2)),
           likes: 12,
@@ -59,7 +55,8 @@ class _ForumPageState extends State<ForumPage>
         ),
         ForumPost(
           id: '2',
-          content: 'Having one of those days where everything feels overwhelming. Trying to take it one step at a time.',
+          content:
+              'Having one of those days where everything feels overwhelming. Trying to take it one step at a time.',
           mood: MoodType.sad,
           timestamp: DateTime.now().subtract(const Duration(hours: 5)),
           likes: 8,
@@ -68,7 +65,8 @@ class _ForumPageState extends State<ForumPage>
         ),
         ForumPost(
           id: '3',
-          content: 'Just finished meditation and feeling so centered. The peace of mind is incredible.',
+          content:
+              'Just finished meditation and feeling so centered. The peace of mind is incredible.',
           mood: MoodType.calm,
           timestamp: DateTime.now().subtract(const Duration(hours: 8)),
           likes: 15,
@@ -77,7 +75,8 @@ class _ForumPageState extends State<ForumPage>
         ),
         ForumPost(
           id: '4',
-          content: 'Traffic, deadlines, and everything going wrong today. Need to find my center again.',
+          content:
+              'Traffic, deadlines, and everything going wrong today. Need to find my center again.',
           mood: MoodType.angry,
           timestamp: DateTime.now().subtract(const Duration(days: 1)),
           likes: 6,
@@ -86,7 +85,8 @@ class _ForumPageState extends State<ForumPage>
         ),
         ForumPost(
           id: '5',
-          content: 'Achieved a personal goal today! It took months of work but persistence pays off. 🎉',
+          content:
+              'Achieved a personal goal today! It took months of work but persistence pays off. 🎉',
           mood: MoodType.excited,
           timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
           likes: 23,
@@ -95,7 +95,8 @@ class _ForumPageState extends State<ForumPage>
         ),
         ForumPost(
           id: '6',
-          content: 'Feeling uncertain about the path ahead. Sometimes not knowing is the hardest part.',
+          content:
+              'Feeling uncertain about the path ahead. Sometimes not knowing is the hardest part.',
           mood: MoodType.anxious,
           timestamp: DateTime.now().subtract(const Duration(days: 2)),
           likes: 9,
@@ -110,9 +111,12 @@ class _ForumPageState extends State<ForumPage>
     if (selectedMoodFilter == 'All') {
       return posts;
     }
-    return posts.where((post) => 
-      post.mood.name.toLowerCase() == selectedMoodFilter.toLowerCase()
-    ).toList();
+    return posts
+        .where(
+          (post) =>
+              post.mood.name.toLowerCase() == selectedMoodFilter.toLowerCase(),
+        )
+        .toList();
   }
 
   void _toggleLike(String postId) {
@@ -130,7 +134,7 @@ class _ForumPageState extends State<ForumPage>
       final postIndex = posts.indexWhere((post) => post.id == postId);
       if (postIndex != -1) {
         posts[postIndex].isSaved = !posts[postIndex].isSaved;
-        
+
         if (posts[postIndex].isSaved) {
           savedPosts.add(posts[postIndex]);
         } else {
@@ -208,9 +212,7 @@ class _ForumPageState extends State<ForumPage>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreatePostPage(
-                onPostCreated: _addNewPost,
-              ),
+              builder: (context) => CreatePostPage(onPostCreated: _addNewPost),
             ),
           );
         },
@@ -294,13 +296,9 @@ class _PostCardState extends State<PostCard>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -397,10 +395,7 @@ class _PostCardState extends State<PostCard>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            widget.post.mood.emoji,
-            style: const TextStyle(fontSize: 16),
-          ),
+          Text(widget.post.mood.emoji, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 6),
           Text(
             widget.post.mood.displayName,
@@ -426,12 +421,12 @@ class _PostCardState extends State<PostCard>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: widget.post.isLiked 
+            color: widget.post.isLiked
                 ? const Color(0xFFE53E3E).withOpacity(0.1)
                 : const Color(0xFFF7FAFC),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: widget.post.isLiked 
+              color: widget.post.isLiked
                   ? const Color(0xFFE53E3E).withOpacity(0.3)
                   : const Color(0xFFE2E8F0),
             ),
@@ -441,7 +436,7 @@ class _PostCardState extends State<PostCard>
             children: [
               Icon(
                 widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
-                color: widget.post.isLiked 
+                color: widget.post.isLiked
                     ? const Color(0xFFE53E3E)
                     : const Color(0xFF718096),
                 size: 18,
@@ -450,7 +445,7 @@ class _PostCardState extends State<PostCard>
               Text(
                 'Like',
                 style: TextStyle(
-                  color: widget.post.isLiked 
+                  color: widget.post.isLiked
                       ? const Color(0xFFE53E3E)
                       : const Color(0xFF718096),
                   fontSize: 14,
@@ -472,12 +467,12 @@ class _PostCardState extends State<PostCard>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: widget.post.isSaved 
+          color: widget.post.isSaved
               ? const Color(0xFF3182CE).withOpacity(0.1)
               : const Color(0xFFF7FAFC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: widget.post.isSaved 
+            color: widget.post.isSaved
                 ? const Color(0xFF3182CE).withOpacity(0.3)
                 : const Color(0xFFE2E8F0),
           ),
@@ -487,7 +482,7 @@ class _PostCardState extends State<PostCard>
           children: [
             Icon(
               widget.post.isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: widget.post.isSaved 
+              color: widget.post.isSaved
                   ? const Color(0xFF3182CE)
                   : const Color(0xFF718096),
               size: 18,
@@ -496,7 +491,7 @@ class _PostCardState extends State<PostCard>
             Text(
               'Save',
               style: TextStyle(
-                color: widget.post.isSaved 
+                color: widget.post.isSaved
                     ? const Color(0xFF3182CE)
                     : const Color(0xFF718096),
                 fontSize: 14,

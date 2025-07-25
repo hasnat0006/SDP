@@ -4,10 +4,7 @@ import 'forum_models.dart';
 class CreatePostPage extends StatefulWidget {
   final Function(ForumPost) onPostCreated;
 
-  const CreatePostPage({
-    super.key,
-    required this.onPostCreated,
-  });
+  const CreatePostPage({super.key, required this.onPostCreated});
 
   @override
   State<CreatePostPage> createState() => _CreatePostPageState();
@@ -18,7 +15,7 @@ class _CreatePostPageState extends State<CreatePostPage>
   final TextEditingController _contentController = TextEditingController();
   MoodType? _selectedMood;
   bool _isPosting = false;
-  
+
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late Animation<double> _fadeAnimation;
@@ -35,23 +32,15 @@ class _CreatePostPageState extends State<CreatePostPage>
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeInOut,
-    ));
-    
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    );
+
     _fadeController.forward();
   }
 
@@ -87,7 +76,7 @@ class _CreatePostPageState extends State<CreatePostPage>
     );
 
     widget.onPostCreated(newPost);
-    
+
     setState(() {
       _isPosting = false;
     });
@@ -100,11 +89,9 @@ class _CreatePostPageState extends State<CreatePostPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: const Color(0xFF667EEA),
+        backgroundColor: Colors.deepPurple,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -157,17 +144,11 @@ class _CreatePostPageState extends State<CreatePostPage>
       decoration: BoxDecoration(
         color: const Color(0xFF667EEA).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFF667EEA).withOpacity(0.2),
-        ),
+        border: Border.all(color: const Color(0xFF667EEA).withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.security,
-            color: const Color(0xFF667EEA),
-            size: 24,
-          ),
+          Icon(Icons.security, color: Colors.deepPurple, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -176,7 +157,7 @@ class _CreatePostPageState extends State<CreatePostPage>
                 const Text(
                   'Anonymous Posting',
                   style: TextStyle(
-                    color: Color(0xFF667EEA),
+                    color: Colors.deepPurple,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -184,10 +165,7 @@ class _CreatePostPageState extends State<CreatePostPage>
                 const SizedBox(height: 4),
                 const Text(
                   'Your identity is completely protected. Share freely.',
-                  style: TextStyle(
-                    color: Color(0xFF4A5568),
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Color(0xFF4A5568), fontSize: 14),
                 ),
               ],
             ),
@@ -236,15 +214,11 @@ class _CreatePostPageState extends State<CreatePostPage>
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFE2E8F0),
-                  ),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFE2E8F0),
-                  ),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -307,8 +281,8 @@ class _CreatePostPageState extends State<CreatePostPage>
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
@@ -325,18 +299,17 @@ class _CreatePostPageState extends State<CreatePostPage>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          mood.emoji,
-                          style: const TextStyle(fontSize: 18),
-                        ),
+                        Text(mood.emoji, style: const TextStyle(fontSize: 18)),
                         const SizedBox(width: 8),
                         Text(
                           mood.displayName,
                           style: TextStyle(
-                            color: isSelected ? mood.color : const Color(0xFF4A5568),
+                            color: isSelected
+                                ? mood.color
+                                : const Color(0xFF4A5568),
                             fontSize: 14,
-                            fontWeight: isSelected 
-                                ? FontWeight.w600 
+                            fontWeight: isSelected
+                                ? FontWeight.w600
                                 : FontWeight.w500,
                           ),
                         ),
@@ -360,7 +333,7 @@ class _CreatePostPageState extends State<CreatePostPage>
         child: ElevatedButton(
           onPressed: _isPosting ? null : _createPost,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF667EEA),
+            backgroundColor: Colors.deepPurple,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 18),
             shape: RoundedRectangleBorder(
@@ -370,7 +343,7 @@ class _CreatePostPageState extends State<CreatePostPage>
           ),
           child: _isPosting
               ? const SizedBox(
-                  height: 20,
+                  height: 15,
                   width: 20,
                   child: CircularProgressIndicator(
                     color: Colors.white,
@@ -379,10 +352,7 @@ class _CreatePostPageState extends State<CreatePostPage>
                 )
               : const Text(
                   'Share Anonymously',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
         ),
       ),

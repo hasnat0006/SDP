@@ -5,10 +5,7 @@ import 'forum_models.dart';
 class SavedPostsPage extends StatefulWidget {
   final List<ForumPost> savedPosts;
 
-  const SavedPostsPage({
-    super.key,
-    required this.savedPosts,
-  });
+  const SavedPostsPage({super.key, required this.savedPosts});
 
   @override
   State<SavedPostsPage> createState() => _SavedPostsPageState();
@@ -26,13 +23,9 @@ class _SavedPostsPageState extends State<SavedPostsPage>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
     _fadeController.forward();
   }
 
@@ -71,9 +64,7 @@ class _SavedPostsPageState extends State<SavedPostsPage>
                 padding: const EdgeInsets.all(16),
                 itemCount: widget.savedPosts.length,
                 itemBuilder: (context, index) {
-                  return SavedPostCard(
-                    post: widget.savedPosts[index],
-                  );
+                  return SavedPostCard(post: widget.savedPosts[index]);
                 },
               ),
       ),
@@ -129,10 +120,7 @@ class _SavedPostsPageState extends State<SavedPostsPage>
             ),
             child: const Text(
               'Browse Forum',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -144,10 +132,7 @@ class _SavedPostsPageState extends State<SavedPostsPage>
 class SavedPostCard extends StatelessWidget {
   final ForumPost post;
 
-  const SavedPostCard({
-    super.key,
-    required this.post,
-  });
+  const SavedPostCard({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
@@ -173,11 +158,7 @@ class SavedPostCard extends StatelessWidget {
               children: [
                 _buildMoodBadge(),
                 const Spacer(),
-                Icon(
-                  Icons.bookmark,
-                  color: const Color(0xFF3182CE),
-                  size: 20,
-                ),
+                Icon(Icons.bookmark, color: const Color(0xFF3182CE), size: 20),
                 const SizedBox(width: 8),
                 Text(
                   _formatTimestamp(post.timestamp),
@@ -204,7 +185,7 @@ class SavedPostCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.favorite,
-                  color: post.isLiked 
+                  color: post.isLiked
                       ? const Color(0xFFE53E3E)
                       : const Color(0xFF718096),
                   size: 18,
@@ -232,18 +213,12 @@ class SavedPostCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: post.mood.color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: post.mood.color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: post.mood.color.withOpacity(0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            post.mood.emoji,
-            style: const TextStyle(fontSize: 16),
-          ),
+          Text(post.mood.emoji, style: const TextStyle(fontSize: 16)),
           const SizedBox(width: 6),
           Text(
             post.mood.displayName,

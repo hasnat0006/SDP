@@ -1,3 +1,4 @@
+import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -5,7 +6,6 @@ import '../journal/journal.dart'; // Ensure this import is correct
 import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
 // import 'package:google_fonts/google_fonts.dart';
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -171,65 +171,149 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-   Widget _buildTrackers(BuildContext context) {
+  Widget _buildTrackers(BuildContext context) {
     return Column(
       children: [
-        _trackerTile(Icons.mood, 'Mood Tracker', 'Sad → Happy → Neutral', context,
+        _trackerTile(
+          Icons.mood,
+          'Mood Tracker',
+          'Sad → Happy → Neutral',
+          context,
           onTap: () {
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const MoodPage(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(1.0, 0.0);
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  return SlideTransition(position: animation.drive(tween), child: child);
-                },
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MoodPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
         ),
-        _trackerTile(Icons.bedtime, 'Sleep Quality', 'Insomniac (~2h Avg)', context),
-        _trackerTile(Icons.edit_note, 'Thought Journal', '64 Day Streak', context,
+        _trackerTile(
+          Icons.bedtime,
+          'Sleep Quality',
+          'Insomniac (~2h Avg)',
+          context,
+        ),
+        _trackerTile(
+          Icons.edit_note,
+          'Thought Journal',
+          '64 Day Streak',
+          context,
           onTap: () {
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const JournalPage(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(1.0, 0.0);
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  return SlideTransition(position: animation.drive(tween), child: child);
-                },
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const JournalPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
         ),
-        _trackerTile(Icons.emoji_emotions_outlined, 'Stress Level', 'Level 3 | Normal', context),
-        _trackerTile(Icons.calendar_month, 'Book an Appointment', 'Get professional help', context),
-        _trackerTile(Icons.check_circle_outline, 'To Do List', '3/5 Completed', context,
+        _trackerTile(
+          Icons.emoji_emotions_outlined,
+          'Stress Level',
+          'Level 3 | Normal',
+          context,
+        ),
+        _trackerTile(
+          Icons.calendar_month,
+          'Book an Appointment',
+          'Get professional help',
+          context,
+        ),
+        _trackerTile(
+          Icons.check_circle_outline,
+          'To Do List',
+          '3/5 Completed',
+          context,
           onTap: () {
             Navigator.push(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const ToDoApp(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(1.0, 0.0);
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  return SlideTransition(position: animation.drive(tween), child: child);
-                },
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const ToDoApp(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
         ),
-        _trackerTile(Icons.self_improvement, 'Virtual Therapist', 'Ease your mind', context),
-        _trackerTile(Icons.forum, 'Forum', 'Share your thought', context),
+        _trackerTile(
+          Icons.self_improvement,
+          'Virtual Therapist',
+          'Ease your mind',
+          context,
+        ),
+        _trackerTile(
+          Icons.forum,
+          'Forum',
+          'Share your thought',
+          context,
+          onTap: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const ForumPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -242,11 +326,12 @@ class DashboardPage extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     return GestureDetector(
-      onTap: onTap ??
+      onTap:
+          onTap ??
           () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$title tapped!')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('$title tapped!')));
           },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -278,7 +363,4 @@ class DashboardPage extends StatelessWidget {
       ),
     );
   }
-
 }
-
-
