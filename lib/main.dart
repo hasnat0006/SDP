@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: const JournalHistoryPage(),
+      home: const DoctorDashboard(),
     );
   }
 } 

@@ -78,7 +78,14 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Appointment Details'),
+              Flexible(
+                child: Text(
+                  'Appointment Details',
+                  softWrap: true,
+                  overflow: TextOverflow.visible,
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.pop(context),
@@ -232,7 +239,13 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.arrow_back),
+                  // Back button
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
                   const SizedBox(width: 10),
                   const Text(
                     "Appointments",

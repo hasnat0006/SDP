@@ -62,7 +62,7 @@ class DashboardPage extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 30,
-            backgroundImage: AssetImage('assets/zaima.jpg'), // Replace with real image
+            backgroundImage: AssetImage('assets/zaima.jpg'), 
           ),
           const SizedBox(width: 16),
           Column(
@@ -219,7 +219,7 @@ class DashboardPage extends StatelessWidget {
           },
         ),
         _trackerTile(Icons.self_improvement, 'Virtual Therapist', 'Ease your mind', context),
-        _trackerTile(Icons.forum, 'Forum', 'Share your thought', context),
+        _trackerTile(Icons.forum, 'Forum', 'Share your thought anonymously', context),
       ],
     );
   }
