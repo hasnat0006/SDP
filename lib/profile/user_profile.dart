@@ -391,7 +391,10 @@ class _UserProfilePageState extends State<UserProfilePage>
         backgroundColor: const Color(0xFFD1A1E3),
         // rouded corners
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
         ),
         elevation: 0,
         actions: [
@@ -435,27 +438,27 @@ class _UserProfilePageState extends State<UserProfilePage>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90),
-        child: FloatingActionButton.extended(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          onPressed: _editProfile,
-          icon: const Icon(Icons.edit),
-          label: Text(
-            'Edit Profile',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-          ),
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          elevation: 6,
-          extendedPadding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 8,
-          ),
-        ),
-      ),
+      // floatingActionButton: Padding(
+      //   padding: const EdgeInsets.only(bottom: 90),
+      //   child: FloatingActionButton.extended(
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(10),
+      //     ),
+      //     onPressed: _editProfile,
+      //     icon: const Icon(Icons.edit),
+      //     label: Text(
+      //       'Edit Profile',
+      //       style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+      //     ),
+      //     backgroundColor: theme.colorScheme.primary,
+      //     foregroundColor: theme.colorScheme.onPrimary,
+      //     elevation: 6,
+      //     extendedPadding: const EdgeInsets.symmetric(
+      //       horizontal: 10,
+      //       vertical: 8,
+      //     ),
+      //   ),
+      // ),
     );
   }
 
