@@ -1,3 +1,4 @@
+import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import '../../dashboard/p_dashboard.dart';
 
@@ -76,22 +77,14 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircleAvatar(
-              radius: 30,
+              radius: 50,
               backgroundColor: Colors.white,
               backgroundImage: AssetImage(
-                'assets/mindora_logo.png',
-              ), // Replace with your logo
+                'assets/mindora.png',
+              ), 
             ),
             const SizedBox(height: 8),
-            const Text(
-              'MINDORA',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 16,
-                letterSpacing: 1.2,
-              ),
-            ),
+            
           ],
         ),
       ),
@@ -156,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to dashboard
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
+            MaterialPageRoute(builder: (context) => const MainNavBar()),
           );
         },
         style: ElevatedButton.styleFrom(

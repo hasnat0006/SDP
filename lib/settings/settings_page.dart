@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../login/signup/login.dart'; 
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -99,6 +100,19 @@ class SettingsPage extends StatelessWidget {
                     title: 'Help & Support',
                     subtitle: 'Get help and contact support',
                   ),
+                  // --- Logout Button ---
+                  _buildSettingsItem(
+                    icon: Icons.logout,
+                    title: 'Logout',
+                    subtitle: 'Sign out of your account',
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        (route) => false,
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -112,6 +126,7 @@ class SettingsPage extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
+    VoidCallback? onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -165,9 +180,7 @@ class SettingsPage extends StatelessWidget {
           color: Color(0xFF757575),
           size: 16,
         ),
-        onTap: () {
-          // Handle settings item tap
-        },
+        onTap: onTap,
       ),
     );
   }
