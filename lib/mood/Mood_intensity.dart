@@ -7,10 +7,10 @@ class MoodIntensityPage extends StatefulWidget {
   final String moodEmoji;
 
   const MoodIntensityPage({
-    Key? key,
+    super.key,
     required this.moodLabel,
     required this.moodEmoji,
-  }) : super(key: key);
+  });
 
   @override
   State<MoodIntensityPage> createState() => _MoodIntensityPageState();

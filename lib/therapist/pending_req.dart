@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import './manage_app.dart'; // Import your ManageAppointments widget file
 
 class PendingRequestsPage extends StatefulWidget {
-  const PendingRequestsPage({Key? key}) : super(key: key);
+  const PendingRequestsPage({super.key});
 
   @override
   State<PendingRequestsPage> createState() => _PendingRequestsPageState();

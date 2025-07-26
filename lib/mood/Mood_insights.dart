@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class MoodInsightsPage extends StatefulWidget {
-  const MoodInsightsPage({Key? key}) : super(key: key);
+  const MoodInsightsPage({super.key});
 
   @override
   State<MoodInsightsPage> createState() => _MoodInsightsPageState();

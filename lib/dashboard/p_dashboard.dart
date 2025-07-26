@@ -5,26 +5,22 @@ import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
 // import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mental Health Dashboard',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        // fontFamily: GoogleFonts.poppins().fontFamily,
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const DashboardPage(),
-    );
-  }
-}
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Mental Health Dashboard',
+//       debugShowCheckedModeBanner: false,
+//       theme: ThemeData(
+//         // fontFamily: GoogleFonts.poppins().fontFamily,
+//         useMaterial3: true,
+//         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+//       ),
+//       home: const DashboardPage(),
+//     );
+//   }
+// }
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
