@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'edit_profile.dart';
 import 'therapist_profile.dart';
+import '../dashboard/t_dashboard.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -391,7 +392,10 @@ class _UserProfilePageState extends State<UserProfilePage>
         backgroundColor: const Color(0xFFD1A1E3),
         // rouded corners
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
         ),
         elevation: 0,
         actions: [
@@ -435,27 +439,27 @@ class _UserProfilePageState extends State<UserProfilePage>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 90),
-        child: FloatingActionButton.extended(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          onPressed: _editProfile,
-          icon: const Icon(Icons.edit),
-          label: Text(
-            'Edit Profile',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-          ),
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: theme.colorScheme.onPrimary,
-          elevation: 6,
-          extendedPadding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 8,
-          ),
-        ),
-      ),
+      // floatingActionButton: Padding(
+      //   padding: const EdgeInsets.only(bottom: 90),
+      //   child: FloatingActionButton.extended(
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(10),
+      //     ),
+      //     onPressed: _editProfile,
+      //     icon: const Icon(Icons.edit),
+      //     label: Text(
+      //       'Edit Profile',
+      //       style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+      //     ),
+      //     backgroundColor: theme.colorScheme.primary,
+      //     foregroundColor: theme.colorScheme.onPrimary,
+      //     elevation: 6,
+      //     extendedPadding: const EdgeInsets.symmetric(
+      //       horizontal: 10,
+      //       vertical: 8,
+      //     ),
+      //   ),
+      // ),
     );
   }
 
@@ -862,6 +866,32 @@ class _UserProfilePageState extends State<UserProfilePage>
               icon: const Icon(Icons.person),
               label: Text(
                 'View Sample Therapist Profile',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A148C),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const DoctorDashboard(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.dashboard_customize),
+              label: Text(
+                'Therapist Dashboard',
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
               ),
               style: ElevatedButton.styleFrom(

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:client/dashboard/p_dashboard.dart';
@@ -168,7 +169,7 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => DashboardPage()),
+                      MaterialPageRoute(builder: (context) => MainNavBar()),
                     );
                   },
                   style: ElevatedButton.styleFrom(

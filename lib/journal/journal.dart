@@ -1,3 +1,4 @@
+import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import '../journal/journal_history.dart';
 import '../dashboard/p_dashboard.dart'; // <-- Add this import
@@ -18,7 +19,7 @@ class JournalPage extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const DashboardPage(),
+                pageBuilder: (context, animation, secondaryAnimation) => const MainNavBar(),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   const begin = Offset(-1.0, 0.0); // Slide from left to right
                   const end = Offset.zero;

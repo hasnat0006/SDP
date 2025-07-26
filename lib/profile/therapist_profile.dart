@@ -272,7 +272,13 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
             fontFamily: 'Poppins',
           ),
         ),
-        backgroundColor: const Color(0xFF4A148C),
+        backgroundColor: const Color(0xFFD1A1E3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+        ),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -320,27 +326,27 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
           ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80),
-        child: FloatingActionButton.extended(
-          onPressed: _editProfile,
-          icon: const Icon(Icons.edit),
-          label: const Text(
-            'Edit Profile',
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          backgroundColor: const Color(0xFF4A148C),
-          foregroundColor: Colors.white,
-          elevation: 6,
-          extendedPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 10,
-          ),
-        ),
-      ),
+      // floatingActionButton: Padding(
+      //   padding: const EdgeInsets.only(bottom: 80),
+      //   child: FloatingActionButton.extended(
+      //     onPressed: _editProfile,
+      //     icon: const Icon(Icons.edit),
+      //     label: const Text(
+      //       'Edit Profile',
+      //       style: TextStyle(
+      //         fontWeight: FontWeight.w500,
+      //         fontFamily: 'Poppins',
+      //       ),
+      //     ),
+      //     backgroundColor: const Color(0xFF4A148C),
+      //     foregroundColor: Colors.white,
+      //     elevation: 6,
+      //     extendedPadding: const EdgeInsets.symmetric(
+      //       horizontal: 20,
+      //       vertical: 10,
+      //     ),
+      //   ),
+      // ),
     );
   }
 
