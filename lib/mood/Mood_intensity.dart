@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'Mood_insights.dart'; 
+import 'Mood_insights.dart'; // Add the Mood Insights page import
 
 class MoodIntensityPage extends StatefulWidget {
   final String moodLabel;
@@ -19,6 +19,21 @@ class MoodIntensityPage extends StatefulWidget {
 class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTickerProviderStateMixin {
   int selectedIntensity = 3;
   bool isHovering = false;
+  List<String> selectedCauses = [];
+  List<String> stressCauses = [
+    'Work',
+    'Family',
+    'Health',
+    'Financial',
+    'Other',
+  ];
+  List<IconData> causeIcons = [
+    Icons.work,
+    Icons.family_restroom,
+    Icons.health_and_safety,
+    Icons.attach_money,
+    Icons.add_circle_outline,
+  ];
 
   late AnimationController _controller;
   late Animation<Offset> _slideAnimation;
@@ -62,9 +77,70 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
     });
   }
 
+  TextEditingController _otherController = TextEditingController();
+
+  void _showOtherPopup(BuildContext context) {
+    if (!selectedCauses.contains('Other')) {
+      setState(() {
+        selectedCauses.add('Other');
+      });
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Please enter your custom cause',
+            style: GoogleFonts.poppins(),
+          ),
+          content: TextField(
+            controller: _otherController,
+            decoration: InputDecoration(
+              labelText: 'Enter custom cause',
+              labelStyle: GoogleFonts.poppins(),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (_otherController.text.isNotEmpty) {
+                  setState(() {
+                    selectedCauses.remove('Other');
+                    selectedCauses.add(_otherController.text);
+                    _otherController.clear();
+                  });
+                }
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'OK',
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  selectedCauses.remove('Other');
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
+    _otherController.dispose();
     super.dispose();
   }
 
@@ -96,9 +172,13 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 130), 
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 50),
             SlideTransition(
               position: _slideAnimation,
               child: Container(
@@ -156,6 +236,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                       ),
                     ),
                     const SizedBox(height: 30),
+                    // Existing section for selecting intensity
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -232,7 +313,138 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                 ),
               ),
             ),
-            const SizedBox(height: 35),
+            const SizedBox(height: 43),
+
+            // **New Section: Stress Cause Options**
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What\'s causing your mood to be so today?',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF6D3670),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.3, // Adjust this value to make buttons more rectangular
+                  ),
+                  itemCount: stressCauses.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onDoubleTap: () {
+                        setState(() {
+                          if (selectedCauses.contains(stressCauses[index])) {
+                            selectedCauses.remove(stressCauses[index]);
+                          }
+                        });
+                      },
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: selectedCauses.contains(stressCauses[index])
+                              ? Color.fromARGB(255, 204, 163, 199) // Light beige when selected
+                              : Color.fromARGB(255, 238, 204, 224), // Very light lavender when not selected
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8), // Smaller border radius
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Smaller padding
+                          elevation: selectedCauses.contains(stressCauses[index]) ? 2 : 1,
+                        ),
+                        onPressed: () {
+                          if (stressCauses[index] == 'Other') {
+                            _showOtherPopup(context);
+                          } else {
+                            setState(() {
+                              if (!selectedCauses.contains(stressCauses[index])) {
+                                selectedCauses.add(stressCauses[index]);
+                              }
+                            });
+                          }
+                        },
+                        onHover: (isHovered) {
+                          setState(() {
+                            // You can add hover state handling here if needed
+                          });
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              causeIcons[index],
+                              size: 24, // Smaller icon size
+                              color: const Color.fromARGB(255, 173, 47, 108), // Dark pinkish color
+                            ),
+                            const SizedBox(height: 4), // Reduced spacing
+                            Text(
+                              stressCauses[index],
+                              style: GoogleFonts.poppins(
+                                color: const Color.fromARGB(255, 173, 47, 108), // Dark pinkish color
+                                fontSize: 13, // Smaller text size
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // **New Section: Selected Causes**
+            if (selectedCauses.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Selected Causes:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF6D3670),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: selectedCauses.map((cause) {
+                      return Chip(
+                        label: Text(
+                          cause,
+                          style: GoogleFonts.poppins(
+                            color: Color(0xFF6D3670),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        backgroundColor: const Color(0xFFE8D5F0), // Lighter lavender
+                        side: const BorderSide(color: Color(0xFFD5B4E3), width: 1), // Subtle border
+                        deleteIcon: Icon(Icons.close, size: 16, color: Color(0xFF6D3670)),
+                        onDeleted: () {
+                          setState(() {
+                            selectedCauses.remove(cause);
+                          });
+                        },
+                        elevation: 1,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 30),
+
+            // **Continue Button**
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: MouseRegion(
@@ -243,7 +455,12 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const MoodInsightsPage(),
+                        builder: (context) => MoodInsightsPage(
+                          moodLabel: widget.moodLabel,
+                          moodEmoji: widget.moodEmoji,
+                          moodIntensity: selectedIntensity,
+                          selectedCauses: selectedCauses,
+                        ),
                       ),
                     );
                   },
@@ -253,29 +470,27 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     width: double.infinity,
                     decoration: BoxDecoration(
-gradient: LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: isHovering
-      ? [Color.fromARGB(255, 233, 188, 240), Color.fromARGB(255, 207, 126, 228)] // Light hover blend
-      : [Color(0xFFD6A6E1), Color(0xFFB78ED3)], // Base gradient
-),
-
-  borderRadius: BorderRadius.circular(20),
-  boxShadow: [
-    BoxShadow(
-      color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
-      blurRadius: isHovering ? 16 : 10,
-      offset: const Offset(0, 6),
-    ),
-  ],
-),
-
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isHovering
+                            ? [Color(0xFFD6C7A6), Color(0xFFE5DAC3)] // Lighter warm beige on hover
+                            : [Color(0xFFCBB994), Color(0xFFCBB994)], // Same as login page button
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFCBB994).withOpacity(isHovering ? 0.5 : 0.3),
+                          blurRadius: isHovering ? 16 : 10,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
                     child: Center(
                       child: Text(
                         "Continue →",
                         style: GoogleFonts.poppins(
-                          color: const Color.fromARGB(255, 250, 247, 247),
+                          color: Colors.black, // Same as login page button text
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.4,
@@ -286,8 +501,9 @@ gradient: LinearGradient(
                 ),
               ),
             ),
-            const SizedBox(height: 25),
-          ],
+              const SizedBox(height: 25),
+            ],
+          ),
         ),
       ),
     );

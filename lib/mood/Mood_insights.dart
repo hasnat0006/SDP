@@ -4,7 +4,18 @@ import 'package:intl/intl.dart';
 import 'Selected_mood_stats.dart';
 
 class MoodInsightsPage extends StatefulWidget {
-  const MoodInsightsPage({Key? key}) : super(key: key);
+  final String moodLabel;
+  final String moodEmoji;
+  final int moodIntensity;
+  final List<String> selectedCauses;
+
+  const MoodInsightsPage({
+    Key? key,
+    required this.moodLabel,
+    required this.moodEmoji,
+    required this.moodIntensity,
+    required this.selectedCauses,
+  }) : super(key: key);
 
   @override
   State<MoodInsightsPage> createState() => _MoodInsightsPageState();
@@ -12,6 +23,29 @@ class MoodInsightsPage extends StatefulWidget {
 
 class _MoodInsightsPageState extends State<MoodInsightsPage> {
   DateTime? selectedDate;
+
+  IconData _getCauseIcon(String cause) {
+    switch (cause.toLowerCase()) {
+      case 'work':
+      case 'work/study':
+        return Icons.work;
+      case 'relationships':
+        return Icons.favorite;
+      case 'health':
+        return Icons.health_and_safety;
+      case 'family':
+        return Icons.family_restroom;
+      case 'financial':
+      case 'money':
+        return Icons.account_balance_wallet;
+      case 'social':
+        return Icons.people;
+      case 'other':
+        return Icons.more_horiz;
+      default:
+        return Icons.label_important;
+    }
+  }
 // Filter Tabs
 final List<String> filters = ["1 Week", "1 Month", "1 Year", "All Time"];
 int selectedFilterIndex = 0; // Default to "1 Week"
@@ -221,7 +255,78 @@ Divider(
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+
+              // Causes Section
+              if (widget.selectedCauses.isNotEmpty) Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Logged Causes",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.brown.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.selectedCauses.map((cause) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEE6FA),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getCauseIcon(cause),
+                                size: 18,
+                                color: const Color(0xFF8E72C7),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                cause,
+                                style: GoogleFonts.poppins(
+                                  color: const Color(0xFF8E72C7),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
               Align(
   alignment: Alignment.centerLeft,
   child: Row(
@@ -230,16 +335,16 @@ Divider(
       Text(
         "History: ",
         style: GoogleFonts.poppins(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Colors.grey.shade700,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: const Color.fromARGB(255, 161, 91, 91),
         ),
       ),
       GestureDetector(
         onTap: _pickDate,
-        child: const Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
+        child: const Icon(Icons.calendar_today, size: 19, color: Colors.deepPurple),
       ),
-      const SizedBox(width: 4),
+      const SizedBox(width: 5),
       GestureDetector(
         onTap: _pickDate,
         child: Text(
@@ -248,8 +353,8 @@ Divider(
               : DateFormat.MMMd().format(selectedDate!),
           style: GoogleFonts.poppins(
             color: Colors.deepPurple,
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
         ),
       )
@@ -323,10 +428,8 @@ Container(
   ),
 ),
 
+const SizedBox(height: 20),
 
-
-
-const SizedBox(height: 16),
 
 
 ClipRRect(
