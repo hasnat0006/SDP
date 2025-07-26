@@ -1,3 +1,4 @@
+import 'package:client/forum/forum.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
@@ -140,7 +141,10 @@ class DoctorDashboard extends StatelessWidget {
                   padding: EdgeInsets.zero,
                 ),
                 onPressed: () {
-                  // Handle Forums tap
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ForumPage()),
+                  );
                 },
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
