@@ -1,5 +1,6 @@
 import 'package:client/appointment/bookappt.dart';
 import 'package:client/appointment/bookform.dart';
+import 'package:client/sleep/sleeptracker.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: 'Poppins',
       ),
-      home: BookAppt(),
+      home: Sleeptracker(),
     );
   }
 }
