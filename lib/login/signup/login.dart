@@ -1,6 +1,7 @@
 import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import '../../dashboard/p_dashboard.dart';
+import 'signup1.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -201,13 +202,27 @@ class _LoginPageState extends State<LoginPage> {
         const SizedBox(height: 6),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text("Don't have an account? "),
-            Text(
-              "Sign Up.",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFD25B68),
+          children: [
+            const Text("Don't have an account? "),
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                minimumSize: Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SignUpPage()),
+                );
+              },
+              child: const Text(
+                "Sign Up",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFD25B68),
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
