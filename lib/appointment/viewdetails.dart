@@ -40,7 +40,12 @@ class _Viewdetails extends State<Viewdetails> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         centerTitle: true,
-        leading: const Icon(Icons.arrow_back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Container(
         color: Colors.white,

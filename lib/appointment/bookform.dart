@@ -50,7 +50,12 @@ class _BookForm extends State<BookForm> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         centerTitle: true,
-        leading: const Icon(Icons.arrow_back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Container(
         color: Colors.white,

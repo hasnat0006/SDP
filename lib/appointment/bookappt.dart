@@ -105,7 +105,12 @@ Dr. Nabiha Parvez aims to empower individuals to take control of their mental he
           ),
         ),
         centerTitle: true,
-        leading: Icon(Icons.arrow_back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Container(
         color: const Color.fromARGB(255, 247, 244, 242),
