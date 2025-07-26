@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../journal/journal_history.dart';
+import '../dashboard/p_dashboard.dart'; // <-- Add this import
 
 class JournalPage extends StatelessWidget {
   const JournalPage({super.key});
@@ -11,7 +12,27 @@ class JournalPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const DashboardPage(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(-1.0, 0.0); // Slide from left to right
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
+                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        ),
         title: const Text(
           "New Journal",
           style: TextStyle(
@@ -26,9 +47,9 @@ class JournalPage extends StatelessWidget {
             icon: const Icon(Icons.history, color: Colors.black54),
             onPressed: () {
               Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const JournalHistoryPage()),
-  );
+                context,
+                MaterialPageRoute(builder: (context) => const JournalHistoryPage()),
+              );
             },
           ),
         ],
