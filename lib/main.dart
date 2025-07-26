@@ -19,7 +19,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A148C)),
         fontFamily: 'Poppins',
       ),
-      home: const ManageAppointments(),
+      home: const MainNavBar(), // Using the new navbar
     );
   }
 }
+
