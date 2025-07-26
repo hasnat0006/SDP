@@ -14,7 +14,7 @@ class BookForm extends StatefulWidget {
   final String exp; // <-- Add this
 
   const BookForm({
-    Key? key,
+    super.key,
     required this.name,
     required this.institution,
     required this.imagepath,
@@ -23,7 +23,7 @@ class BookForm extends StatefulWidget {
     required this.description,
     required this.special,
     required this.exp, // <-- Add this
-  }) : super(key: key);
+  });
 
   @override
   State<BookForm> createState() => _BookForm();
@@ -50,7 +50,12 @@ class _BookForm extends State<BookForm> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         centerTitle: true,
-        leading: const Icon(Icons.arrow_back),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Container(
         color: Colors.white,
@@ -69,7 +74,7 @@ class _BookForm extends State<BookForm> {
               ),
               const SizedBox(height: 16),
               Text(
-                widget.name + ' ,Psychiatrist',
+                '${widget.name} ,Psychiatrist',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
@@ -111,7 +116,7 @@ class _BookForm extends State<BookForm> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'About ' + widget.name,
+                      'About ${widget.name}',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
