@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../dashboard/p_dashboard.dart'; // <-- Add this import
 
 class ToDoApp extends StatelessWidget {
   const ToDoApp({super.key});
@@ -132,7 +133,22 @@ class _ToDoPageState extends State<ToDoPage> {
         leading: IconButton(
           icon: Icon(Icons.chevron_left_sharp, color: Colors.white, size: 30),
           onPressed: () {
-            // Handle back navigation
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => const DashboardPage(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(-1.0, 0.0); // Slide from left to right
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
+                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            );
           },
         ),
         title: Text(
