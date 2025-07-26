@@ -67,15 +67,16 @@ class _LoginPageState extends State<LoginPage> {
       width: double.infinity,
       height: 180,
       decoration: const BoxDecoration(
-        color: Color(0xFFD8A3D3),
+        color: Color(0xFFD1A1E3),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(90),
-          bottomRight: Radius.circular(90),
+          bottomLeft: Radius.circular(45),
+          bottomRight: Radius.circular(45),
         ),
       ),
       child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const CircleAvatar(
               radius: 50,

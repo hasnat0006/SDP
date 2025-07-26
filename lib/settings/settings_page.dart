@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../login/signup/login.dart'; 
+import '../login/signup/login.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -17,7 +17,9 @@ class SettingsPage extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: const Color(0xFF4A148C),
+        backgroundColor: const Color(0xFFD1A1E3),
+        // rounded corners
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
@@ -45,7 +47,7 @@ class SettingsPage extends StatelessWidget {
               ),
               child: const Column(
                 children: [
-                  Icon(Icons.settings, size: 80, color: Color(0xFF4A148C)),
+                  Icon(Icons.settings, size: 80, color: Color(0xFFD1A1E3)),
                   SizedBox(height: 15),
                   Text(
                     'Settings & Preferences',
@@ -108,7 +110,9 @@ class SettingsPage extends StatelessWidget {
                     onTap: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
                         (route) => false,
                       );
                     },
@@ -134,7 +138,7 @@ class SettingsPage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF4A148C).withOpacity(0.2),
+          color: const Color(0xFFD1A1E3).withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [

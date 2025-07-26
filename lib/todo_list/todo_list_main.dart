@@ -159,7 +159,7 @@ class _ToDoPageState extends State<ToDoPage> {
             fontSize: 24,
           ),
         ),
-        backgroundColor: Color(0xFFD39AD5),
+        backgroundColor: Color(0xFFD1A1E3),
         centerTitle: true,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -338,7 +338,7 @@ class _ToDoPageState extends State<ToDoPage> {
                   ElevatedButton(
                     onPressed: () => addTask(taskController.text),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple[300],
+                      backgroundColor: const Color(0xFFD1A1E3),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

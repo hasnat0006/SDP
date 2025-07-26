@@ -162,7 +162,9 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
             color: Color(0xFF2D3748),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFD1A1E3),
+        // rounded corners
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),

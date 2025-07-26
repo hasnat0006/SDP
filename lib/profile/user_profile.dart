@@ -102,7 +102,7 @@ class _UserProfilePageState extends State<UserProfilePage>
       builder: (BuildContext context) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: const Color(0xFFF8F9FA),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -388,7 +388,11 @@ class _UserProfilePageState extends State<UserProfilePage>
           'Profile',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 20),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFD1A1E3),
+        // rouded corners
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         elevation: 0,
         actions: [
           IconButton(
