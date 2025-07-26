@@ -302,7 +302,8 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
             builder: (context) => StressInsightsPage(
               stressLevel: selectedStressLevel,
               selectedCauses: selectedCauses,
-              notes: 'Your Notes: $notes', // Pass actual notes from the TextField
+              selectedSymptoms: selectedSymptoms,
+              notes: notes.isNotEmpty ? notes : 'No notes added.',
             ),
           ),
         );
