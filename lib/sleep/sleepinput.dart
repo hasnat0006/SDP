@@ -107,7 +107,8 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
-                Expanded(
+                SizedBox(
+                  width: 350, // Set your desired width here
                   child: Center(
                     child: RotatedBox(
                       quarterTurns: -1,
@@ -120,7 +121,6 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                             overlayRadius: 24,
                           ),
                           trackHeight: 6,
-                        
                           activeTrackColor: const Color.fromARGB(
                             255,
                             211,
