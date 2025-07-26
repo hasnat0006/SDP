@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'edit_profile.dart';
 import 'therapist_profile.dart';
+import '../dashboard/t_dashboard.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -862,6 +863,32 @@ class _UserProfilePageState extends State<UserProfilePage>
               icon: const Icon(Icons.person),
               label: Text(
                 'View Sample Therapist Profile',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A148C),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const DoctorDashboard(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.dashboard_customize),
+              label: Text(
+                'Therapist Dashboard',
                 style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
               ),
               style: ElevatedButton.styleFrom(
