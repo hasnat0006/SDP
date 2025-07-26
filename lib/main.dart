@@ -1,5 +1,5 @@
+import 'package:client/login/signup/login.dart';
 import 'package:flutter/material.dart';
-import './navbar/navbar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A148C)),
         fontFamily: 'Poppins',
       ),
-      home: const MainNavBar(), // Using the new navbar
+      home: const LoginPage(), // Using the new navbar
     );
   }
 }
