@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../stress/stress_insights.dart'; 
+
 
 void main() => runApp(const MyApp());
 
@@ -25,6 +27,7 @@ class StressTrackerPage extends StatefulWidget {
 class _StressTrackerPageState extends State<StressTrackerPage> {
   int selectedStressLevel = 3;
   bool isHovering = false;
+  String notes = "";
   List<String> stressCauses = [
     'Work/Study',
     'Relationships',
@@ -276,7 +279,7 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                       maxLines: 4,
                       onChanged: (text) {
                         setState(() {
-                          // Handle notes input
+                        notes = text;
                         });
                       },
                     ),
@@ -284,53 +287,64 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                 ),
                 const SizedBox(height: 40),
 
-                // Continue Button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: MouseRegion(
-                    onEnter: (_) => setState(() => isHovering = true),
-                    onExit: (_) => setState(() => isHovering = false),
-                    child: GestureDetector(
-                      onTap: () {
-                        // Handle continue button tap
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        transform: Matrix4.identity()..scale(isHovering ? 1.03 : 1.0),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: isHovering
-                                ? [Color(0xFFE6BCF0), Color(0xFFCF7EE4)]
-                                : [Color(0xFFD6A6E1), Color(0xFFB78ED3)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
-                              blurRadius: isHovering ? 16 : 10,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            "Continue →",
-                            style: GoogleFonts.poppins(
-                              color: const Color(0xFFF9F7F7),
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                    // Continue Button
+               Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+  child: MouseRegion(
+    onEnter: (_) => setState(() => isHovering = true),
+    onExit: (_) => setState(() => isHovering = false),
+    child: GestureDetector(
+      onTap: () {
+        // Navigate to StressInsightsPage with data
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StressInsightsPage(
+              stressLevel: selectedStressLevel,
+              selectedCauses: selectedCauses,
+              notes: 'Your Notes: $notes', // Pass actual notes from the TextField
+            ),
+          ),
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        transform: Matrix4.identity()..scale(isHovering ? 1.03 : 1.0),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isHovering
+                ? [Color(0xFFE6BCF0), Color(0xFFCF7EE4)]
+                : [Color(0xFFD6A6E1), Color(0xFFB78ED3)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
+              blurRadius: isHovering ? 16 : 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            "Continue →",
+            style: GoogleFonts.poppins(
+              color: const Color(0xFFF9F7F7),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+      ),
+    ),
+  ),
+),
+
               ],
             ),
           ),
@@ -401,9 +415,9 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
               onPressed: () {
                 if (_otherController.text.isNotEmpty) {
                   setState(() {
-                    selectedCauses.remove('Other'); // Remove "Other" from causes
+                    selectedCauses.remove('Other');
                     selectedCauses.add(_otherController.text);
-                    _otherController.clear(); // Clear the text field after submission
+                    _otherController.clear(); 
                   });
                 }
                 Navigator.of(context).pop();
