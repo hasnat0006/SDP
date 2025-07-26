@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:client/dashboard/p_dashboard.dart';
+import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -148,7 +149,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DashboardPage(),
+                            builder: (context) => MainNavBar(),
                           ),
                         );
                       },
