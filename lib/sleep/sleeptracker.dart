@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'sleepinput.dart';
 
 class Sleeptracker extends StatefulWidget {
-  const Sleeptracker({Key? key}) : super(key: key);
+  const Sleeptracker({super.key});
 
   @override
   State<Sleeptracker> createState() => _SleeptrackerState();
@@ -135,7 +135,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Did you sleep for 7 hours?",
+                  "Your screen was off from ",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
                 ),
                 SizedBox(height: 12),
@@ -149,6 +149,13 @@ class _SleeptrackerState extends State<Sleeptracker> {
                           MaterialPageRoute(builder: (context) => Sleepinput()),
                         );
                       },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 211, 154, 213),
+                        textStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       child: Text(
                         "Yes",
                         style: TextStyle(
@@ -156,6 +163,10 @@ class _SleeptrackerState extends State<Sleeptracker> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
+                    SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 211, 154, 213),
                         textStyle: TextStyle(
@@ -163,22 +174,11 @@ class _SleeptrackerState extends State<Sleeptracker> {
                           fontSize: 16,
                         ),
                       ),
-                    ),
-                    SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {},
                       child: Text(
                         "No",
                         style: TextStyle(
                           color: Color.fromARGB(255, 255, 255, 255),
                           fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 211, 154, 213),
-                        textStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                       ),
                     ),

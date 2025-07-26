@@ -15,7 +15,7 @@ class Viewdetails extends StatefulWidget {
   final String exp; // <-- Add this
 
   const Viewdetails({
-    Key? key,
+    super.key,
     required this.name,
     required this.institution,
     required this.imagepath,
@@ -24,7 +24,7 @@ class Viewdetails extends StatefulWidget {
     required this.description,
     required this.special,
     required this.exp, // <-- Add this
-  }) : super(key: key);
+  });
 
   @override
   State<Viewdetails> createState() => _Viewdetails();
@@ -59,7 +59,7 @@ class _Viewdetails extends State<Viewdetails> {
               ),
               const SizedBox(height: 16),
               Text(
-                widget.name + ' ,Psychiatrist',
+                '${widget.name} ,Psychiatrist',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
@@ -101,7 +101,7 @@ class _Viewdetails extends State<Viewdetails> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'About ' + widget.name,
+                      'About ${widget.name}',
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
