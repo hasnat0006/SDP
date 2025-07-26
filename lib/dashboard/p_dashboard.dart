@@ -1,29 +1,11 @@
+import 'package:client/chatbot/startpage.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../journal/journal.dart'; // Ensure this import is correct
 import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
-// import 'package:google_fonts/google_fonts.dart';
 import '../stress/stress_tracker.dart';
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Mental Health Dashboard',
-//       debugShowCheckedModeBanner: false,
-//       theme: ThemeData(
-//         // fontFamily: GoogleFonts.poppins().fontFamily,
-//         useMaterial3: true,
-//         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-//       ),
-//       home: const DashboardPage(),
-//     );
-//   }
-// }
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -110,13 +92,20 @@ class DashboardPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Text('Average Sleep', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Average Sleep',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 8),
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.white,
-              child: Text('5.5\nHours', textAlign: TextAlign.center, style: TextStyle(color: Colors.green)),
-            )
+              child: Text(
+                '5.5\nHours',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.green),
+              ),
+            ),
           ],
         ),
       ),
@@ -235,8 +224,39 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
-        _trackerTile(Icons.bedtime, 'Sleep Quality', 'Healthy (~5.5h Avg)', context),
-        _trackerTile(Icons.edit_note, 'Thought Journal', '64 Day Streak', context,
+        _trackerTile(
+          Icons.emoji_emotions_outlined,
+          'Stress Level',
+          'Level 3 | Normal',
+          context,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const StressTrackerPage(), // Use MaterialPageRoute for simplicity
+              ),
+            );
+          },
+        ),
+        // _trackerTile(
+        //   Icons.bedtime,
+        //   'Sleep Quality',
+        //   'Healthy (~5.5h Avg)',
+        //   context,
+        // ),
+        
+        _trackerTile(
+          Icons.calendar_month,
+          'Book an Appointment',
+          'Get professional help',
+          context,
+        ),
+        _trackerTile(
+          Icons.edit_note,
+          'Todo List',
+          '3/5 Completed',
+          context,
           onTap: () {
             Navigator.push(
               context,
@@ -261,25 +281,13 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
-_trackerTile(
-  Icons.emoji_emotions_outlined, 
-  'Stress Level', 
-  'Level 3 | Normal', 
-  context,
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const StressTrackerPage(), // Use MaterialPageRoute for simplicity
-      ),
-    );
-  },
-),
+        
 
-
-
-        _trackerTile(Icons.calendar_month, 'Book an Appointment', 'Get professional help', context),
-        _trackerTile(Icons.check_circle_outline, 'To Do List', '3/5 Completed', context,
+        _trackerTile(
+           Icons.forum,
+          'Forum',
+          'Share your thought anonymously',
+          context,
           onTap: () {
             Navigator.push(
               context,
@@ -304,8 +312,21 @@ _trackerTile(
             );
           },
         ),
-        _trackerTile(Icons.self_improvement, 'Virtual Therapist', 'Ease your mind', context),
-        _trackerTile(Icons.forum, 'Forum', 'Share your thought anonymously', context),
+        _trackerTile(
+          Icons.self_improvement,
+          'Virtual Therapist',
+          'Ease your mind',
+          context,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const Startpage(), // Use MaterialPageRoute for simplicity
+              ),
+            );
+          },
+        ),
+
       ],
     );
   }
