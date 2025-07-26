@@ -1,3 +1,4 @@
+import 'package:client/forum/forum.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../dashboard/p_dashboard.dart';
@@ -48,7 +49,7 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
       label: '',
       page: const DashboardPageWrapper(),
     ),
-    NavItem(icon: Icons.mood, label: '', page: const MoodPageWrapper()),
+    NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
     NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
     NavItem(icon: Icons.person, label: '', page: const UserProfilePage()),
     NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
@@ -99,36 +100,36 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
+        padding: const EdgeInsets.fromLTRB(5, 0, 5, 3),
         child: Container(
-          height: 85,
+          height: 78,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
-                color: primaryPurple.withOpacity(0.2),
-                blurRadius: 20,
-                spreadRadius: 2,
-                offset: const Offset(0, 6),
+                color: primaryPurple.withOpacity(0.15),
+                blurRadius: 15,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 12,
-                spreadRadius: -2,
-                offset: const Offset(0, -2),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 8,
-                spreadRadius: -4,
-                offset: const Offset(0, -6),
+                spreadRadius: -1,
+                offset: const Offset(0, -1),
+              ),
+              BoxShadow(
+                color: Colors.white.withOpacity(0.6),
+                blurRadius: 6,
+                spreadRadius: -2,
+                offset: const Offset(0, -3),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(10),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
                 // padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                 decoration: BoxDecoration(
@@ -142,15 +143,15 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
                     ],
                     stops: const [0.0, 0.6, 1.0],
                   ),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: const Color.fromARGB(
                       255,
                       255,
                       255,
                       255,
-                    ).withOpacity(0.22),
-                    width: 1.1,
+                    ).withOpacity(0.2),
+                    width: 1.0,
                   ),
                 ),
                 child: BottomNavigationBar(
@@ -185,24 +186,24 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
                                     end: Alignment.bottomRight,
                                   )
                                 : null,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(10),
                             border: isSelected
                                 ? Border.all(
-                                    color: Colors.white.withOpacity(0.45),
-                                    width: 1.6,
+                                    color: Colors.white.withOpacity(0.4),
+                                    width: 1.2,
                                   )
                                 : null,
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: primaryPurple.withOpacity(0.22),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                      offset: const Offset(0, 3),
+                                      color: primaryPurple.withOpacity(0.18),
+                                      blurRadius: 8,
+                                      spreadRadius: 0,
+                                      offset: const Offset(0, 2),
                                     ),
                                     BoxShadow(
-                                      color: Colors.white.withOpacity(0.5),
-                                      blurRadius: 5,
+                                      color: Colors.white.withOpacity(0.4),
+                                      blurRadius: 4,
                                       spreadRadius: -1,
                                       offset: const Offset(0, -1),
                                     ),
@@ -210,35 +211,35 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
                                 : null,
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(10),
                             child: isSelected
                                 ? BackdropFilter(
                                     filter: ImageFilter.blur(
-                                      sigmaX: 6,
-                                      sigmaY: 6,
+                                      sigmaX: 4,
+                                      sigmaY: 4,
                                     ),
                                     child: AnimatedScale(
-                                      scale: isSelected ? 1.15 : 1.0,
+                                      scale: isSelected ? 1.1 : 1.0,
                                       duration: const Duration(
-                                        milliseconds: 220,
+                                        milliseconds: 200,
                                       ),
                                       child: Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Icon(
                                           item.icon,
-                                          size: isSelected ? 28 : 24,
+                                          size: isSelected ? 22 : 20,
                                         ),
                                       ),
                                     ),
                                   )
                                 : AnimatedScale(
-                                    scale: isSelected ? 1.15 : 1.0,
-                                    duration: const Duration(milliseconds: 220),
+                                    scale: isSelected ? 1.1 : 1.0,
+                                    duration: const Duration(milliseconds: 200),
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Icon(
                                         item.icon,
-                                        size: isSelected ? 28 : 24,
+                                        size: isSelected ? 22 : 20,
                                       ),
                                     ),
                                   ),
