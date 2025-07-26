@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,7 +31,6 @@ class _SleeptrackerState extends State<Sleeptracker> {
   void _inferSleepStart() {
     final now = DateTime.now();
     if (now.hour >= 23 || now.hour <= 5) {
-      // You can refine this later with actual inactivity detection
       sleepStartTime = DateTime(now.year, now.month, now.day, 23, 0);
     }
   }
@@ -42,7 +42,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
         if (sleepStartTime != null) {
           sleepDuration = wakeTime!.difference(sleepStartTime!);
           _showSleepSummary();
-          sleepStartTime = null; // Reset cycle
+          sleepStartTime = null;
         }
       }
     });
@@ -85,7 +85,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context); // Pops current screen off the stack
+            Navigator.pop(context);
           },
         ),
       ),
@@ -93,29 +93,28 @@ class _SleeptrackerState extends State<Sleeptracker> {
         children: [
           Container(color: const Color.fromARGB(255, 247, 244, 242)),
 
-          //   Clouds scattered across the background
-          // Positioned(
-          //   top: 50,
-          //   left: 30,
-          //   child: Image.asset('assets/cloud3.png', width: 100),
-          // ),
-          // Positioned(
-          //   top: 150,
-          //   right: 20,
-          //   child: Image.asset('assets/cloud3.png', width: 100),
-          // ),
-          // Positioned(
-          //   bottom: 120,
-          //   left: 60,
-          //   child: Image.asset('assets/cloud3.png', width: 100),
-          // ),
-          // Positioned(
-          //   bottom: 30,
-          //   right: 10,
-          //   child: Image.asset('assets/cloud3.png', width: 90),
-          // ),
+          // ⭐ Twinkling Stars
+          ...List.generate(50, (index) {
+            final random = Random(index);
+            final top =
+                random.nextDouble() * MediaQuery.of(context).size.height;
+            final left =
+                random.nextDouble() * MediaQuery.of(context).size.width;
+            final delay = Duration(milliseconds: 300 * index);
+            final size = 12.0 + random.nextInt(10);
 
-          // // Cat image at bottom center
+            return Positioned(
+              top: top,
+              left: left,
+              child: TwinklingStar(
+                assetPath: 'assets/star.png',
+                delay: delay,
+                size: size,
+              ),
+            );
+          }),
+
+          // 🐱 Cat at bottom
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -128,8 +127,8 @@ class _SleeptrackerState extends State<Sleeptracker> {
               ),
             ),
           ),
-          SizedBox(height: 12),
 
+          // 🌙 Sleep Confirmation Prompt
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -137,8 +136,9 @@ class _SleeptrackerState extends State<Sleeptracker> {
                 Text(
                   "Your screen was off from 11:00 pm to 6:00 am. Were you sleeping?",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+                  textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -150,36 +150,40 @@ class _SleeptrackerState extends State<Sleeptracker> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 211, 154, 213),
-                        textStyle: TextStyle(
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          211,
+                          154,
+                          213,
+                        ),
+                        textStyle: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
-                      child: Text(
+                      child: const Text(
                         "Yes",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {}, // Optional “No” action
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 211, 154, 213),
-                        textStyle: TextStyle(
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          211,
+                          154,
+                          213,
+                        ),
+                        textStyle: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
-                      child: Text(
+                      child: const Text(
                         "No",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
@@ -187,9 +191,78 @@ class _SleeptrackerState extends State<Sleeptracker> {
               ],
             ),
           ),
-          SizedBox(height: 12),
         ],
       ),
     );
+  }
+}
+
+// 🌠 Star Widget with gentle pulsing
+class TwinklingStar extends StatefulWidget {
+  final String assetPath;
+  final Duration delay;
+  final double size;
+
+  const TwinklingStar({
+    Key? key,
+    required this.assetPath,
+    this.delay = Duration.zero,
+    this.size = 18.0,
+  }) : super(key: key);
+
+  @override
+  State<TwinklingStar> createState() => _TwinklingStarState();
+}
+
+class _TwinklingStarState extends State<TwinklingStar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.repeat(reverse: true);
+    });
+
+    _scale = Tween<double>(
+      begin: 0.9,
+      end: 1.3,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _opacity = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) => Opacity(
+        opacity: _opacity.value,
+        child: Transform.scale(
+          scale: _scale.value,
+          child: Image.asset(
+            widget.assetPath,
+            width: widget.size,
+            height: widget.size,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
