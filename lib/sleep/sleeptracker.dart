@@ -143,12 +143,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => Sleepinput()),
-                        );
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(
                           255,
@@ -168,7 +163,12 @@ class _SleeptrackerState extends State<Sleeptracker> {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {}, // Optional “No” action
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => Sleepinput()),
+                        );
+                      }, // Optional “No” action
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(
                           255,
