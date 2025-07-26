@@ -136,7 +136,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
               children: [
                 Text(
                   "Your screen was off from 11:00 pm to 6:00 am. Were you sleeping?",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 26),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),

@@ -8,6 +8,7 @@ import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
 import '../stress/stress_tracker.dart';
 import '../chatbot/chatbot.dart';
+import '../sleep/sleeptracker.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -196,6 +197,29 @@ class DashboardPage extends StatelessWidget {
           'Sleep Quality',
           'Insomniac (~2h Avg)',
           context,
+          onTap: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const Sleeptracker(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+              ),
+            );
+          },
         ),
         _trackerTile(
           Icons.edit_note,
