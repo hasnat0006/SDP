@@ -86,7 +86,7 @@ class StressInsightsPage extends StatelessWidget {
                           Text(
                             'Stress Level',
                             style: GoogleFonts.poppins(
-                              fontSize: 16,
+                              fontSize: 19,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF8E72C7),
                             ),
@@ -99,19 +99,28 @@ class StressInsightsPage extends StatelessWidget {
                             'Reported Causes',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                             // fontWeight: FontWeight.w600,
                               color: const Color.fromARGB(255, 100, 94, 110),
                             ),
                           ),
                           const SizedBox(height: 10),
-                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildCategoryButton('Relationships', Icons.favorite),
-                          _buildCategoryButton('Work', Icons.work),
-                          _buildCategoryButton('Health', Icons.health_and_safety),
-                        ],
-                      ),
+                      SizedBox(
+                        height: 45, // Fixed height for the buttons
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              _buildCategoryButton('Relationships', Icons.favorite),
+                              _buildCategoryButton('Work', Icons.work),
+                              _buildCategoryButton('Health', Icons.health_and_safety),
+                              _buildCategoryButton('Family', Icons.family_restroom),
+                              _buildCategoryButton('Financial', Icons.account_balance_wallet),
+                              _buildCategoryButton('Social', Icons.people),
+                            ],
+                          ),
+                        ),
+                      )
+
                     ],
                   ),
                 ),
@@ -123,25 +132,30 @@ class StressInsightsPage extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Reported Symptoms with white tab and icons
-                _buildSectionWithTabs(
-                  title: 'Logged Symptoms',
-                  children: [
-                    _buildSymptomTab('Headache', Icons.headset),
-                    _buildSymptomTab('Fatigue', Icons.battery_alert),
-                    _buildSymptomTab('Muscle Tension', Icons.sports_gymnastics),
-                  ],
-                ),
+           _buildSectionWithTabs(
+  title: 'Logged Symptoms',
+  children: [
+    _buildSymptomTab('Headache', Icons.headset),
+    _buildSymptomTab('Fatigue', Icons.battery_alert),
+    _buildSymptomTab('Muscle Tension', Icons.sports_gymnastics),
+  ],
+),
+
                 const SizedBox(height: 16),
 
                 // Recommended Activities with white tab and small square tabs
-                _buildSectionWithTabs(
-                  title: 'Recommended Activities',
-                 children: [
-  _buildActivityTab('Deep Breathing', Icons.accessibility, '5 mins'), // Heart Icon for Deep Breathing
-  _buildActivityTab('Nature Walk', Icons.directions_walk, '15 mins'), // Nature Walk Icon
-],
+_buildSectionWithTabs(
+  title: 'Recommended Activities',
+  children: [
+    _buildActivityTab('Deep Breathing', Icons.accessibility, '5 mins'),
+    _buildActivityTab('Nature Walk', Icons.directions_walk, '15 mins'),
+    _buildActivityTab('Yoga', Icons.self_improvement, '10 mins'),
+    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
+    _buildActivityTab('Stretching', Icons.accessibility_new, '7 mins'),
+    _buildActivityTab('Jogging', Icons.directions_run, '30 mins'),
+  ],
+),
 
-                ),
                 const SizedBox(height: 16),
 
                 // Your Notes in a nice tab with custom size and border
@@ -241,6 +255,7 @@ class StressInsightsPage extends StatelessWidget {
   // Custom section with title and tabs
   Widget _buildSectionWithTabs({required String title, required List<Widget> children}) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -265,9 +280,16 @@ class StressInsightsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: children,
+          SizedBox(
+            height: 120, // Fixed height for the scrollable area
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: children,
+              ),
+            ),
           ),
         ],
       ),
@@ -348,19 +370,22 @@ class StressInsightsPage extends StatelessWidget {
 
   // Category Button Widget
   Widget _buildCategoryButton(String label, IconData icon) {
-    return ElevatedButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, color: const Color.fromARGB(255, 138, 5, 78)),
-      label: Text(
-        label,
-        style: GoogleFonts.poppins(color: const Color.fromARGB(255, 138, 5, 78)),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 243, 211, 247), // Background color
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      child: ElevatedButton.icon(
+        onPressed: () {},
+        icon: Icon(icon, color: const Color.fromARGB(255, 138, 5, 78)),
+        label: Text(
+          label,
+          style: GoogleFonts.poppins(color: const Color.fromARGB(255, 138, 5, 78)),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(255, 243, 211, 247), // Background color
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        ),
       ),
     );
   }
