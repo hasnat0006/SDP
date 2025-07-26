@@ -108,7 +108,6 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
-                  width: 350, // Set your desired width here
                   child: Center(
                     child: RotatedBox(
                       quarterTurns: -1,
