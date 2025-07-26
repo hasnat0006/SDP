@@ -1,16 +1,28 @@
+import 'package:client/appointment/viewdetails.dart';
 import 'package:flutter/material.dart';
+import 'bookform.dart';
 
 class TherapistCard extends StatelessWidget {
   final String name;
   final String institution;
   final String imagepath;
+  final String shortbio;
+  final String description;
+  final String education;
+  final String special;
+  final String exp; // <-- Add this
 
   const TherapistCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.institution,
     required this.imagepath,
-  }) : super(key: key);
+    required this.shortbio,
+    required this.description,
+    required this.education,
+    required this.special,
+    required this.exp, // <-- Add this
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +65,23 @@ class TherapistCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookForm(
+                            name: name,
+                            institution: institution,
+                            imagepath: imagepath,
+                            shortbio: shortbio,
+                            description: description,
+                            education: education,
+                            special: special,
+                            exp: exp,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 194, 178, 128),
                       padding: EdgeInsets.symmetric(vertical: 10),
@@ -74,7 +102,23 @@ class TherapistCard extends StatelessWidget {
                 SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Viewdetails(
+                            name: name,
+                            institution: institution,
+                            imagepath: imagepath,
+                            shortbio: shortbio,
+                            description: description,
+                            education: education,
+                            special: special,
+                            exp: exp,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 194, 178, 128),
                       padding: EdgeInsets.symmetric(vertical: 10),

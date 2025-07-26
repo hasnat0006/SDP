@@ -1,4 +1,3 @@
-import 'package:client/chatbot/chatbot.dart';
 import 'package:flutter/material.dart';
 import 'package:client/chatbot/chatbubble.dart';
 import 'package:client/chatbot/chatbubbleuser.dart';
