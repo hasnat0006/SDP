@@ -135,7 +135,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "Your screen was off from ",
+                  "Your screen was off from 11:00 pm to 6:00 am. Were you sleeping?",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
                 ),
                 SizedBox(height: 12),
