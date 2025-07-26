@@ -6,6 +6,8 @@ import '../journal/journal.dart'; // Ensure this import is correct
 import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
 // import 'package:google_fonts/google_fonts.dart';
+import '../stress/stress_tracker.dart';
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -260,17 +262,25 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
-        _trackerTile(
-          Icons.self_improvement,
-          'Virtual Therapist',
-          'Ease your mind',
-          context,
-        ),
-        _trackerTile(
-          Icons.forum,
-          'Forum',
-          'Share your thought',
-          context,
+_trackerTile(
+  Icons.emoji_emotions_outlined, 
+  'Stress Level', 
+  'Level 3 | Normal', 
+  context,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const StressTrackerPage(), // Use MaterialPageRoute for simplicity
+      ),
+    );
+  },
+),
+
+
+
+        _trackerTile(Icons.calendar_month, 'Book an Appointment', 'Get professional help', context),
+        _trackerTile(Icons.check_circle_outline, 'To Do List', '3/5 Completed', context,
           onTap: () {
             Navigator.push(
               context,

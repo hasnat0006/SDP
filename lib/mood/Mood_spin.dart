@@ -59,12 +59,12 @@ return Scaffold(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
     ),
-    leading: IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 0, 0, 0)),
-      onPressed: () {
-        // Your back action here
-      },
-    ),
+   leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
     title: Text(
       'Mood Tracker',
       style: GoogleFonts.poppins(
