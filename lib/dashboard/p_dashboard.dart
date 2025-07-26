@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../todo_list/todo_list_main.dart';
 import '../mood/Mood_spin.dart';
 import '../stress/stress_tracker.dart';
+import '../chatbot/chatbot.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -321,7 +322,7 @@ class DashboardPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const Startpage(), // Use MaterialPageRoute for simplicity
+                builder: (context) => const Chatbot(), // Use MaterialPageRoute for simplicity
               ),
             );
           },
