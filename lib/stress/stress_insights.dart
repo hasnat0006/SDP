@@ -4,12 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 class StressInsightsPage extends StatelessWidget {
   final int stressLevel;
   final List<String> selectedCauses;
+  final List<String> selectedSymptoms;
   final String notes;
 
   const StressInsightsPage({
     Key? key,
     required this.stressLevel,
     required this.selectedCauses,
+    required this.selectedSymptoms,
     required this.notes,
   }) : super(key: key);
 
@@ -104,19 +106,16 @@ class StressInsightsPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                       SizedBox(
-                        height: 45, // Fixed height for the buttons
+                        height: 45,
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Row(
-                            children: [
-                              _buildCategoryButton('Relationships', Icons.favorite),
-                              _buildCategoryButton('Work', Icons.work),
-                              _buildCategoryButton('Health', Icons.health_and_safety),
-                              _buildCategoryButton('Family', Icons.family_restroom),
-                              _buildCategoryButton('Financial', Icons.account_balance_wallet),
-                              _buildCategoryButton('Social', Icons.people),
-                            ],
+                            children: selectedCauses.map((cause) {
+                              // Map causes to their respective icons
+                              IconData icon = _getCauseIcon(cause);
+                              return _buildCategoryButton(cause, icon);
+                            }).toList(),
                           ),
                         ),
                       )
@@ -134,11 +133,13 @@ class StressInsightsPage extends StatelessWidget {
                 // Reported Symptoms with white tab and icons
            _buildSectionWithTabs(
   title: 'Logged Symptoms',
-  children: [
-    _buildSymptomTab('Headache', Icons.headset),
-    _buildSymptomTab('Fatigue', Icons.battery_alert),
-    _buildSymptomTab('Muscle Tension', Icons.sports_gymnastics),
-  ],
+  children: selectedSymptoms.isNotEmpty
+      ? selectedSymptoms.map((symptom) {
+          return _buildSymptomTab(symptom, _getSymptomIcon(symptom));
+        }).toList()
+      : [
+          _buildSymptomTab('No symptoms', Icons.check_circle_outline),
+        ],
 ),
 
                 const SizedBox(height: 16),
@@ -200,9 +201,9 @@ _buildSectionWithTabs(
             ),
             const SizedBox(height: 8),
             Text(
-              notes,  // Display the notes text
+              notes.replaceAll('Your Notes: ', ''),  // Remove the redundant prefix
               style: GoogleFonts.poppins(
-                fontSize: 14, // Adjust the font size of the notes text
+                fontSize: 14,
                 color: const Color.fromARGB(255, 117, 100, 117),
               ),
             ),
@@ -296,6 +297,22 @@ _buildSectionWithTabs(
     );
   }
 
+  // Helper method to get icon for each symptom
+  IconData _getSymptomIcon(String symptom) {
+    switch (symptom.toLowerCase()) {
+      case 'headache':
+        return Icons.sick;
+      case 'tension':
+        return Icons.fitness_center;
+      case 'fatigue':
+        return Icons.battery_alert;
+      case 'anxiety':
+        return Icons.psychology;
+      default:
+        return Icons.healing; // Default icon for other symptoms
+    }
+  }
+
   // Symptom Tab Widget with Icons
   Widget _buildSymptomTab(String label, IconData icon) {
     return Container(
@@ -366,6 +383,29 @@ _buildSectionWithTabs(
         ],
       ),
     );
+  }
+
+  // Helper method to get icon for each cause
+  IconData _getCauseIcon(String cause) {
+    switch (cause.toLowerCase()) {
+      case 'work':
+      case 'work/study':
+        return Icons.work;
+      case 'relationships':
+        return Icons.favorite;
+      case 'health':
+        return Icons.health_and_safety;
+      case 'family':
+        return Icons.family_restroom;
+      case 'financial':
+        return Icons.account_balance_wallet;
+      case 'social':
+        return Icons.people;
+      case 'other':
+        return Icons.more_horiz;
+      default:
+        return Icons.label_important; // Default icon for custom causes
+    }
   }
 
   // Category Button Widget
