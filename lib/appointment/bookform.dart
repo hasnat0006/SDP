@@ -74,7 +74,7 @@ class _BookForm extends State<BookForm> {
               ),
               const SizedBox(height: 16),
               Text(
-                '${widget.name} ,Psychiatrist',
+                '${widget.name}, Psychiatrist',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,

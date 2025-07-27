@@ -238,7 +238,7 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                     const SizedBox(height: 30),
                     // Existing section for selecting intensity
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
                         color: Colors.white,
