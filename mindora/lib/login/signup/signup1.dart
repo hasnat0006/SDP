@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../navbar/navbar.dart'; // <-- Fixed import path
 import 'login.dart'; // <-- Import for LoginPage navigation
+import './backend.dart'; // <-- Import backend service
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -12,6 +13,20 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  // Add TextEditingControllers to store field data
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    // Dispose controllers to prevent memory leaks
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +75,7 @@ class _SignUpPageState extends State<SignUpPage> {
               hintText: "Enter your email...",
               icon: Icons.email_outlined,
               isPassword: false,
+              controller: _emailController,
             ),
 
             const SizedBox(height: 20),
@@ -71,7 +87,9 @@ class _SignUpPageState extends State<SignUpPage> {
               icon: Icons.lock_outline,
               isPassword: true,
               obscureText: _obscurePassword,
-              toggle: () => setState(() => _obscurePassword = !_obscurePassword),
+              toggle: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
+              controller: _passwordController,
             ),
 
             const SizedBox(height: 20),
@@ -84,6 +102,7 @@ class _SignUpPageState extends State<SignUpPage> {
               isPassword: true,
               obscureText: _obscureConfirm,
               toggle: () => setState(() => _obscureConfirm = !_obscureConfirm),
+              controller: _confirmPasswordController,
             ),
 
             const SizedBox(height: 30),
@@ -95,18 +114,74 @@ class _SignUpPageState extends State<SignUpPage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 100,
+                  vertical: 16,
+                ),
               ),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainNavBar()),
+              onPressed: () async {
+                // Access the field data
+                String email = _emailController.text.trim();
+                String password = _passwordController.text;
+                String confirmPassword = _confirmPasswordController.text;
+
+                // Validate form using backend service
+                final validation = BackendService.validateSignupForm(
+                  email: email,
+                  password: password,
+                  confirmPassword: confirmPassword,
                 );
+
+                if (!validation['isValid']) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(validation['message']),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Print or process the data (you can replace this with your signup logic)
+                print('Email: $email');
+                print('Password: $password');
+
+                // Apply backend signup logic here
+                final result = await BackendService.signUpUser(
+                  email: email,
+                  password: password,
+                );
+
+                if (result['success']) {
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainNavBar()),
+                  );
+                } else {
+                  // Handle backend errors
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(result['message']),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Sign Up", style: TextStyle(fontSize: 16, color: Colors.white)),
+                  Text(
+                    "Sign Up",
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
                   SizedBox(width: 8),
                   Icon(Icons.arrow_forward, color: Colors.white),
                 ],
@@ -119,12 +194,17 @@ class _SignUpPageState extends State<SignUpPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Already have an account?", style: TextStyle(color: Colors.black54)),
+                const Text(
+                  "Already have an account?",
+                  style: TextStyle(color: Colors.black54),
+                ),
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
                     );
                   },
                   child: const Text(
@@ -151,16 +231,14 @@ class _SignUpPageState extends State<SignUpPage> {
     required bool isPassword,
     bool obscureText = false,
     VoidCallback? toggle,
+    TextEditingController? controller,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -169,6 +247,7 @@ class _SignUpPageState extends State<SignUpPage> {
               borderRadius: BorderRadius.circular(30),
             ),
             child: TextField(
+              controller: controller,
               obscureText: obscureText,
               decoration: InputDecoration(
                 hintText: hintText,
@@ -183,7 +262,10 @@ class _SignUpPageState extends State<SignUpPage> {
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
             ),
           ),

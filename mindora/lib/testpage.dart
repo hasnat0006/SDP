@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main.dart'; // to access fetchUsers()
+import './backend/main_query.dart';
 
 class DatabaseTestPage extends StatelessWidget {
   const DatabaseTestPage({super.key});
@@ -10,7 +10,7 @@ class DatabaseTestPage extends StatelessWidget {
       appBar: AppBar(title: const Text('Database Connection Test')),
       body: Center(
         child: FutureBuilder<List<dynamic>>(
-          future: fetchUsers(),
+          future: getFromBackend('users'),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();

@@ -12,7 +12,7 @@
 .swiftpm/
 .vscode/
 migrate_working_dir/
-
+.env
 
 /macos/
 /linux/
