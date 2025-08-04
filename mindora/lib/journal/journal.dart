@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../journal/journal_history.dart';
 import '../dashboard/p_dashboard.dart'; // <-- Add this import
 
-class JournalPage extends StatelessWidget {
+class JournalPage extends StatefulWidget {
   const JournalPage({super.key});
+
+  @override
+  State<JournalPage> createState() => _JournalPageState();
+}
+
+class _JournalPageState extends State<JournalPage> {
+  // Add TextEditingControllers to store field data
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
+
+  @override
+  void dispose() {
+    // Dispose controllers to prevent memory leaks
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +36,25 @@ class JournalPage extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const MainNavBar(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(-1.0, 0.0); // Slide from left to right
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MainNavBar(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(
+                        -1.0,
+                        0.0,
+                      ); // Slide from left to right
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
@@ -49,7 +74,9 @@ class JournalPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const JournalHistoryPage()),
+                MaterialPageRoute(
+                  builder: (context) => const JournalHistoryPage(),
+                ),
               );
             },
           ),
@@ -60,13 +87,14 @@ class JournalPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const TextField(
-              decoration: InputDecoration(
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
                 hintText: 'Title your journal...',
                 hintStyle: TextStyle(color: Colors.black54),
                 border: InputBorder.none,
               ),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
             Expanded(
@@ -76,11 +104,12 @@ class JournalPage extends StatelessWidget {
                   color: Color(0xFFEEDCF9),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const TextField(
+                child: TextField(
+                  controller: _contentController,
                   maxLines: null,
                   expands: true,
                   keyboardType: TextInputType.multiline,
-                  decoration: InputDecoration.collapsed(
+                  decoration: const InputDecoration.collapsed(
                     hintText: 'Write your thoughts here...',
                   ),
                 ),
@@ -98,7 +127,38 @@ class JournalPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // Save journal logic
+                  // Get the current values
+                  String title = _titleController.text.trim();
+                  String content = _contentController.text.trim();
+
+                  // Check if both fields have content
+                  if (title.isNotEmpty || content.isNotEmpty) {
+                    // Save journal logic here (you can add backend integration later)
+                    print('Journal Title: $title');
+                    print('Journal Content: $content');
+
+                    // Clear the text fields
+                    _titleController.clear();
+                    _contentController.clear();
+
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Journal saved successfully!'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  } else {
+                    // Show message if both fields are empty
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please write something before saving!'),
+                        backgroundColor: Colors.orange,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
                 child: const Text(
                   'Save Journal',

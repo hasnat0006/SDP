@@ -11,7 +11,7 @@ Future<List<dynamic>> getFromBackend(String endpoint) async {
     debugPrint('🌐 API: $url');
 
     final response = await http.get(Uri.parse(url));
-
+ 
     debugPrint('📡 Status: ${response.statusCode}');
     debugPrint('📄 Response: ${response.body}');
     // Pretty print JSON response in terminal
@@ -38,6 +38,7 @@ Future<List<dynamic>> getFromBackend(String endpoint) async {
     throw Exception('Network error: $e');
   }
 }
+
 
 Future<List<dynamic>> postToBackend(
   String endpoint,
