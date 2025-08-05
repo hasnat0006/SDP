@@ -1,7 +1,7 @@
 import 'package:client/appointment/bookappt.dart';
-import 'package:client/chatbot/startpage.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
+import 'package:client/demo_notification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../todo_list/todo_list_main.dart';
@@ -265,13 +265,13 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
+
         // _trackerTile(
         //   Icons.bedtime,
         //   'Sleep Quality',
         //   'Healthy (~5.5h Avg)',
         //   context,
         // ),
-        
         _trackerTile(
           Icons.calendar_month,
           'Book an Appointment',
@@ -330,10 +330,9 @@ class DashboardPage extends StatelessWidget {
             );
           },
         ),
-        
 
         _trackerTile(
-           Icons.forum,
+          Icons.forum,
           'Forum',
           'Share your thought anonymously',
           context,
@@ -362,6 +361,20 @@ class DashboardPage extends StatelessWidget {
           },
         ),
         _trackerTile(
+          Icons.notifications,
+          'Demo Notification',
+          'Test app notifications',
+          context,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const DemoNotificationPage(),
+              ),
+            );
+          },
+        ),
+        _trackerTile(
           Icons.self_improvement,
           'Virtual Therapist',
           'Ease your mind',
@@ -370,12 +383,12 @@ class DashboardPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const Chatbot(), // Use MaterialPageRoute for simplicity
+                builder: (context) =>
+                    const Chatbot(), // Use MaterialPageRoute for simplicity
               ),
             );
           },
         ),
-
       ],
     );
   }
