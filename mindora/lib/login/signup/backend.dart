@@ -5,11 +5,17 @@ class BackendService {
   static Future<Map<String, dynamic>> signUpUser({
     required String email,
     required String password,
+    required String name,
+    String? bdn,
+    bool isPatient = false,
   }) async {
     try {
       final response = await postToBackend('signup', {
         'email': email,
         'password': password,
+        'name': name,
+        'bdn': bdn,
+        'isPatient': isPatient,
       });
 
       return {
@@ -32,11 +38,8 @@ class BackendService {
     required String password,
   }) async {
     try {
-      final response = await postToBackend('login', {
-        'email': email,
-        'password': password,
-      });
-
+      final response = await getFromBackend('login?email=$email&password=$password');
+      print("-------------response: $response");
       return {
         'success': true,
         'message': 'Login successful!',
@@ -45,7 +48,7 @@ class BackendService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Login failed: ${e.toString()}',
+        'message': 'Please check your email and password',
         'error': e.toString(),
       };
     }

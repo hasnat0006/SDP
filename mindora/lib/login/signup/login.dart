@@ -1,3 +1,4 @@
+import 'package:client/login/signup/backend.dart';
 import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import '../../dashboard/p_dashboard.dart';
@@ -69,8 +70,8 @@ class _LoginPageState extends State<LoginPage> {
       decoration: const BoxDecoration(
         color: Color(0xFFD1A1E3),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(45),
-          bottomRight: Radius.circular(45),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: Center(
@@ -147,12 +148,41 @@ class _LoginPageState extends State<LoginPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: ElevatedButton(
-        onPressed: () {
-          // Navigate to dashboard
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainNavBar()),
-          );
+        onPressed: () async {
+
+          final email = _emailController.text.trim();
+          final password = _passwordController.text.trim();
+          if (email.isEmpty || password.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please fill in all fields')),
+            );
+            return;
+          }
+
+          if(!BackendService.isValidEmail(email)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please enter a valid email address')),
+            );
+            return;
+          }
+
+          final result = await BackendService.loginUser(email: email, password: password);
+          print('Login result:');
+          print(result);
+          if (result['success']) {
+            // Navigate to dashboard
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainNavBar()),
+            );
+          }
+          else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(result['message'])),
+            );
+          }
+
+
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFCBB994),

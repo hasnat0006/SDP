@@ -46,8 +46,8 @@ class _SignUpPageState extends State<SignUpPage> {
               decoration: const BoxDecoration(
                 color: Color(0xFFD6A9E5),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(100),
-                  bottomRight: Radius.circular(100),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
               child: Center(
@@ -274,11 +274,19 @@ class _SignUpPageState extends State<SignUpPage> {
                 // Print or process the data (you can replace this with your signup logic)
                 print('Email: $email');
                 print('Password: $password');
+                print('Confirm Password: $confirmPassword');
+                print('Full Name: ${_fullNameController.text}');
+                if (!_isPatient) {
+                  print('BDN Number: ${_bdnController.text}');
+                }
 
                 // Apply backend signup logic here
                 final result = await BackendService.signUpUser(
                   email: email,
                   password: password,
+                  name: _fullNameController.text,
+                  bdn: !_isPatient ? _bdnController.text : null,
+                  isPatient: _isPatient,
                 );
 
                 if (result['success']) {
