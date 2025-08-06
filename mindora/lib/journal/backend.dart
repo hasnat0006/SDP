@@ -22,3 +22,17 @@ Future<void> saveJournalEntry(String title, String content) async {
     rethrow;
   }
 }
+
+Future<List<Map<String, dynamic>>> fetchJournalEntries() async {
+  const userId = 'b87a924a-dbde-4a27-b3d0-ef44042fa607';
+  final endpoint = 'journal?user_id=$userId';
+
+  try {
+    final response = await getFromBackend(endpoint); // Map<String, dynamic>
+    final List<dynamic> journalList = response['journals'];
+    return List<Map<String, dynamic>>.from(journalList);
+  } catch (e) {
+    print('❌ Error in fetchJournalEntries: $e');
+    rethrow;
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'backend.dart'; // Make sure this has fetchJournalEntries()
 
 class JournalHistoryPage extends StatefulWidget {
   const JournalHistoryPage({super.key});
@@ -11,44 +12,72 @@ class JournalHistoryPage extends StatefulWidget {
 class _JournalHistoryPageState extends State<JournalHistoryPage> {
   String sortOrder = 'Newest';
 
-  final List<JournalEntry> journalEntries = [
-    JournalEntry(
-      time: "10:00",
-      title: "Feeling Positive Today! 😊",
-      description:
-          "I'm grateful for the supportive phone call I had with my best friend.",
-      moodColor: Colors.green,
-      dateTime: DateTime(2025, 7, 11, 10, 0),
-    ),
-    JournalEntry(
-      time: "9:00",
-      title: "I Love my Dog!",
-      description:
-          "I experienced pure joy today while playing with my dog in the park.",
-      moodColor: Colors.orange,
-      dateTime: DateTime(2025, 7, 11, 9, 0),
-    ),
-    JournalEntry(
-      time: "8:00",
-      title: "Felt Bad, but it's all OK",
-      description:
-          "I felt anxious today during the team meeting, but it helped stay truthful.",
-      moodColor: Colors.purple,
-      dateTime: DateTime(2025, 7, 11, 8, 0),
-    ),
-    JournalEntry(
-      time: "7:00",
-      title: "Felt Sad & Grief",
-      description:
-          "Feeling sad today after hearing a touching but heartbreaking news.",
-      moodColor: Colors.blue,
-      dateTime: DateTime(2025, 7, 11, 7, 0),
-    ),
-  ];
+  
+  List<JournalEntry> journalEntries = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJournalEntries();
+  }
+
+  Future<void> _loadJournalEntries() async {
+    try {
+      final rawEntries = await fetchJournalEntries();
+
+      
+      final List<JournalEntry> loadedEntries = rawEntries.map((json) {
+        
+
+        final time = json['time'] ?? '00:00';
+        final title = json['title'] ?? 'No Title';
+        final description = json['information'] ?? '';
+        final dateStr = json['date'] ?? DateTime.now().toIso8601String();
+
+        // Parse date string
+        DateTime dateTime;
+        try {
+          dateTime = DateTime.parse(dateStr);
+        } catch (_) {
+          dateTime = DateTime.now();
+        }
+
+        
+        Color moodColor = Colors.grey; 
+
+        if (json['mood_color'] != null) {
+          final mc = json['mood_color'];
+          if (mc is String) {
+            try {
+              
+              final hexColor = mc.replaceAll('#', '');
+              moodColor = Color(int.parse('FF$hexColor', radix: 16));
+            } catch (_) {}
+          } else if (mc is int) {
+            moodColor = Color(mc);
+          }
+        }
+
+        return JournalEntry(
+          time: time,
+          title: title,
+          description: description,
+          moodColor: moodColor,
+          dateTime: dateTime,
+        );
+      }).toList();
+
+      setState(() {
+        journalEntries = loadedEntries;
+      });
+    } catch (e) {
+      debugPrint('Error loading journal entries: $e');
+     
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sort journal entries based on the selected order
     List<JournalEntry> sortedEntries = [...journalEntries];
     sortedEntries.sort((a, b) {
       if (sortOrder == 'Newest') {
@@ -105,11 +134,11 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 14, // Show two weeks
+        itemCount: 14,
         itemBuilder: (context, index) {
           final date = startOfWeek.add(Duration(days: index));
-          final weekday = DateFormat.E().format(date); // Mon, Tue
-          final day = DateFormat.d().format(date); // 25, 26
+          final weekday = DateFormat.E().format(date);
+          final day = DateFormat.d().format(date);
           final isToday = date.day == now.day &&
               date.month == now.month &&
               date.year == now.year;
@@ -245,8 +274,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                           });
                           Navigator.pop(context);
                         },
-                        style: ElevatedButton.styleFrom(
-                        ),
+                        style: ElevatedButton.styleFrom(),
                         child: const Text('Yes'),
                       ),
                       ElevatedButton(
@@ -326,7 +354,6 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
   }
 }
 
-// Update JournalEntry to allow editing fields:
 class JournalEntry {
   String time;
   String title;
