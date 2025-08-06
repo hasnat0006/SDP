@@ -4,7 +4,7 @@ import 'dart:math' as math;
 class ArcGauge extends StatefulWidget {
   final double outerRadius;
   final double innerRadius;
-  final List<Color> segmentColors;
+  final List<Color>? segmentColors;
   final Function(double)? onRotationChanged;
   final Function(int, String)? onSegmentSelected;
 
@@ -12,48 +12,47 @@ class ArcGauge extends StatefulWidget {
     super.key,
     this.outerRadius = 200,
     this.innerRadius = 140,
-    this.segmentColors = const [
-      Color.fromARGB(126, 121, 85, 72),
-      Color.fromARGB(126, 255, 153, 0),
-      Color.fromARGB(138, 255, 235, 59),
-      Color.fromARGB(127, 76, 175, 79),
-      Color.fromARGB(123, 155, 39, 176),
-      Color.fromARGB(126, 121, 85, 72),
-      Color.fromARGB(126, 255, 153, 0),
-      Color.fromARGB(138, 255, 235, 59),
-      Color.fromARGB(127, 76, 175, 79),
-      Color.fromARGB(123, 155, 39, 176),
-    ],
+    this.segmentColors,
     this.onRotationChanged,
     this.onSegmentSelected,
   });
 
-  // Segment names corresponding to each color
-  static const List<String> segmentNames = [
-    'Stressed',
-    'Sad',
-    'Happy',
-    'Angry',
-    'Excited',
-    'Stressed',
-    'Sad',
-    'Happy',
-    'Angry',
-    'Excited',
-  ];
-
-  // Emojis for each segment
-  static const List<String> segmentEmojis = [
-    '😟', // Stressed
-    '😢', // Sad
-    '😊', // Happy
-    '😠', // Angry
-    '😃', // Excited
-    '😟', // Stressed (repeat)
-    '😢', // Sad (repeat)
-    '😊', // Happy (repeat)
-    '😠', // Angry (repeat)
-    '😃', // Excited (repeat)
+  // Combined segment data with emoji, label, and color
+  static const List<Map<String, dynamic>> segments = [
+    {
+      'emoji': '😟',
+      'label': 'Stressed',
+      'color': Color.fromARGB(126, 121, 85, 72),
+    },
+    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(126, 255, 153, 0)},
+    {
+      'emoji': '😊',
+      'label': 'Happy',
+      'color': Color.fromARGB(138, 255, 235, 59),
+    },
+    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(127, 76, 175, 79)},
+    {
+      'emoji': '😃',
+      'label': 'Excited',
+      'color': Color.fromARGB(123, 155, 39, 176),
+    },
+    {
+      'emoji': '😟',
+      'label': 'Stressed',
+      'color': Color.fromARGB(126, 121, 85, 72),
+    },
+    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(126, 255, 153, 0)},
+    {
+      'emoji': '😊',
+      'label': 'Happy',
+      'color': Color.fromARGB(138, 255, 235, 59),
+    },
+    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(127, 76, 175, 79)},
+    {
+      'emoji': '😃',
+      'label': 'Excited',
+      'color': Color.fromARGB(123, 155, 39, 176),
+    },
   ];
 
   @override
@@ -89,21 +88,16 @@ class _ArcGaugeState extends State<ArcGauge> {
 
         // Calculate which segment the fixed line (at 90°) is pointing to
         final selectedSegment = _calculateSelectedSegment();
-        final segmentName = ArcGauge.segmentNames[selectedSegment];
-
-        print(
-          'Rotation: ${degrees.toStringAsFixed(1)}° - Selected: $segmentName',
-        );
+        final segmentlabel = ArcGauge.segments[selectedSegment]['label']!;
 
         widget.onRotationChanged?.call(degrees);
-        widget.onSegmentSelected?.call(selectedSegment, segmentName);
+        widget.onSegmentSelected?.call(selectedSegment, segmentlabel);
       },
       child: CustomPaint(
         size: Size(widget.outerRadius * 2, widget.outerRadius),
         painter: ArcGaugePainter(
           outerRadius: widget.outerRadius,
           innerRadius: widget.innerRadius,
-          segmentColors: widget.segmentColors,
           rotationAngle: _rotationAngle,
         ),
       ),
@@ -132,20 +126,18 @@ class _ArcGaugeState extends State<ArcGauge> {
     const segmentAngle = 2 * math.pi / 10; // 360° / 10 segments
     final segmentIndex = (relativeAngle / segmentAngle).floor();
 
-    return segmentIndex.clamp(0, widget.segmentColors.length - 1);
+    return segmentIndex.clamp(0, ArcGauge.segments.length - 1);
   }
 }
 
 class ArcGaugePainter extends CustomPainter {
   final double outerRadius;
   final double innerRadius;
-  final List<Color> segmentColors;
   final double rotationAngle;
 
   ArcGaugePainter({
     required this.outerRadius,
     required this.innerRadius,
-    required this.segmentColors,
     this.rotationAngle = 0.0,
   });
 
@@ -161,10 +153,10 @@ class ArcGaugePainter extends CustomPainter {
 
     // Draw segments but only show the upper 180° (from π to 2π, which appears as 0° to 180° visually)
     const totalAngle = 2 * math.pi; // 360 degrees in radians
-    final segmentAngle = totalAngle / segmentColors.length;
+    final segmentAngle = totalAngle / ArcGauge.segments.length;
 
-    for (int i = 0; i < segmentColors.length; i++) {
-      paint.color = segmentColors[i];
+    for (int i = 0; i < ArcGauge.segments.length; i++) {
+      paint.color = ArcGauge.segments[i]['color']! as Color;
 
       // Calculate start angle for each segment with rotation
       final startAngle = (i * segmentAngle) + rotationAngle;
@@ -192,7 +184,7 @@ class ArcGaugePainter extends CustomPainter {
         // Draw the emoji
         final emojiPainter = TextPainter(
           text: TextSpan(
-            text: ArcGauge.segmentEmojis[i],
+            text: ArcGauge.segments[i]['emoji']!,
             style: const TextStyle(fontSize: 24, color: Colors.white),
           ),
           textAlign: TextAlign.center,
@@ -209,10 +201,10 @@ class ArcGaugePainter extends CustomPainter {
 
         emojiPainter.paint(canvas, emojiOffset);
 
-        // Draw the emoji name below the emoji
-        final namePainter = TextPainter(
+        // Draw the emoji label below the emoji
+        final labelPainter = TextPainter(
           text: TextSpan(
-            text: ArcGauge.segmentNames[i],
+            text: ArcGauge.segments[i]['label']!,
             style: const TextStyle(
               fontSize: 12,
               color: Colors.white,
@@ -223,15 +215,15 @@ class ArcGaugePainter extends CustomPainter {
           textDirection: TextDirection.ltr,
         );
 
-        namePainter.layout();
+        labelPainter.layout();
 
-        // Position the name slightly below the emoji
-        final nameOffset = Offset(
-          emojiX - namePainter.width / 2,
+        // Position the label slightly below the emoji
+        final labelOffset = Offset(
+          emojiX - labelPainter.width / 2,
           emojiY + 15, // 15 pixels below emoji center
         );
 
-        namePainter.paint(canvas, nameOffset);
+        labelPainter.paint(canvas, labelOffset);
       }
     }
 
@@ -264,7 +256,6 @@ class ArcGaugePainter extends CustomPainter {
   bool shouldRepaint(ArcGaugePainter oldDelegate) {
     return oldDelegate.outerRadius != outerRadius ||
         oldDelegate.innerRadius != innerRadius ||
-        oldDelegate.segmentColors != segmentColors ||
         oldDelegate.rotationAngle != rotationAngle;
   }
 }
