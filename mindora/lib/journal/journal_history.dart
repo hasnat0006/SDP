@@ -14,6 +14,8 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   List<JournalEntry> journalEntries = [];
 
+  DateTime? selectedDate; // Add this state variable to track the selected date
+
   @override
   void initState() {
     super.initState();
@@ -72,7 +74,18 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<JournalEntry> sortedEntries = [...journalEntries];
+    List<JournalEntry> filteredEntries = [...journalEntries];
+
+    // Filter entries based on selected date
+    if (selectedDate != null) {
+      filteredEntries = filteredEntries.where((entry) {
+        return entry.dateTime.year == selectedDate!.year &&
+            entry.dateTime.month == selectedDate!.month &&
+            entry.dateTime.day == selectedDate!.day;
+      }).toList();
+    }
+
+    List<JournalEntry> sortedEntries = [...filteredEntries];
 
     // Sort by combined date and time
     sortedEntries.sort((a, b) {
@@ -147,36 +160,62 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   Widget _buildDateScroller() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7)); // Start from Sunday
 
     return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 14,
+        itemCount: 7, // Only show 7 days (Sunday to Saturday)
         itemBuilder: (context, index) {
           final date = startOfWeek.add(Duration(days: index));
-          final weekday = DateFormat.E().format(date);
-          final day = DateFormat.d().format(date);
-          final isToday = date.day == now.day &&
-              date.month == now.month &&
-              date.year == now.year;
+          final weekday = DateFormat.E().format(date); // Day name (e.g., Sun, Mon)
+          final day = DateFormat.d().format(date); // Day number (e.g., 6, 7)
+          
+          // Better date comparison - compare only year, month, and day
+          final isSelected = selectedDate != null && 
+              selectedDate!.year == date.year &&
+              selectedDate!.month == date.month &&
+              selectedDate!.day == date.day;
 
-          return Container(
-            width: 60,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: isToday ? const Color(0xFFDCB8F5) : const Color(0xFFF3E9FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              "$weekday\n$day",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: isToday ? Colors.white : Colors.black87,
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  selectedDate = null; // Untoggle if already selected
+                } else {
+                  selectedDate = DateTime(date.year, date.month, date.day); // Set selected date
+                }
+              });
+            },
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF6A1B9A) : const Color(0xFFF3E9FF), // Much darker purple for selected
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected 
+                    ? Border.all(color: const Color(0xFF4A148C), width: 2)
+                    : null,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF6A1B9A).withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                "$weekday\n$day",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
               ),
             ),
           );
