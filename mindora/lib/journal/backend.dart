@@ -36,3 +36,25 @@ Future<List<Map<String, dynamic>>> fetchJournalEntries() async {
     rethrow;
   }
 }
+
+Future<bool> updateJournalEntry({
+  required String id,
+  required String title,
+  required String description,
+}) async {
+  const endpoint = 'journal/update';
+ 
+  final body = {
+    'id': id,
+    'title': title,
+    'description': description,
+  };
+   print('backend dart: $id');
+  try {
+    final response = await postToBackend(endpoint, body);
+    return response.isNotEmpty; // if backend returns [data], this checks success
+  } catch (e) {
+    print('Error updating journal: $e');
+    return false;
+  }
+}

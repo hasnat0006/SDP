@@ -25,6 +25,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
       final rawEntries = await fetchJournalEntries();
 
       final List<JournalEntry> loadedEntries = rawEntries.map((json) {
+        final j_id = json['j_id'] ?? '';
         final time = json['time'] ?? '00:00';
         final title = json['title'] ?? 'No Title';
         final description = json['information'] ?? '';
@@ -52,13 +53,13 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
           }
         }
 
-        return JournalEntry(
-          time: time,
-          title: title,
-          description: description,
-          moodColor: moodColor,
-          dateTime: dateTime,
-        );
+       return JournalEntry(
+        id: j_id,
+        time: time,
+        title: title,
+        description: description,
+        dateTime: dateTime,
+);
       }).toList();
 
       setState(() {
@@ -247,7 +248,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: entry.moodColor,
+                  color: Colors.grey,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -355,16 +356,29 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  entry.title = titleController.text;
-                  entry.description = descController.text;
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
+           ElevatedButton(
+  onPressed: () async {
+    
+    final success = await updateJournalEntry(
+      id: entry.id, 
+      title: titleController.text,
+      description: descController.text,
+    );
+
+    if (success) {
+      setState(() {
+        entry.title = titleController.text;
+        entry.description = descController.text;
+      });
+      Navigator.pop(context);
+    } else {
+      // Optionally show error
+      debugPrint("Failed to update journal entry.");
+    }
+  },
+  child: const Text('Save'),
+),
+
           ],
         );
       },
@@ -373,17 +387,18 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 }
 
 class JournalEntry {
+  final String id;
   String time;
   String title;
   String description;
-  final Color moodColor;
   final DateTime dateTime;
 
   JournalEntry({
+    required this.id,
     required this.time,
     required this.title,
     required this.description,
-    required this.moodColor,
     required this.dateTime,
   });
+
 }
