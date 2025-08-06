@@ -4,6 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 String get apiUrl => dotenv.env['EMULATOR_URL'] ?? 'http://127.0.0.1:5000';
+/*
+'name' : ifrit
+'id': 112
+
+*/
+
 
 Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
   try {
@@ -12,29 +18,29 @@ Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
 
     final response = await http.get(Uri.parse(url));
  
-    debugPrint('📡 Status: ${response.statusCode}');
-    debugPrint('📄 Response: ${response.body}');
+    // debugPrint('📡 Status: ${response.statusCode}');
+    // debugPrint('📄 Response: ${response.body}');
     // Pretty print JSON response in terminal
     try {
       final prettyJson = JsonEncoder.withIndent(
         '  ',
       ).convert(jsonDecode(response.body));
-      debugPrint('📋 JSON response:\n$prettyJson');
+      // debugPrint('📋 JSON response:\n$prettyJson');
     } catch (e) {
-      debugPrint('⚠️ Could not format JSON: $e');
+      // debugPrint('⚠️ Could not format JSON: $e');
     }
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      debugPrint('✅ Successfully parsed ${data.length} items from $endpoint');
-      debugPrint('📊 Parsed data: $data');
+      // debugPrint('✅ Successfully parsed ${data.length} items from $endpoint');
+      // debugPrint('📊 Parsed data: $data');
       return data;
     } else {
-      debugPrint('❌ Failed to load $endpoint: ${response.statusCode}');
-      debugPrint('❌ Error body: ${response.body}');
+      // debugPrint('❌ Failed to load $endpoint: ${response.statusCode}');
+      // debugPrint('❌ Error body: ${response.body}');
       throw Exception('Failed to load $endpoint: ${response.statusCode}');
     }
   } catch (e) {
-    debugPrint('🚨 Network error occurred: $e');
+    // debugPrint('🚨 Network error occurred: $e');
     throw Exception('Network error: $e');
   }
 }

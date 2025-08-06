@@ -287,6 +287,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   name: _fullNameController.text,
                   bdn: !_isPatient ? _bdnController.text : null,
                   isPatient: _isPatient,
+                  
                 );
 
                 if (result['success']) {
