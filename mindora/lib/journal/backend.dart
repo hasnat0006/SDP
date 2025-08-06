@@ -58,3 +58,19 @@ Future<bool> updateJournalEntry({
     return false;
   }
 }
+
+Future<bool> deleteJournalEntry(String id) async {
+  const endpoint = 'journal/delete';
+
+  final body = {
+    'id': id,
+  };
+
+  try {
+    final response = await postToBackend(endpoint, body);
+    return response.isNotEmpty; // Check if backend returned success
+  } catch (e) {
+    print('Error deleting journal: $e');
+    return false;
+  }
+}

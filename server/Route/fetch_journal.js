@@ -46,7 +46,24 @@ router.post('/journal/update', async (req, res) => {
   }
 });
 
+router.post('/journal/delete', async (req, res) => {
+  const { id } = req.body;
+  console.log('Delete request received:', req.body);
 
+  if (!id) {
+    return res.status(400).json({ error: 'Missing journal ID' });
+  }
 
+  try {
+    await sql`
+      DELETE FROM journal
+      WHERE j_id = ${id}
+    `;
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting journal:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
 
 module.exports = router;

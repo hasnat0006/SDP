@@ -287,11 +287,17 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                     content: const Text('Do you really want to delete this entry?'),
                     actions: [
                       ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            journalEntries.remove(entry);
-                          });
-                          Navigator.pop(context);
+                        onPressed: () async {
+                          final success = await deleteJournalEntry(entry.id);
+                          if (success) {
+                            setState(() {
+                              journalEntries.remove(entry);
+                            });
+                            Navigator.pop(context); // Close the dialog
+                          } else {
+                            // Optionally show an error message
+                            debugPrint("Failed to delete journal entry.");
+                          }
                         },
                         style: ElevatedButton.styleFrom(),
                         child: const Text('Yes'),
