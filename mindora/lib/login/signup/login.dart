@@ -1,5 +1,6 @@
 import 'package:client/login/signup/backend.dart';
 import 'package:client/navbar/navbar.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import '../../dashboard/p_dashboard.dart';
 import 'signup1.dart';
@@ -76,18 +77,15 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: Center(
         child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const CircleAvatar(
               radius: 50,
               backgroundColor: Colors.white,
-              backgroundImage: AssetImage(
-                'assets/mindora.png',
-              ), 
+              backgroundImage: AssetImage('assets/mindora.png'),
             ),
             const SizedBox(height: 8),
-            
           ],
         ),
       ),
@@ -149,7 +147,6 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: ElevatedButton(
         onPressed: () async {
-
           final email = _emailController.text.trim();
           final password = _passwordController.text.trim();
           if (email.isEmpty || password.isEmpty) {
@@ -159,30 +156,44 @@ class _LoginPageState extends State<LoginPage> {
             return;
           }
 
-          if(!BackendService.isValidEmail(email)) {
+          if (!BackendService.isValidEmail(email)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please enter a valid email address')),
+              const SnackBar(
+                content: Text('Please enter a valid email address'),
+              ),
             );
             return;
           }
 
-          final result = await BackendService.loginUser(email: email, password: password);
+          final result = await BackendService.loginUser(
+            email: email,
+            password: password,
+          );
           print('Login result:');
           print(result);
           if (result['success']) {
+            // Extract user data from response
+            final userData = result['data'];
+            final userId = userData['id'].toString();
+            final userType = userData['isPatient'] == true
+                ? 'patient'
+                : 'doctor';
+
+            // Store user data locally
+            await UserService.storeUserData(userId: userId, userType: userType);
+
+            print('User data stored - ID: $userId, Type: $userType');
+
             // Navigate to dashboard
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const MainNavBar()),
             );
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(result['message'])));
           }
-          else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(result['message'])),
-            );
-          }
-
-
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFCBB994),

@@ -2,6 +2,7 @@ import 'package:client/appointment/bookappt.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/demo_notification_page.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../todo_list/todo_list_main.dart';
@@ -10,8 +11,35 @@ import '../stress/stress_tracker.dart';
 import '../chatbot/chatbot.dart';
 import '../sleep/sleeptracker.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  String _userId = '';
+  String _userType = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,14 +81,16 @@ class DashboardPage extends StatelessWidget {
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
+            children: [
+              const Text(
                 "Tue, 25 Jan 2025",
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
-                "Hi, Zaima!",
-                style: TextStyle(
+                _userType.isNotEmpty
+                    ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
+                    : "Welcome back, User!",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
