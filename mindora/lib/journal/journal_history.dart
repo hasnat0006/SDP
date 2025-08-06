@@ -12,7 +12,6 @@ class JournalHistoryPage extends StatefulWidget {
 class _JournalHistoryPageState extends State<JournalHistoryPage> {
   String sortOrder = 'Newest';
 
-  
   List<JournalEntry> journalEntries = [];
 
   @override
@@ -25,10 +24,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
     try {
       final rawEntries = await fetchJournalEntries();
 
-      
       final List<JournalEntry> loadedEntries = rawEntries.map((json) {
-        
-
         final time = json['time'] ?? '00:00';
         final title = json['title'] ?? 'No Title';
         final description = json['information'] ?? '';
@@ -42,14 +38,12 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
           dateTime = DateTime.now();
         }
 
-        
-        Color moodColor = Colors.grey; 
+        Color moodColor = Colors.grey;
 
         if (json['mood_color'] != null) {
           final mc = json['mood_color'];
           if (mc is String) {
             try {
-              
               final hexColor = mc.replaceAll('#', '');
               moodColor = Color(int.parse('FF$hexColor', radix: 16));
             } catch (_) {}
@@ -72,18 +66,42 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
       });
     } catch (e) {
       debugPrint('Error loading journal entries: $e');
-     
     }
   }
 
   @override
   Widget build(BuildContext context) {
     List<JournalEntry> sortedEntries = [...journalEntries];
+
+    // Sort by combined date and time
     sortedEntries.sort((a, b) {
+      DateTime parseFullDateTime(JournalEntry entry) {
+        try {
+          final timeParts = entry.time.split(':');
+          final hour = int.tryParse(timeParts[0]) ?? 0;
+          final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) ?? 0 : 0;
+          final second = timeParts.length > 2 ? int.tryParse(timeParts[2]) ?? 0 : 0;
+
+          return DateTime(
+            entry.dateTime.year,
+            entry.dateTime.month,
+            entry.dateTime.day,
+            hour,
+            minute,
+            second,
+          );
+        } catch (_) {
+          return entry.dateTime;
+        }
+      }
+
+      final aDateTime = parseFullDateTime(a);
+      final bDateTime = parseFullDateTime(b);
+
       if (sortOrder == 'Newest') {
-        return b.dateTime.compareTo(a.dateTime);
+        return bDateTime.compareTo(aDateTime);
       } else {
-        return a.dateTime.compareTo(b.dateTime);
+        return aDateTime.compareTo(bDateTime);
       }
     });
 
