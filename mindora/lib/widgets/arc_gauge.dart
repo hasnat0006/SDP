@@ -1,0 +1,270 @@
+import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
+class ArcGauge extends StatefulWidget {
+  final double outerRadius;
+  final double innerRadius;
+  final List<Color> segmentColors;
+  final Function(double)? onRotationChanged;
+  final Function(int, String)? onSegmentSelected;
+
+  const ArcGauge({
+    super.key,
+    this.outerRadius = 200,
+    this.innerRadius = 140,
+    this.segmentColors = const [
+      Color.fromARGB(126, 121, 85, 72),
+      Color.fromARGB(126, 255, 153, 0),
+      Color.fromARGB(138, 255, 235, 59),
+      Color.fromARGB(127, 76, 175, 79),
+      Color.fromARGB(123, 155, 39, 176),
+      Color.fromARGB(126, 121, 85, 72),
+      Color.fromARGB(126, 255, 153, 0),
+      Color.fromARGB(138, 255, 235, 59),
+      Color.fromARGB(127, 76, 175, 79),
+      Color.fromARGB(123, 155, 39, 176),
+    ],
+    this.onRotationChanged,
+    this.onSegmentSelected,
+  });
+
+  // Segment names corresponding to each color
+  static const List<String> segmentNames = [
+    'Stressed',
+    'Sad',
+    'Happy',
+    'Angry',
+    'Excited',
+    'Stressed',
+    'Sad',
+    'Happy',
+    'Angry',
+    'Excited',
+  ];
+
+  // Emojis for each segment
+  static const List<String> segmentEmojis = [
+    '😟', // Stressed
+    '😢', // Sad
+    '😊', // Happy
+    '😠', // Angry
+    '😃', // Excited
+    '😟', // Stressed (repeat)
+    '😢', // Sad (repeat)
+    '😊', // Happy (repeat)
+    '😠', // Angry (repeat)
+    '😃', // Excited (repeat)
+  ];
+
+  @override
+  State<ArcGauge> createState() => _ArcGaugeState();
+}
+
+class _ArcGaugeState extends State<ArcGauge> {
+  double _rotationAngle = 0.0;
+  double _startAngle = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanStart: (details) {
+        final center = Offset(widget.outerRadius, widget.outerRadius);
+        final touchPosition = details.localPosition;
+        _startAngle = _calculateAngle(center, touchPosition) - _rotationAngle;
+      },
+      onPanUpdate: (details) {
+        final center = Offset(widget.outerRadius, widget.outerRadius);
+        final touchPosition = details.localPosition;
+        final currentAngle = _calculateAngle(center, touchPosition);
+
+        setState(() {
+          _rotationAngle = currentAngle - _startAngle;
+          // Normalize angle to 0-360 degrees
+          _rotationAngle = _rotationAngle % (2 * math.pi);
+          if (_rotationAngle < 0) _rotationAngle += 2 * math.pi;
+        });
+
+        // Convert to degrees and call callback
+        final degrees = _rotationAngle * 180 / math.pi;
+
+        // Calculate which segment the fixed line (at 90°) is pointing to
+        final selectedSegment = _calculateSelectedSegment();
+        final segmentName = ArcGauge.segmentNames[selectedSegment];
+
+        print(
+          'Rotation: ${degrees.toStringAsFixed(1)}° - Selected: $segmentName',
+        );
+
+        widget.onRotationChanged?.call(degrees);
+        widget.onSegmentSelected?.call(selectedSegment, segmentName);
+      },
+      child: CustomPaint(
+        size: Size(widget.outerRadius * 2, widget.outerRadius),
+        painter: ArcGaugePainter(
+          outerRadius: widget.outerRadius,
+          innerRadius: widget.innerRadius,
+          segmentColors: widget.segmentColors,
+          rotationAngle: _rotationAngle,
+        ),
+      ),
+    );
+  }
+
+  double _calculateAngle(Offset center, Offset point) {
+    final dx = point.dx - center.dx;
+    final dy = point.dy - center.dy;
+    return math.atan2(dy, dx);
+  }
+
+  int _calculateSelectedSegment() {
+    // Fixed line is at 90° (π/2 radians), pointing upward
+    // We need to find which segment this line intersects after rotation
+    const fixedLineAngle = -math.pi / 2; // -90° (upward in canvas coordinates)
+
+    // Calculate the relative angle of the fixed line with respect to the rotated gauge
+    double relativeAngle = fixedLineAngle - _rotationAngle;
+
+    // Normalize to 0-2π range
+    relativeAngle = relativeAngle % (2 * math.pi);
+    if (relativeAngle < 0) relativeAngle += 2 * math.pi;
+
+    // Calculate which segment this angle falls into
+    const segmentAngle = 2 * math.pi / 10; // 360° / 10 segments
+    final segmentIndex = (relativeAngle / segmentAngle).floor();
+
+    return segmentIndex.clamp(0, widget.segmentColors.length - 1);
+  }
+}
+
+class ArcGaugePainter extends CustomPainter {
+  final double outerRadius;
+  final double innerRadius;
+  final List<Color> segmentColors;
+  final double rotationAngle;
+
+  ArcGaugePainter({
+    required this.outerRadius,
+    required this.innerRadius,
+    required this.segmentColors,
+    this.rotationAngle = 0.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height);
+
+    // Paint for the arc segments
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = outerRadius - innerRadius
+      ..strokeCap = StrokeCap.butt;
+
+    // Draw segments but only show the upper 180° (from π to 2π, which appears as 0° to 180° visually)
+    const totalAngle = 2 * math.pi; // 360 degrees in radians
+    final segmentAngle = totalAngle / segmentColors.length;
+
+    for (int i = 0; i < segmentColors.length; i++) {
+      paint.color = segmentColors[i];
+
+      // Calculate start angle for each segment with rotation
+      final startAngle = (i * segmentAngle) + rotationAngle;
+
+      // Draw all segments, but they will be clipped by the canvas size to show only upper 180°
+      canvas.drawArc(
+        Rect.fromCircle(
+          center: center,
+          radius: (outerRadius + innerRadius) / 2, // Middle radius for stroke
+        ),
+        startAngle,
+        segmentAngle,
+        false,
+        paint,
+      );
+
+      // Draw emoji at the center of each segment
+      final middleAngle = startAngle + (segmentAngle / 2);
+      final emojiRadius = (outerRadius + innerRadius) / 2; // Same as arc radius
+      final emojiX = center.dx + emojiRadius * math.cos(middleAngle);
+      final emojiY = center.dy + emojiRadius * math.sin(middleAngle);
+
+      // Only draw emoji if it's in the visible area (roughly upper 180°)
+      if (emojiY <= center.dy) {
+        // Draw the emoji
+        final emojiPainter = TextPainter(
+          text: TextSpan(
+            text: ArcGauge.segmentEmojis[i],
+            style: const TextStyle(fontSize: 24, color: Colors.white),
+          ),
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+
+        emojiPainter.layout();
+
+        // Center the emoji at the calculated position
+        final emojiOffset = Offset(
+          emojiX - emojiPainter.width / 2,
+          emojiY - emojiPainter.height / 2,
+        );
+
+        emojiPainter.paint(canvas, emojiOffset);
+
+        // Draw the emoji name below the emoji
+        final namePainter = TextPainter(
+          text: TextSpan(
+            text: ArcGauge.segmentNames[i],
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        );
+
+        namePainter.layout();
+
+        // Position the name slightly below the emoji
+        final nameOffset = Offset(
+          emojiX - namePainter.width / 2,
+          emojiY + 15, // 15 pixels below emoji center
+        );
+
+        namePainter.paint(canvas, nameOffset);
+      }
+    }
+
+    // Draw a FIXED line indicator at 90 degrees (pointing upward)
+    final linePaint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round;
+
+    // Fixed line at 90 degrees (π/2 radians) - pointing upward
+    const fixedAngle = -math.pi / 2; // -90° (upward in canvas coordinates)
+    final lineLength = outerRadius - 10; // Slightly shorter than outer radius
+    final lineEndX = center.dx + lineLength * math.cos(fixedAngle);
+    final lineEndY = center.dy + lineLength * math.sin(fixedAngle);
+    final lineEnd = Offset(lineEndX, lineEndY);
+
+    // Draw fixed line from center pointing upward
+    canvas.drawLine(center, lineEnd, linePaint);
+
+    // Draw the circular pointer at the center of the circle
+    final pointerPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    const pointerRadius = 8.0;
+    canvas.drawCircle(center, pointerRadius, pointerPaint);
+  }
+
+  @override
+  bool shouldRepaint(ArcGaugePainter oldDelegate) {
+    return oldDelegate.outerRadius != outerRadius ||
+        oldDelegate.innerRadius != innerRadius ||
+        oldDelegate.segmentColors != segmentColors ||
+        oldDelegate.rotationAngle != rotationAngle;
+  }
+}
