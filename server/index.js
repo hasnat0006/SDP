@@ -8,8 +8,10 @@ const cors = require("cors");
 app.use(cors());
 
 const users = require("./Route/fetchusers");
+const stress = require("./Route/stress");
 
 app.use("/", users);
+app.use("/stress", stress);
 
 
 const PORT = process.env.PORT;

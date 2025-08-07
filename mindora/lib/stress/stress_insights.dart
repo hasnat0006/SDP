@@ -1,22 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'backend.dart';
 
-class StressInsightsPage extends StatelessWidget {
+class StressInsightsPage extends StatefulWidget {
   final int stressLevel;
-  final List<String> selectedCauses;
-  final List<String> selectedSymptoms;
-  final String notes;
+  final List<String> cause;  // Changed to match DB column
+  final List<String> loggedSymptoms;  // Changed to match DB column
+  final List<String> Notes;  // Changed to match DB column
 
   const StressInsightsPage({
     Key? key,
     required this.stressLevel,
-    required this.selectedCauses,
-    required this.selectedSymptoms,
-    required this.notes,
+    required this.cause,
+    required this.loggedSymptoms,
+    required this.Notes,
   }) : super(key: key);
 
   @override
+  State<StressInsightsPage> createState() => _StressInsightsPageState();
+}
+
+class _StressInsightsPageState extends State<StressInsightsPage> {
+  Map<String, dynamic>? _stressData;
+  Map<String, dynamic>? _weeklyData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStressData();
+  }
+
+  Future<void> _loadStressData() async {
+    try {
+      // Load stress data from backend
+      final stressResult = await StressTrackerBackend.getStressData("1"); // Replace with actual user UUID
+      final weeklyResult = await StressTrackerBackend.getWeeklyStressData("1"); // Replace with actual user UUID
+
+      if (stressResult['success'] && weeklyResult['success']) {
+        setState(() {
+          _stressData = stressResult['data'];
+          _weeklyData = weeklyResult['data'];
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(stressResult['message'] ?? 'Failed to load data'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final stressLevel = _stressData?['stress_level'] ?? widget.stressLevel;
+    // Use the fetched data or fall back to widget properties
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FF),
       appBar: AppBar(
@@ -111,7 +158,7 @@ class StressInsightsPage extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Row(
-                            children: selectedCauses.map((cause) {
+                            children: widget.cause.map((cause) {
                               // Map causes to their respective icons
                               IconData icon = _getCauseIcon(cause);
                               return _buildCategoryButton(cause, icon);
@@ -133,8 +180,8 @@ class StressInsightsPage extends StatelessWidget {
                 // Reported Symptoms with white tab and icons
            _buildSectionWithTabs(
   title: 'Logged Symptoms',
-  children: selectedSymptoms.isNotEmpty
-      ? selectedSymptoms.map((symptom) {
+  children: widget.loggedSymptoms.isNotEmpty
+      ? widget.loggedSymptoms.map((symptom) {
           return _buildSymptomTab(symptom, _getSymptomIcon(symptom));
         }).toList()
       : [
@@ -201,7 +248,7 @@ _buildSectionWithTabs(
             ),
             const SizedBox(height: 8),
             Text(
-              notes.replaceAll('Your Notes: ', ''),  // Remove the redundant prefix
+              widget.Notes.isNotEmpty ? widget.Notes[0] : 'No notes added.',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: const Color.fromARGB(255, 117, 100, 117),
@@ -388,7 +435,6 @@ _buildSectionWithTabs(
   // Helper method to get icon for each cause
   IconData _getCauseIcon(String cause) {
     switch (cause.toLowerCase()) {
-      case 'work':
       case 'work/study':
         return Icons.work;
       case 'relationships':
@@ -399,8 +445,16 @@ _buildSectionWithTabs(
         return Icons.family_restroom;
       case 'financial':
         return Icons.account_balance_wallet;
-      case 'social':
-        return Icons.people;
+      case 'social media':
+        return Icons.phone_android;
+      case 'academic':
+        return Icons.school;
+      case 'environmental':
+        return Icons.nature;
+      case 'sleep':
+        return Icons.bedtime;
+      case 'time management':
+        return Icons.access_time;
       case 'other':
         return Icons.more_horiz;
       default:
