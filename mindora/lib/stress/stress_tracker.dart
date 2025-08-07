@@ -1,21 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../stress/stress_insights.dart'; 
-
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: StressTrackerPage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
+import './backend.dart';
 
 class StressTrackerPage extends StatefulWidget {
   const StressTrackerPage({Key? key}) : super(key: key);
@@ -34,6 +20,11 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
     'Health',
     'Family',
     'Financial',
+    'Social Media',
+    'Academic',
+    'Environmental',
+    'Sleep',
+    'Time Management',
     'Other'
   ];
   List<String> selectedCauses = [];
@@ -41,9 +32,14 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
   List<IconData> causeIcons = [
     Icons.work, // Work/Study
     Icons.people, // Relationships
-    Icons.favorite, // Health
-    Icons.home, // Family
-    Icons.money, // Financial
+    Icons.health_and_safety, // Health
+    Icons.family_restroom, // Family
+    Icons.account_balance_wallet, // Financial
+    Icons.phone_android, // Social Media
+    Icons.school, // Academic
+    Icons.nature, // Environmental
+    Icons.bedtime, // Sleep
+    Icons.access_time, // Time Management
     Icons.more_horiz, // Other
   ];
 
@@ -294,19 +290,39 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
     onEnter: (_) => setState(() => isHovering = true),
     onExit: (_) => setState(() => isHovering = false),
     child: GestureDetector(
-      onTap: () {
-        // Navigate to StressInsightsPage with data
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StressInsightsPage(
-              stressLevel: selectedStressLevel,
-              selectedCauses: selectedCauses,
-              selectedSymptoms: selectedSymptoms,
-              notes: notes.isNotEmpty ? notes : 'No notes added.',
-            ),
-          ),
+      onTap: () async {
+        // Save data to backend
+        final result = await StressTrackerBackend.saveStressData(
+          userId: '63551ccb-8ee2-4097-aa86-ee72dce1649f', // Replace with actual logged in user's UUID
+          stressLevel: selectedStressLevel,
+          cause: selectedCauses, // Changed to match backend parameter name
+          loggedSymptoms: selectedSymptoms, // Changed to match backend parameter name
+          Notes: [notes.isNotEmpty ? notes : 'No notes added.'], // Changed to List<String> as per DB schema
+          date: DateTime.now(),
         );
+
+        if (result['success']) {
+          // Navigate to StressInsightsPage with data
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StressInsightsPage(
+                stressLevel: selectedStressLevel,
+                cause: selectedCauses,
+                loggedSymptoms: selectedSymptoms,
+                Notes: [notes.isNotEmpty ? notes : 'No notes added.'],
+              ),
+            ),
+          );
+        } else {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message']),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
