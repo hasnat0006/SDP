@@ -1,4 +1,3 @@
-import '../services/main_query.dart';
 import 'package:flutter/material.dart';
 import '../../backend/main_query.dart';
 

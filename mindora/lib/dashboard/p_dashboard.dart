@@ -2,6 +2,7 @@ import 'package:client/appointment/bookappt.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/demo_notification_page.dart';
+import 'package:client/mood/mood_spinner.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -203,7 +204,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    const MoodPage(),
+                    const MoodSpinner(),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                       const begin = Offset(1.0, 0.0);

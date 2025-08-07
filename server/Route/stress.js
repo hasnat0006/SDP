@@ -38,7 +38,7 @@ router.post("/track", async (req, res) => {
 router.get("/data/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    
+    console.log("User ID:", userId);
     const result = await sql`
       SELECT * FROM stress_tracker 
       WHERE user_id = ${userId}

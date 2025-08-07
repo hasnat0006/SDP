@@ -1,12 +1,13 @@
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'backend.dart';
 
 class StressInsightsPage extends StatefulWidget {
   final int stressLevel;
-  final List<String> cause;  // Changed to match DB column
-  final List<String> loggedSymptoms;  // Changed to match DB column
-  final List<String> Notes;  // Changed to match DB column
+  final List<String> cause; // Changed to match DB column
+  final List<String> loggedSymptoms; // Changed to match DB column
+  final List<String> Notes; // Changed to match DB column
 
   const StressInsightsPage({
     Key? key,
@@ -27,14 +28,47 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _loadStressData();
   }
 
+  String _userId = '';
+  String _userType = '';
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      print(userData);
+      setState(() {
+        _userId = userData['uuid'] ?? '';
+        _userType = userData['type'] ?? '';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading user data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _loadStressData() async {
+    if (_userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User ID is not available. Please log in.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     try {
       // Load stress data from backend
-      final stressResult = await StressTrackerBackend.getStressData("1"); // Replace with actual user UUID
-      final weeklyResult = await StressTrackerBackend.getWeeklyStressData("1"); // Replace with actual user UUID
+      final stressResult = await StressTrackerBackend.getStressData(_userId);
+      final weeklyResult = await StressTrackerBackend.getWeeklyStressData(
+        _userId,
+      );
 
       if (stressResult['success'] && weeklyResult['success']) {
         setState(() {
@@ -63,7 +97,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
   Widget build(BuildContext context) {
     final stressLevel = _stressData?['stress_level'] ?? widget.stressLevel;
     // Use the fetched data or fall back to widget properties
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FF),
       appBar: AppBar(
@@ -75,7 +109,10 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black,
+          ),
           onPressed: () {
             Navigator.pop(context); // Navigate back to StressTrackerPage
           },
@@ -114,7 +151,10 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                     children: [
                       const Text(
                         'Today\'s Summary',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       // Stress Level Section
@@ -145,13 +185,13 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                       const SizedBox(height: 16),
                       // Categories with styled buttons
                       Text(
-                            'Reported Causes',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: const Color.fromARGB(255, 100, 94, 110),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                        'Reported Causes',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color.fromARGB(255, 100, 94, 110),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       SizedBox(
                         height: 45,
                         child: SingleChildScrollView(
@@ -165,8 +205,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                             }).toList(),
                           ),
                         ),
-                      )
-
+                      ),
                     ],
                   ),
                 ),
@@ -178,31 +217,57 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                 const SizedBox(height: 16),
 
                 // Reported Symptoms with white tab and icons
-           _buildSectionWithTabs(
-  title: 'Logged Symptoms',
-  children: widget.loggedSymptoms.isNotEmpty
-      ? widget.loggedSymptoms.map((symptom) {
-          return _buildSymptomTab(symptom, _getSymptomIcon(symptom));
-        }).toList()
-      : [
-          _buildSymptomTab('No symptoms', Icons.check_circle_outline),
-        ],
-),
+                _buildSectionWithTabs(
+                  title: 'Logged Symptoms',
+                  children: widget.loggedSymptoms.isNotEmpty
+                      ? widget.loggedSymptoms.map((symptom) {
+                          return _buildSymptomTab(
+                            symptom,
+                            _getSymptomIcon(symptom),
+                          );
+                        }).toList()
+                      : [
+                          _buildSymptomTab(
+                            'No symptoms',
+                            Icons.check_circle_outline,
+                          ),
+                        ],
+                ),
 
                 const SizedBox(height: 16),
 
                 // Recommended Activities with white tab and small square tabs
-_buildSectionWithTabs(
-  title: 'Recommended Activities',
-  children: [
-    _buildActivityTab('Deep Breathing', Icons.accessibility, '5 mins'),
-    _buildActivityTab('Nature Walk', Icons.directions_walk, '15 mins'),
-    _buildActivityTab('Yoga', Icons.self_improvement, '10 mins'),
-    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
-    _buildActivityTab('Stretching', Icons.accessibility_new, '7 mins'),
-    _buildActivityTab('Jogging', Icons.directions_run, '30 mins'),
-  ],
-),
+                _buildSectionWithTabs(
+                  title: 'Recommended Activities',
+                  children: [
+                    _buildActivityTab(
+                      'Deep Breathing',
+                      Icons.accessibility,
+                      '5 mins',
+                    ),
+                    _buildActivityTab(
+                      'Nature Walk',
+                      Icons.directions_walk,
+                      '15 mins',
+                    ),
+                    _buildActivityTab(
+                      'Yoga',
+                      Icons.self_improvement,
+                      '10 mins',
+                    ),
+                    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
+                    _buildActivityTab(
+                      'Stretching',
+                      Icons.accessibility_new,
+                      '7 mins',
+                    ),
+                    _buildActivityTab(
+                      'Jogging',
+                      Icons.directions_run,
+                      '30 mins',
+                    ),
+                  ],
+                ),
 
                 const SizedBox(height: 16),
 
@@ -219,11 +284,17 @@ _buildSectionWithTabs(
   // Your Notes section widget (Moved outside of the build method)
   Widget _buildNotesSection() {
     return Container(
-      width: double.infinity,  // Ensure it spans the full width
-      height: 100,  // Adjust the height to match the size of the symptom/activity containers
-      margin: const EdgeInsets.only(bottom: 16),  // Add spacing at the bottom
+      width: double.infinity, // Ensure it spans the full width
+      height:
+          100, // Adjust the height to match the size of the symptom/activity containers
+      margin: const EdgeInsets.only(bottom: 16), // Add spacing at the bottom
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 255, 255), // Light lavender background
+        color: const Color.fromARGB(
+          255,
+          255,
+          255,
+          255,
+        ), // Light lavender background
         borderRadius: BorderRadius.circular(10), // Rounded corners
         boxShadow: [
           BoxShadow(
@@ -241,7 +312,7 @@ _buildSectionWithTabs(
             const Text(
               'Your Notes',
               style: TextStyle(
-                fontSize: 16,  // Title font size
+                fontSize: 16, // Title font size
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
@@ -301,7 +372,10 @@ _buildSectionWithTabs(
   }
 
   // Custom section with title and tabs
-  Widget _buildSectionWithTabs({required String title, required List<Widget> children}) {
+  Widget _buildSectionWithTabs({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -384,7 +458,11 @@ _buildSectionWithTabs(
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: const Color.fromARGB(255, 177, 38, 119), fontSize: 14, fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 177, 38, 119),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -411,11 +489,19 @@ _buildSectionWithTabs(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: const Color.fromARGB(255, 88, 35, 104)), // Icon with color
+          Icon(
+            icon,
+            color: const Color.fromARGB(255, 88, 35, 104),
+          ), // Icon with color
           Text(
             label,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 83, 33, 99), // Text color same as icon
+              color: const Color.fromARGB(
+                255,
+                83,
+                33,
+                99,
+              ), // Text color same as icon
               fontWeight: FontWeight.bold, // Bold text
             ),
           ),
@@ -423,7 +509,12 @@ _buildSectionWithTabs(
             time,
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 166, 121, 180), // Text color same as icon
+              color: const Color.fromARGB(
+                255,
+                166,
+                121,
+                180,
+              ), // Text color same as icon
               fontWeight: FontWeight.bold, // Bold text
             ),
           ),
@@ -471,10 +562,17 @@ _buildSectionWithTabs(
         icon: Icon(icon, color: const Color.fromARGB(255, 138, 5, 78)),
         label: Text(
           label,
-          style: GoogleFonts.poppins(color: const Color.fromARGB(255, 138, 5, 78)),
+          style: GoogleFonts.poppins(
+            color: const Color.fromARGB(255, 138, 5, 78),
+          ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 243, 211, 247), // Background color
+          backgroundColor: const Color.fromARGB(
+            255,
+            243,
+            211,
+            247,
+          ), // Background color
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
