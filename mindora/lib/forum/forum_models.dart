@@ -75,7 +75,10 @@ class ForumPost {
       id: json['id'],
       content: json['content'],
       mood: MoodType.values.firstWhere(
-        (m) => m.name == json['mood'],
+        (m) =>
+            m.name.toLowerCase() == json['mood'].toString().toLowerCase() ||
+            m.displayName.toLowerCase() ==
+                json['mood'].toString().toLowerCase(),
         orElse: () => MoodType.content,
       ),
       timestamp: DateTime.parse(json['timestamp']),

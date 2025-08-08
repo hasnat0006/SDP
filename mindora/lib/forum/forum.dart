@@ -1,8 +1,11 @@
+import 'package:client/forum/backend.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'forum_models.dart';
 import 'saved_posts.dart';
 import 'create_post.dart';
+import 'my_posts.dart';
 
 class ForumPage extends StatefulWidget {
   const ForumPage({super.key});
@@ -14,14 +17,19 @@ class ForumPage extends StatefulWidget {
 class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  final TextEditingController _shareController = TextEditingController();
+  final FocusNode _shareFocusNode = FocusNode();
 
   List<ForumPost> posts = [];
   List<ForumPost> savedPosts = [];
   String selectedMoodFilter = 'All';
 
+  String _userId = '', _userType = '';
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -30,81 +38,42 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
 
-    _loadMockData();
     _fadeController.forward();
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
+    _shareController.dispose();
+    _shareFocusNode.dispose();
     super.dispose();
   }
 
-  void _loadMockData() {
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+
+      _loadAllData();
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadAllData() async {
+    final post = await ForumBackend().getAllPosts();
     setState(() {
-      posts = [
-        ForumPost(
-          id: '1',
-          content:
-              'Feeling grateful today for the small moments that bring joy. Sometimes it\'s just about appreciating what we have.',
-          mood: MoodType.happy,
-          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-          likes: 12,
-          isLiked: false,
-          isSaved: false,
-        ),
-        ForumPost(
-          id: '2',
-          content:
-              'Having one of those days where everything feels overwhelming. Trying to take it one step at a time.',
-          mood: MoodType.sad,
-          timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-          likes: 8,
-          isLiked: true,
-          isSaved: false,
-        ),
-        ForumPost(
-          id: '3',
-          content:
-              'Just finished meditation and feeling so centered. The peace of mind is incredible.',
-          mood: MoodType.calm,
-          timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-          likes: 15,
-          isLiked: false,
-          isSaved: true,
-        ),
-        ForumPost(
-          id: '4',
-          content:
-              'Traffic, deadlines, and everything going wrong today. Need to find my center again.',
-          mood: MoodType.angry,
-          timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          likes: 6,
-          isLiked: false,
-          isSaved: false,
-        ),
-        ForumPost(
-          id: '5',
-          content:
-              'Achieved a personal goal today! It took months of work but persistence pays off. 🎉',
-          mood: MoodType.excited,
-          timestamp: DateTime.now().subtract(const Duration(days: 1, hours: 3)),
-          likes: 23,
-          isLiked: true,
-          isSaved: true,
-        ),
-        ForumPost(
-          id: '6',
-          content:
-              'Feeling uncertain about the path ahead. Sometimes not knowing is the hardest part.',
-          mood: MoodType.anxious,
-          timestamp: DateTime.now().subtract(const Duration(days: 2)),
-          likes: 9,
-          isLiked: false,
-          isSaved: false,
-        ),
-      ];
+      posts = post;
     });
+    for (var post in posts) {
+      print(
+        'Post ID: ${post.id}, Content: ${post.content}, Mood: ${post.mood.displayName}, Likes: ${post.likes}',
+      );
+    }
   }
 
   List<ForumPost> get filteredPosts {
@@ -150,6 +119,16 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
     });
   }
 
+  void _quickShare() {
+    // Simply navigate to create post page when tapped
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreatePostPage(onPostCreated: _addNewPost),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,7 +143,9 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
         ),
         backgroundColor: const Color(0xFFD1A1E3),
         // rounded corners
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        ),
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF2D3748)),
@@ -180,18 +161,28 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
               );
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MyPostsPage()),
+              );
+            },
+          ),
         ],
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Column(
           children: [
+            _buildShareBox(),
             _buildMoodFilter(),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
                   await Future.delayed(const Duration(seconds: 1));
-                  _loadMockData();
+                  _loadAllData();
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -209,19 +200,59 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreatePostPage(onPostCreated: _addNewPost),
+    );
+  }
+
+  Widget _buildShareBox() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _shareController,
+              focusNode: _shareFocusNode,
+              decoration: const InputDecoration(
+                hintText: 'Share something with the community...',
+                hintStyle: TextStyle(color: Color(0xFF718096), fontSize: 16),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              style: const TextStyle(color: Color(0xFF2D3748), fontSize: 16),
+              maxLines: 3,
+              minLines: 1,
+              onTap: _quickShare,
+              readOnly: true,
             ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Share'),
-        backgroundColor: const Color(0xFF667EEA),
-        foregroundColor: Colors.white,
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: _quickShare,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF667EEA),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 20),
+            ),
+          ),
+        ],
       ),
     );
   }

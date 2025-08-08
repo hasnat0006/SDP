@@ -11,10 +11,11 @@ const auth = require("./Route/auth/fetchusers");
 const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
 const journalRoutes = require("./Route/fetch_journal");
-
+const forumRoutes = require("./Route/forum/forum");
 
 app.use("/", auth);
 app.use("/reset-pass", resetPassword);
+app.use("/forum", forumRoutes);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);
 
