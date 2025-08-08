@@ -7,19 +7,16 @@ require("dotenv").config();
 const cors = require("cors");
 app.use(cors());
 
-const users = require("./Route/fetchusers");
-
-app.use("/", users);
-
+const auth = require("./Route/auth/fetchusers");
+const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
-app.use("/", saveJournal);
-
 const journalRoutes = require("./Route/fetch_journal");
+
+
+app.use("/", auth);
+app.use("/reset-pass", resetPassword);
+app.use("/", saveJournal);
 app.use("/", journalRoutes);
-
-
-
-
 
 
 const PORT = process.env.PORT;

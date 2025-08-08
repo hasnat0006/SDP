@@ -1,6 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const sql = require("../DB/connection");
+const sql = require("../../DB/connection");
 const router = express.Router();
 
 router.get("/login", async (req, res) => {

@@ -38,7 +38,9 @@ class BackendService {
     required String password,
   }) async {
     try {
-      final response = await getFromBackend('login?email=$email&password=$password');
+      final response = await getFromBackend(
+        'login?email=$email&password=$password',
+      );
       print("-------------response: $response");
       return {
         'success': true,
@@ -102,5 +104,53 @@ class BackendService {
     }
 
     return {'isValid': true, 'message': 'Form is valid'};
+  }
+
+  static Future<Map<String, dynamic>> sendOtp(String email) async {
+    try {
+      final response = await getFromBackend('reset-pass/send-otp?email=$email');
+      return {
+        'success': true,
+        'message': 'OTP sent successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to send OTP: ${e.toString()}',
+        'error': e.toString(),
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (!BackendService.validatePassword(password)['isValid']) {
+      return {
+        'success': false,
+        'message': BackendService.validatePassword(password)['message'],
+      };
+    }
+
+    try {
+      final response = await postToBackend('reset-pass/change-pass', {
+        'email': email,
+        'password': password,
+      });
+
+      return {
+        'success': true,
+        'message': 'Password reset successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to reset password: ${e.toString()}',
+        'error': e.toString(),
+      };
+    }
   }
 }

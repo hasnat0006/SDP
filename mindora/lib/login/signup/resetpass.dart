@@ -1,7 +1,10 @@
+import 'package:client/login/signup/backend.dart';
 import 'package:flutter/material.dart';
+import 'login.dart';
 
 class ResetPassPage extends StatefulWidget {
-  const ResetPassPage({super.key});
+  final String email;
+  const ResetPassPage({super.key, required this.email});
 
   @override
   State<ResetPassPage> createState() => _ResetPassPageState();
@@ -9,7 +12,11 @@ class ResetPassPage extends StatefulWidget {
 
 class _ResetPassPageState extends State<ResetPassPage> {
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -42,6 +49,13 @@ class _ResetPassPageState extends State<ResetPassPage> {
               label: 'New Password',
               icon: Icons.lock_outline,
               borderColor: const Color(0xFFA6D38D),
+              isPassword: true,
+              obscureText: _obscureNewPassword,
+              onToggleVisibility: () {
+                setState(() {
+                  _obscureNewPassword = !_obscureNewPassword;
+                });
+              },
             ),
             const SizedBox(height: 20),
             _buildTextField(
@@ -50,6 +64,13 @@ class _ResetPassPageState extends State<ResetPassPage> {
               label: 'Confirm Password',
               icon: Icons.lock_outline,
               borderColor: const Color(0xFFA6D38D),
+              isPassword: true,
+              obscureText: _obscureConfirmPassword,
+              onToggleVisibility: () {
+                setState(() {
+                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                });
+              },
             ),
             const SizedBox(height: 30),
             _buildSaveButton(),
@@ -93,6 +114,9 @@ class _ResetPassPageState extends State<ResetPassPage> {
     required String label,
     required IconData icon,
     required Color borderColor,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? onToggleVisibility,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -103,17 +127,27 @@ class _ResetPassPageState extends State<ResetPassPage> {
           const SizedBox(height: 8),
           TextField(
             controller: controller,
+            obscureText: obscureText,
             decoration: InputDecoration(
               hintText: hintText,
               prefixIcon: Icon(icon),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: onToggleVisibility,
+                    )
+                  : null,
               filled: true,
               fillColor: borderColor.withOpacity(0.1),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
             ),
@@ -126,26 +160,111 @@ class _ResetPassPageState extends State<ResetPassPage> {
   Widget _buildSaveButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: ElevatedButton(
-        onPressed: () {
-          // Logic to save new password
-          print('New Password: ${_newPasswordController.text.trim()}');
-          print('Confirm Password: ${_confirmPasswordController.text.trim()}');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFCBB994),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
+
+                  final newPassword = _newPasswordController.text.trim();
+                  final confirmPassword = _confirmPasswordController.text
+                      .trim();
+
+                  if (newPassword.isEmpty || confirmPassword.isEmpty) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please fill in all fields'),
+                      ),
+                    );
+                    return;
+                  }
+                  if (newPassword != confirmPassword) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Passwords do not match')),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final resetPass = await BackendService.resetPassword(
+                      email: widget.email,
+                      password: newPassword,
+                    );
+
+                    if (resetPass['success']) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Password reset successfully'),
+                        ),
+                      );
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Failed to reset password: ${resetPass['message']}',
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  } finally {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+
+                  // Logic to save new password
+                  print('New Password: ${_newPasswordController.text.trim()}');
+                  print(
+                    'Confirm Password: ${_confirmPasswordController.text.trim()}',
+                  );
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFCBB994),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-        ),
-        child: const Text(
-          'Save',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  ),
+                )
+              : const Text(
+                  'Save',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ),
     );

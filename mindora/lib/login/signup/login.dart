@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +55,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 30),
             _buildSignInButton(),
-            const SizedBox(height: 25),
-            _buildSocialIcons(),
             const SizedBox(height: 20),
             _buildFooterText(),
             const SizedBox(height: 20),
@@ -129,11 +128,11 @@ class _LoginPageState extends State<LoginPage> {
               filled: true,
               fillColor: borderColor.withOpacity(0.1),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
             ),
@@ -147,89 +146,106 @@ class _LoginPageState extends State<LoginPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: ElevatedButton(
-        onPressed: () async {
-          final email = _emailController.text.trim();
-          final password = _passwordController.text.trim();
-          if (email.isEmpty || password.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please fill in all fields')),
-            );
-            return;
-          }
+        onPressed: _isLoading
+            ? null
+            : () async {
+                setState(() {
+                  _isLoading = true;
+                });
+                final email = _emailController.text.trim();
+                final password = _passwordController.text.trim();
+                if (email.isEmpty || password.isEmpty) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill in all fields')),
+                  );
+                  return;
+                }
 
-          if (!BackendService.isValidEmail(email)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please enter a valid email address'),
-              ),
-            );
-            return;
-          }
+                if (!BackendService.isValidEmail(email)) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid email address'),
+                    ),
+                  );
+                  return;
+                }
 
-          final result = await BackendService.loginUser(
-            email: email,
-            password: password,
-          );
-          print('Login result:');
-          print(result);
-          if (result['success']) {
-            // Extract user data from response
-            final userData = result['data'];
-            final userId = userData['id'].toString();
-            final userType = userData['type'];
+                final result = await BackendService.loginUser(
+                  email: email,
+                  password: password,
+                );
+                print('Login result:');
+                print(result);
+                if (result['success']) {
+                  // Extract user data from response
+                  final userData = result['data'];
+                  final userId = userData['id'].toString();
+                  final userType = userData['type'];
 
-            // Store user data locally
-            await UserService.storeUserData(userId: userId, userType: userType);
+                  // Store user data locally
+                  await UserService.storeUserData(
+                    userId: userId,
+                    userType: userType,
+                  );
 
-            print('User data stored - ID: $userId, Type: $userType');
+                  print('User data stored - ID: $userId, Type: $userType');
 
-            // Navigate to dashboard
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainNavBar()),
-            );
-          } else {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(result['message'])));
-          }
-        },
+                  // Navigate to dashboard
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainNavBar()),
+                  );
+                } else {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(result['message'])));
+                }
+                setState(() {
+                  _isLoading = false;
+                });
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFCBB994),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.circular(10),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Sign In',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(Icons.arrow_forward, color: Colors.black),
+            _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, color: Colors.black),
+                    ],
+                  ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSocialIcons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: const [
-        _SocialIconButton(icon: Icons.facebook),
-        SizedBox(width: 16),
-        _SocialIconButton(icon: Icons.g_mobiledata),
-        SizedBox(width: 16),
-        _SocialIconButton(icon: Icons.camera_alt_outlined),
-      ],
     );
   }
 
@@ -277,21 +293,6 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _SocialIconButton extends StatelessWidget {
-  final IconData icon;
-
-  const _SocialIconButton({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      backgroundColor: Colors.white,
-      radius: 22,
-      child: Icon(icon, color: Colors.black),
     );
   }
 }

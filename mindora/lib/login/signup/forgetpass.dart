@@ -1,5 +1,7 @@
+import 'package:client/login/signup/backend.dart';
 import 'package:flutter/material.dart';
 import 'resetpass.dart';
+import 'otp_verification_page.dart';
 
 class ForgetPassPage extends StatefulWidget {
   const ForgetPassPage({super.key});
@@ -46,10 +48,6 @@ class _ForgetPassPageState extends State<ForgetPassPage> {
             ),
             const SizedBox(height: 20),
             _buildSendOtpButton(),
-            const SizedBox(height: 30),
-            _buildOtpField(),
-            const SizedBox(height: 30),
-            _buildSubmitButton(),
           ],
         ),
       ),
@@ -106,11 +104,11 @@ class _ForgetPassPageState extends State<ForgetPassPage> {
               filled: true,
               fillColor: borderColor.withOpacity(0.1),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: borderColor, width: 1.5),
               ),
             ),
@@ -123,90 +121,123 @@ class _ForgetPassPageState extends State<ForgetPassPage> {
   Widget _buildSendOtpButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: ElevatedButton(
-        onPressed: () {
-          // Logic to send OTP
-          print('Send OTP to: ${_emailController.text.trim()}');
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFCBB994),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-        ),
-        child: const Text(
-          'Send OTP',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () async {
+            // Logic to send OTP
+            String email = _emailController.text.trim();
+            if (email.isNotEmpty) {
+              const snackBar = SnackBar(
+                content: Text('Sending OTP...'),
+                duration: Duration(seconds: 2),
+              );
+              ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
-  Widget _buildOtpField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'OTP',
-            style: TextStyle(fontWeight: FontWeight.w600),
+              final response = await BackendService.sendOtp(email);
+
+              print(response);
+
+              if (response['success']) {
+                // OTP sent successfully
+                print('OTP sent to: $email');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OtpVerificationPage(
+                      email: email,
+                      otp: response['data']['otp'].toString(),
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please add your email address'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFCBB994),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _otpController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'Enter OTP...',
-              prefixIcon: const Icon(Icons.lock_outline),
-              filled: true,
-              fillColor: const Color(0xFFF5F5F5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Color(0xFFCBB994)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: const BorderSide(color: Color(0xFFCBB994)),
-              ),
+          child: const Text(
+            'Send OTP',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSubmitButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ResetPassPage()),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFCBB994),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(40),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-        ),
-        child: const Text(
-          'Submit',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildOtpField() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 32),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Text('OTP', style: TextStyle(fontWeight: FontWeight.w600)),
+  //         const SizedBox(height: 8),
+  //         TextField(
+  //           controller: _otpController,
+  //           keyboardType: TextInputType.number,
+  //           decoration: InputDecoration(
+  //             hintText: 'Enter OTP...',
+  //             prefixIcon: const Icon(Icons.lock_outline),
+  //             filled: true,
+  //             fillColor: const Color(0xFFF5F5F5),
+  //             border: OutlineInputBorder(
+  //               borderRadius: BorderRadius.circular(30),
+  //               borderSide: const BorderSide(color: Color(0xFFCBB994)),
+  //             ),
+  //             enabledBorder: OutlineInputBorder(
+  //               borderRadius: BorderRadius.circular(30),
+  //               borderSide: const BorderSide(color: Color(0xFFCBB994)),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildSubmitButton() {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 32),
+  //     child: ElevatedButton(
+  //       onPressed: () {
+  //         Navigator.push(
+  //           context,
+  //           MaterialPageRoute(builder: (context) => const ResetPassPage()),
+  //         );
+  //       },
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: const Color(0xFFCBB994),
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(10),
+  //         ),
+  //         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+  //       ),
+  //       child: const Text(
+  //         'Submit',
+  //         style: TextStyle(
+  //           color: Colors.black,
+  //           fontWeight: FontWeight.bold,
+  //           fontSize: 16,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }
