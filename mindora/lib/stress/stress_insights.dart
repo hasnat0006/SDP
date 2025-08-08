@@ -53,48 +53,64 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
     }
   }
 
-  Future<void> _loadStressData() async {
-    if (_userId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User ID is not available. Please log in.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    try {
-      // Load stress data from backend
-      final stressResult = await StressTrackerBackend.getStressData(_userId);
-      final weeklyResult = await StressTrackerBackend.getWeeklyStressData(
-        _userId,
-      );
+Future<void> _loadStressData() async {
+  if (_userId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('User ID is not available. Please log in.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
 
-      if (stressResult['success'] && weeklyResult['success']) {
-        setState(() {
-          _stressData = stressResult['data'];
-          _weeklyData = weeklyResult['data'];
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(stressResult['message'] ?? 'Failed to load data'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
+  try {
+    // Load stress data from backend
+    final stressResult = await StressTrackerBackend.getStressData(_userId);
+    final weeklyResult = await StressTrackerBackend.getWeeklyStressData(_userId);
+
+    // Check if both API calls were successful
+    if (stressResult['success'] && weeklyResult['success']) {
+      setState(() {
+        // Store the data for use in the UI
+        _stressData = stressResult['data'];
+        _weeklyData = weeklyResult['data'];
+      });
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading data: ${e.toString()}'),
+          content: Text(stressResult['message'] ?? 'Failed to load data'),
           backgroundColor: Colors.red,
         ),
       );
     }
+  } catch (e) {
+    // Handle any errors that occur during the API call
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error loading data: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
+     // Step 1: Check if the data is still loading
+  if (_stressData == null || _weeklyData == null) {
+    // Step 2: Show loading indicator if data is not yet loaded
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFD39AD5),
+        title: Text('Loading...'),
+      ),
+      body: Center(
+        child: CircularProgressIndicator(), // Show a loading spinner
+      ),
+    );
+  }
     final stressLevel = _stressData?['stress_level'] ?? widget.stressLevel;
     // Use the fetched data or fall back to widget properties
 

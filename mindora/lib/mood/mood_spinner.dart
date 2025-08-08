@@ -121,16 +121,14 @@ class _MoodSpinnerState extends State<MoodSpinner> {
           ),
         ],
       ),
-
-      // backgroundColor: Colors.black,
       body: Column(
         children: [
           // Top section with selected segment display
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start, // Adjusted to move text higher
               children: [
-                const SizedBox(height: 20), // optional spacing after AppBar
+                const SizedBox(height: 20), // Spacing after AppBar
 
                 const SizedBox(height: 20),
                 Text(
@@ -158,7 +156,7 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                     key: ValueKey(currentMood["label"]),
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: const Color.fromARGB(255, 99, 97, 97),
                     ),
                   ),
                 ),
@@ -173,9 +171,61 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                     style: const TextStyle(fontSize: 60),
                   ),
                 ),
+                const SizedBox(height: 20),
+
+                Text(
+                  'Spin below to select your mood',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                  // Custom arrow with animation below
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade300,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withOpacity(0.5),
+                        blurRadius: 12,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.expand_more,
+                    size: 28,
+                    color: Colors.white,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Italic label and arrow under the emoji
+                // Text(
+                //   'Spin below to select your mood',
+                //   style: GoogleFonts.poppins(
+                //     fontSize: 14,
+                //     fontStyle: FontStyle.italic,
+                //     color: Colors.grey,
+                //   ),
+                // ),
+               // const SizedBox(height: 10),
+                // Icon(
+                //   Icons.arrow_downward,
+                //   color: const Color(0xFFD39AD5), // Lavender color for the arrow
+                //   size: 30,  // Slightly larger arrow
+                // ),
               ],
             ),
           ),
+          //const SizedBox(height: 10),
 
           // Arc gauge at the bottom - always shows 180° window
           ArcGauge(

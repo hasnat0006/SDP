@@ -340,6 +340,7 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                         );
 
                         if (result['success']) {
+                          
                           // Navigate to StressInsightsPage with data
                           Navigator.push(
                             context,
