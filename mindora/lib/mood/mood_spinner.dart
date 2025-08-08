@@ -171,7 +171,7 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                     style: const TextStyle(fontSize: 60),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 30),
 
                 Text(
                   'Spin below to select your mood',
