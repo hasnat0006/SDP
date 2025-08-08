@@ -13,8 +13,7 @@ class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
-  bool _isPatient = true; // true for patient, false for psychiatrist
-  // Add TextEditingControllers to store field data
+  bool _isPatient = true;
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
