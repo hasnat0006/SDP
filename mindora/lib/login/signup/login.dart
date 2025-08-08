@@ -4,6 +4,7 @@ import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import '../../dashboard/p_dashboard.dart';
 import 'signup1.dart';
+import 'forgetpass.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -235,9 +236,17 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildFooterText() {
     return Column(
       children: [
-        const Text(
-          "Forgot Password",
-          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+        TextButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ForgetPassPage()),
+            );
+          },
+          child: const Text(
+            "Forgot Password",
+            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+          ),
         ),
         const SizedBox(height: 6),
         Row(
