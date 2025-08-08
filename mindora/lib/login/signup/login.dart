@@ -175,9 +175,7 @@ class _LoginPageState extends State<LoginPage> {
             // Extract user data from response
             final userData = result['data'];
             final userId = userData['id'].toString();
-            final userType = userData['isPatient'] == true
-                ? 'patient'
-                : 'doctor';
+            final userType = userData['type'];
 
             // Store user data locally
             await UserService.storeUserData(userId: userId, userType: userType);

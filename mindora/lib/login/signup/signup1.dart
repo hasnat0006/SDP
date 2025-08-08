@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../navbar/navbar.dart'; // <-- Fixed import path
 import 'login.dart'; // <-- Import for LoginPage navigation
 import './backend.dart'; // <-- Import backend service
 
@@ -301,7 +300,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const MainNavBar()),
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
                   );
                 } else {
                   // Handle backend errors

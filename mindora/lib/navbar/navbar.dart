@@ -1,4 +1,5 @@
 import 'package:client/forum/forum.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../dashboard/p_dashboard.dart';
@@ -25,14 +26,32 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   static const Color inactiveGrey = Color(0xFF757575);
   static const Color backgroundColor = Color(0xFFF5F5F5);
 
+  String _userId = '';
+  String _userType = '';
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _pageController = PageController(initialPage: _currentIndex);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+  }
+
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   @override
