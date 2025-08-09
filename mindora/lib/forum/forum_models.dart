@@ -70,7 +70,8 @@ class ForumPost {
     };
   }
 
-  factory ForumPost.fromJson(Map<String, dynamic> json) {
+  factory ForumPost.fromJson(Map<String, dynamic> json, String userId) {
+    print(json['isLiked']);
     return ForumPost(
       id: json['id'],
       content: json['content'],
@@ -83,8 +84,9 @@ class ForumPost {
       ),
       timestamp: DateTime.parse(json['timestamp']),
       likes: json['likes'] ?? 0,
-      isLiked: json['isLiked'] ?? false,
-      isSaved: json['isSaved'] ?? false,
+      // traverse the list of user IDs who liked the post
+      isLiked: json['isLiked']?.contains(userId) ?? false,
+      isSaved: json['isSaved']?.contains(userId) ?? false,
     );
   }
 }

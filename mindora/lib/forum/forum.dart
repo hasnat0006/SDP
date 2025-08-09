@@ -23,6 +23,9 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
   List<ForumPost> posts = [];
   List<ForumPost> savedPosts = [];
   String selectedMoodFilter = 'All';
+  bool _isLoading = true;
+  Set<String> _likingPosts = {}; // Track posts being liked/unliked
+  Set<String> _savingPosts = {}; // Track posts being saved/unsaved
 
   String _userId = '', _userType = '';
 
@@ -65,14 +68,26 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
   }
 
   Future<void> _loadAllData() async {
-    final post = await ForumBackend().getAllPosts();
     setState(() {
-      posts = post;
+      _isLoading = true;
     });
-    for (var post in posts) {
-      print(
-        'Post ID: ${post.id}, Content: ${post.content}, Mood: ${post.mood.displayName}, Likes: ${post.likes}',
-      );
+
+    try {
+      final post = await ForumBackend().getAllPosts(_userId);
+      setState(() {
+        posts = post;
+        _isLoading = false;
+      });
+      for (var post in posts) {
+        print(
+          'Post ID: ${post.id}, Content: ${post.content}, Mood: ${post.mood.displayName}, Likes: ${post.likes}',
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('Error loading posts: $e');
     }
   }
 
@@ -88,29 +103,131 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
         .toList();
   }
 
-  void _toggleLike(String postId) {
+  void _toggleLike(String postId) async {
+    final postIndex = posts.indexWhere((post) => post.id == postId);
+    if (postIndex == -1) return;
+
+    // Prevent multiple rapid taps
+    if (_likingPosts.contains(postId)) return;
+
     setState(() {
-      final postIndex = posts.indexWhere((post) => post.id == postId);
-      if (postIndex != -1) {
-        posts[postIndex].isLiked = !posts[postIndex].isLiked;
-        posts[postIndex].likes += posts[postIndex].isLiked ? 1 : -1;
-      }
+      _likingPosts.add(postId);
     });
+
+    final wasLiked = posts[postIndex].isLiked;
+
+    try {
+      Map<String, dynamic> response;
+
+      if (wasLiked) {
+        // Remove like
+        response = await ForumBackend().removeLike(
+          postId: postId,
+          userId: _userId,
+        );
+      } else {
+        // Add like
+        response = await ForumBackend().addLike(
+          postId: postId,
+          userId: _userId,
+        );
+      }
+
+      if (response['success']) {
+        setState(() {
+          posts[postIndex].isLiked = !wasLiked;
+          posts[postIndex].likes += wasLiked ? -1 : 1;
+        });
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response['message'] ?? 'Failed to update like status',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error toggling like: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update like status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _likingPosts.remove(postId);
+      });
+    }
   }
 
-  void _toggleSave(String postId) {
-    setState(() {
-      final postIndex = posts.indexWhere((post) => post.id == postId);
-      if (postIndex != -1) {
-        posts[postIndex].isSaved = !posts[postIndex].isSaved;
+  void _toggleSave(String postId) async {
+    final postIndex = posts.indexWhere((post) => post.id == postId);
+    if (postIndex == -1) return;
 
-        if (posts[postIndex].isSaved) {
-          savedPosts.add(posts[postIndex]);
-        } else {
-          savedPosts.removeWhere((post) => post.id == postId);
-        }
-      }
+    // Prevent multiple rapid taps
+    if (_savingPosts.contains(postId)) return;
+
+    setState(() {
+      _savingPosts.add(postId);
     });
+
+    final wasLiked = posts[postIndex].isSaved;
+
+    try {
+      Map<String, dynamic> response;
+
+      if (wasLiked) {
+        // Remove save
+        response = await ForumBackend().removeSave(
+          postId: postId,
+          userId: _userId,
+        );
+      } else {
+        // Add save
+        response = await ForumBackend().addSave(
+          postId: postId,
+          userId: _userId,
+        );
+      }
+
+      if (response['success']) {
+        setState(() {
+          posts[postIndex].isSaved = !wasLiked;
+
+          if (posts[postIndex].isSaved) {
+            savedPosts.add(posts[postIndex]);
+          } else {
+            savedPosts.removeWhere((post) => post.id == postId);
+          }
+        });
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response['message'] ?? 'Failed to update save status',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error toggling save: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update save status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _savingPosts.remove(postId);
+      });
+    }
   }
 
   void _addNewPost(ForumPost newPost) {
@@ -179,23 +296,47 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
             _buildShareBox(),
             _buildMoodFilter(),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await Future.delayed(const Duration(seconds: 1));
-                  _loadAllData();
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredPosts.length,
-                  itemBuilder: (context, index) {
-                    return PostCard(
-                      post: filteredPosts[index],
-                      onLike: _toggleLike,
-                      onSave: _toggleSave,
-                    );
-                  },
-                ),
-              ),
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF667EEA),
+                        ),
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        await Future.delayed(const Duration(seconds: 1));
+                        _loadAllData();
+                      },
+                      child: filteredPosts.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No posts available',
+                                style: TextStyle(
+                                  color: Color(0xFF718096),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filteredPosts.length,
+                              itemBuilder: (context, index) {
+                                return PostCard(
+                                  post: filteredPosts[index],
+                                  onLike: _toggleLike,
+                                  onSave: _toggleSave,
+                                  isLiking: _likingPosts.contains(
+                                    filteredPosts[index].id,
+                                  ),
+                                  isSaving: _savingPosts.contains(
+                                    filteredPosts[index].id,
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
             ),
           ],
         ),
@@ -225,11 +366,11 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
               controller: _shareController,
               focusNode: _shareFocusNode,
               decoration: const InputDecoration(
-                hintText: 'Share something with the community...',
+                hintText: 'Share something with us...',
                 hintStyle: TextStyle(color: Color(0xFF718096), fontSize: 16),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: 12,
                   vertical: 12,
                 ),
               ),
@@ -305,12 +446,16 @@ class PostCard extends StatefulWidget {
   final ForumPost post;
   final Function(String) onLike;
   final Function(String) onSave;
+  final bool isLiking;
+  final bool isSaving;
 
   const PostCard({
     super.key,
     required this.post,
     required this.onLike,
     required this.onSave,
+    this.isLiking = false,
+    this.isSaving = false,
   });
 
   @override
@@ -447,10 +592,12 @@ class _PostCardState extends State<PostCard>
     return ScaleTransition(
       scale: _scaleAnimation,
       child: GestureDetector(
-        onTap: () {
-          _animateButton();
-          widget.onLike(widget.post.id);
-        },
+        onTap: widget.isLiking
+            ? null
+            : () {
+                _animateButton();
+                widget.onLike(widget.post.id);
+              },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
@@ -467,13 +614,26 @@ class _PostCardState extends State<PostCard>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                widget.post.isLiked ? Icons.favorite : Icons.favorite_border,
-                color: widget.post.isLiked
-                    ? const Color(0xFFE53E3E)
-                    : const Color(0xFF718096),
-                size: 18,
-              ),
+              widget.isLiking
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFE53E3E),
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      widget.post.isLiked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: widget.post.isLiked
+                          ? const Color(0xFFE53E3E)
+                          : const Color(0xFF718096),
+                      size: 18,
+                    ),
               const SizedBox(width: 6),
               Text(
                 'Like',
@@ -494,9 +654,11 @@ class _PostCardState extends State<PostCard>
 
   Widget _buildSaveButton() {
     return GestureDetector(
-      onTap: () {
-        widget.onSave(widget.post.id);
-      },
+      onTap: widget.isSaving
+          ? null
+          : () {
+              widget.onSave(widget.post.id);
+            },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -513,13 +675,26 @@ class _PostCardState extends State<PostCard>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              widget.post.isSaved ? Icons.bookmark : Icons.bookmark_border,
-              color: widget.post.isSaved
-                  ? const Color(0xFF3182CE)
-                  : const Color(0xFF718096),
-              size: 18,
-            ),
+            widget.isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF3182CE),
+                      ),
+                    ),
+                  )
+                : Icon(
+                    widget.post.isSaved
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                    color: widget.post.isSaved
+                        ? const Color(0xFF3182CE)
+                        : const Color(0xFF718096),
+                    size: 18,
+                  ),
             const SizedBox(width: 6),
             Text(
               'Save',
