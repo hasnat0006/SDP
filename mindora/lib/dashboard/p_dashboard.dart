@@ -261,7 +261,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    const JournalPage(),
+                    JournalPage(userId: _userId), // Pass the user ID
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                       const begin = Offset(1.0, 0.0);

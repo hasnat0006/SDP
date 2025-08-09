@@ -1,35 +1,36 @@
 import 'package:intl/intl.dart';
 import '../backend/main_query.dart'; 
 
-Future<void> saveJournalEntry(String title, String content) async {
-  const String userId = 'b87a924a-dbde-4a27-b3d0-ef44042fa607'; //I HAVE HARD CODED THIS, REMIND ME TO FIX LATER
+Future<void> saveJournalEntry(String title, String content, String userId) async {
   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   final String currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
 
   final Map<String, dynamic> data = {
-  'user_id': userId,
-  'title': title,
-  'information': content,
-  'date': currentDate,
-  'time': currentTime,
-};
-
+    'user_id': userId, // Make sure this uses the passed userId, not hardcoded
+    'title': title,
+    'information': content,
+    'date': currentDate,
+    'time': currentTime,
+  };
 
   try {
     await postToBackend('journal', data);
+    print('✅ Journal saved for user: $userId');
   } catch (e) {
-    print('Error saving journal: $e');
+    print('❌ Error saving journal: $e');
     rethrow;
   }
 }
 
-Future<List<Map<String, dynamic>>> fetchJournalEntries() async {
-  const userId = 'b87a924a-dbde-4a27-b3d0-ef44042fa607';
-  final endpoint = 'journal?user_id=$userId';
+Future<List<Map<String, dynamic>>> fetchJournalEntries(String userId) async {
+  final endpoint = 'journal?user_id=$userId'; // Make sure this uses dynamic userId
+  
+  print('📡 Fetching journals for user: $userId'); // Debug print
 
   try {
-    final response = await getFromBackend(endpoint); // Map<String, dynamic>
+    final response = await getFromBackend(endpoint);
     final List<dynamic> journalList = response['journals'];
+    print('📚 Fetched ${journalList.length} journals for user: $userId');
     return List<Map<String, dynamic>>.from(journalList);
   } catch (e) {
     print('❌ Error in fetchJournalEntries: $e');
@@ -49,10 +50,10 @@ Future<bool> updateJournalEntry({
     'title': title,
     'description': description,
   };
-   print('backend dart: $id');
+  print('backend dart: $id');
   try {
     final response = await postToBackend(endpoint, body);
-    return response.isNotEmpty; // if backend returns [data], this checks success
+    return response.isNotEmpty;
   } catch (e) {
     print('Error updating journal: $e');
     return false;
@@ -68,7 +69,7 @@ Future<bool> deleteJournalEntry(String id) async {
 
   try {
     final response = await postToBackend(endpoint, body);
-    return response.isNotEmpty; // Check if backend returned success
+    return response.isNotEmpty;
   } catch (e) {
     print('Error deleting journal: $e');
     return false;

@@ -5,7 +5,9 @@ import '../dashboard/p_dashboard.dart';
 import 'backend.dart'; // ⬅️ Import for saving journal entry
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({super.key});
+  final String userId;
+  
+  const JournalPage({super.key, required this.userId});
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -28,11 +30,16 @@ class _JournalPageState extends State<JournalPage> {
 
     if (title.isNotEmpty || content.isNotEmpty) {
       try {
-        await saveJournalEntry(title, content); 
-
+        print('💾 Saving journal for user: ${widget.userId}'); // Debug print
+        await saveJournalEntry(
+          title,
+          content,
+          widget.userId, // Use the passed user ID
+        );
+        
         _titleController.clear();
         _contentController.clear();
-
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Journal saved successfully!'),
@@ -41,6 +48,7 @@ class _JournalPageState extends State<JournalPage> {
           ),
         );
       } catch (e) {
+        print('❌ Error saving journal: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to save journal.'),
@@ -58,6 +66,16 @@ class _JournalPageState extends State<JournalPage> {
         ),
       );
     }
+  }
+
+  // When navigating to history page, pass the user ID
+  void _navigateToHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JournalHistoryPage(userId: widget.userId),
+      ),
+    );
   }
 
   @override
@@ -103,14 +121,7 @@ class _JournalPageState extends State<JournalPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.history, color: Colors.black54),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const JournalHistoryPage(),
-                ),
-              );
-            },
+            onPressed: _navigateToHistory,
           ),
         ],
       ),

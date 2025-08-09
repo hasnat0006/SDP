@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'backend.dart'; // Make sure this has fetchJournalEntries()
 
 class JournalHistoryPage extends StatefulWidget {
-  const JournalHistoryPage({super.key});
+  final String userId; // Add user ID parameter
+  
+  const JournalHistoryPage({super.key, required this.userId});
 
   @override
   State<JournalHistoryPage> createState() => _JournalHistoryPageState();
@@ -24,7 +26,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   Future<void> _loadJournalEntries() async {
     try {
-      final rawEntries = await fetchJournalEntries();
+      final rawEntries = await fetchJournalEntries(widget.userId); // Use dynamic user ID
 
       final List<JournalEntry> loadedEntries = rawEntries.map((json) {
         final j_id = json['j_id'] ?? '';
