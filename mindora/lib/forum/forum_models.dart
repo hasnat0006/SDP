@@ -70,18 +70,23 @@ class ForumPost {
     };
   }
 
-  factory ForumPost.fromJson(Map<String, dynamic> json) {
+  factory ForumPost.fromJson(Map<String, dynamic> json, String userId) {
+    print(json['isLiked']);
     return ForumPost(
       id: json['id'],
       content: json['content'],
       mood: MoodType.values.firstWhere(
-        (m) => m.name == json['mood'],
+        (m) =>
+            m.name.toLowerCase() == json['mood'].toString().toLowerCase() ||
+            m.displayName.toLowerCase() ==
+                json['mood'].toString().toLowerCase(),
         orElse: () => MoodType.content,
       ),
       timestamp: DateTime.parse(json['timestamp']),
       likes: json['likes'] ?? 0,
-      isLiked: json['isLiked'] ?? false,
-      isSaved: json['isSaved'] ?? false,
+      // traverse the list of user IDs who liked the post
+      isLiked: json['isLiked']?.contains(userId) ?? false,
+      isSaved: json['isSaved']?.contains(userId) ?? false,
     );
   }
 }

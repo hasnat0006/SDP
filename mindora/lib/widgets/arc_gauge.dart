@@ -22,36 +22,36 @@ class ArcGauge extends StatefulWidget {
     {
       'emoji': '😟',
       'label': 'Stressed',
-      'color': Color.fromARGB(126, 121, 85, 72),
+      'color': Color.fromARGB(246, 213, 92, 1),
     },
-    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(126, 255, 153, 0)},
+    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(172, 192, 174, 81)},
     {
       'emoji': '😊',
       'label': 'Happy',
-      'color': Color.fromARGB(138, 255, 235, 59),
+      'color': Color.fromARGB(255, 162, 206, 162),
     },
-    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(127, 76, 175, 79)},
+    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(255, 221, 87, 82)},
     {
       'emoji': '😃',
       'label': 'Excited',
-      'color': Color.fromARGB(123, 155, 39, 176),
+      'color': Color.fromARGB(255, 191, 174, 225),
     },
     {
       'emoji': '😟',
       'label': 'Stressed',
-      'color': Color.fromARGB(126, 121, 85, 72),
+      'color': Color.fromARGB(246, 213, 92, 1),
     },
-    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(126, 255, 153, 0)},
+    {'emoji': '😢', 'label': 'Sad', 'color': Color.fromARGB(172, 192, 174, 81)},
     {
       'emoji': '😊',
       'label': 'Happy',
-      'color': Color.fromARGB(138, 255, 235, 59),
+      'color': Color.fromARGB(255, 162, 206, 162),
     },
-    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(127, 76, 175, 79)},
+    {'emoji': '😠', 'label': 'Angry', 'color': Color.fromARGB(255, 221, 87, 821)},
     {
       'emoji': '😃',
       'label': 'Excited',
-      'color': Color.fromARGB(123, 155, 39, 176),
+      'color': Color.fromARGB(255, 191, 174, 225),
     },
   ];
 
@@ -145,6 +145,28 @@ class ArcGaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height);
 
+     // Lavender shadow glow effect behind the arc
+   final hoverGlow = Paint()
+  ..shader = RadialGradient(
+    center: Alignment(0.0, 0.3), // Move center downward slightly (0.3)
+    radius: 0.8,  // Adjust radius for a smaller glow
+       colors: [
+      const Color.fromARGB(255, 174, 153, 211).withOpacity(0.3),  // Increased opacity for more visibility
+      const Color.fromARGB(255, 171, 153, 206).withOpacity(0.2),  // Fades out softly
+      const Color.fromARGB(0, 228, 216, 235),  // Transparent center
+    ],
+    stops: const [0.2, 0.6, 1.0],
+  ).createShader(
+    Rect.fromCircle(
+      center: center,
+      radius: outerRadius + outerRadius * 0.6,  // Adjust radius for a smaller glow
+    ),
+  );
+
+// Apply the lavender glow background
+canvas.drawCircle(center, outerRadius + outerRadius * 0.8, hoverGlow);  // Use outerRadius here
+
+
     // Paint for the arc segments
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -156,7 +178,8 @@ class ArcGaugePainter extends CustomPainter {
     final segmentAngle = totalAngle / ArcGauge.segments.length;
 
     for (int i = 0; i < ArcGauge.segments.length; i++) {
-      paint.color = ArcGauge.segments[i]['color']! as Color;
+      paint.color = ArcGauge.segments[i]['color']!.withOpacity(0.5); // Set desired opacity
+
 
       // Calculate start angle for each segment with rotation
       final startAngle = (i * segmentAngle) + rotationAngle;
@@ -207,7 +230,7 @@ class ArcGaugePainter extends CustomPainter {
             text: ArcGauge.segments[i]['label']!,
             style: const TextStyle(
               fontSize: 12,
-              color: Colors.white,
+              color: Color.fromARGB(255, 14, 13, 13),
               fontWeight: FontWeight.bold,
             ),
           ),

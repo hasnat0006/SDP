@@ -1,22 +1,122 @@
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'backend.dart';
 
-class StressInsightsPage extends StatelessWidget {
+class StressInsightsPage extends StatefulWidget {
   final int stressLevel;
-  final List<String> selectedCauses;
-  final List<String> selectedSymptoms;
-  final String notes;
+  final List<String> cause; // Changed to match DB column
+  final List<String> loggedSymptoms; // Changed to match DB column
+  final List<String> Notes; // Changed to match DB column
 
   const StressInsightsPage({
     Key? key,
     required this.stressLevel,
-    required this.selectedCauses,
-    required this.selectedSymptoms,
-    required this.notes,
+    required this.cause,
+    required this.loggedSymptoms,
+    required this.Notes,
   }) : super(key: key);
 
   @override
+  State<StressInsightsPage> createState() => _StressInsightsPageState();
+}
+
+class _StressInsightsPageState extends State<StressInsightsPage> {
+  Map<String, dynamic>? _stressData;
+  Map<String, dynamic>? _weeklyData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  String _userId = '';
+  String _userType = '';
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      print(userData);
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      // Load stress data after user data is loaded
+      await _loadStressData();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading user data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadStressData() async {
+    if (_userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User ID is not available. Please log in.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Load stress data from backend
+      final stressResult = await StressTrackerBackend.getStressData(_userId);
+      // final weeklyResult = await StressTrackerBackend.getWeeklyStressData(
+      //   _userId,
+      // );
+      print('Stress data: ${stressResult['data']}');
+      // print('Weekly data: ${weeklyResult['data']}');
+      // Check if both API calls were successful
+      if (stressResult['success']) {
+        setState(() {
+          // Store the data for use in the UI
+          _stressData = stressResult['data'];
+          // _weeklyData = weeklyResult['data'];
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(stressResult['message'] ?? 'Failed to load data'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors that occur during the API call
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Step 1: Check if the data is still loading
+    if (_stressData == null) {
+      // Step 2: Show loading indicator if data is not yet loaded
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFD39AD5),
+          title: Text('Loading...'),
+        ),
+        body: Center(
+          child: CircularProgressIndicator(), // Show a loading spinner
+        ),
+      );
+    }
+    final stressLevel = _stressData?['stress_level'] ?? widget.stressLevel;
+    // Use the fetched data or fall back to widget properties
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FF),
       appBar: AppBar(
@@ -28,7 +128,10 @@ class StressInsightsPage extends StatelessWidget {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black,
+          ),
           onPressed: () {
             Navigator.pop(context); // Navigate back to StressTrackerPage
           },
@@ -67,7 +170,10 @@ class StressInsightsPage extends StatelessWidget {
                     children: [
                       const Text(
                         'Today\'s Summary',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       // Stress Level Section
@@ -98,28 +204,27 @@ class StressInsightsPage extends StatelessWidget {
                       const SizedBox(height: 16),
                       // Categories with styled buttons
                       Text(
-                            'Reported Causes',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: const Color.fromARGB(255, 100, 94, 110),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                        'Reported Causes',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color.fromARGB(255, 100, 94, 110),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       SizedBox(
                         height: 45,
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Row(
-                            children: selectedCauses.map((cause) {
+                            children: widget.cause.map((cause) {
                               // Map causes to their respective icons
                               IconData icon = _getCauseIcon(cause);
                               return _buildCategoryButton(cause, icon);
                             }).toList(),
                           ),
                         ),
-                      )
-
+                      ),
                     ],
                   ),
                 ),
@@ -131,31 +236,57 @@ class StressInsightsPage extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Reported Symptoms with white tab and icons
-           _buildSectionWithTabs(
-  title: 'Logged Symptoms',
-  children: selectedSymptoms.isNotEmpty
-      ? selectedSymptoms.map((symptom) {
-          return _buildSymptomTab(symptom, _getSymptomIcon(symptom));
-        }).toList()
-      : [
-          _buildSymptomTab('No symptoms', Icons.check_circle_outline),
-        ],
-),
+                _buildSectionWithTabs(
+                  title: 'Logged Symptoms',
+                  children: widget.loggedSymptoms.isNotEmpty
+                      ? widget.loggedSymptoms.map((symptom) {
+                          return _buildSymptomTab(
+                            symptom,
+                            _getSymptomIcon(symptom),
+                          );
+                        }).toList()
+                      : [
+                          _buildSymptomTab(
+                            'No symptoms',
+                            Icons.check_circle_outline,
+                          ),
+                        ],
+                ),
 
                 const SizedBox(height: 16),
 
                 // Recommended Activities with white tab and small square tabs
-_buildSectionWithTabs(
-  title: 'Recommended Activities',
-  children: [
-    _buildActivityTab('Deep Breathing', Icons.accessibility, '5 mins'),
-    _buildActivityTab('Nature Walk', Icons.directions_walk, '15 mins'),
-    _buildActivityTab('Yoga', Icons.self_improvement, '10 mins'),
-    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
-    _buildActivityTab('Stretching', Icons.accessibility_new, '7 mins'),
-    _buildActivityTab('Jogging', Icons.directions_run, '30 mins'),
-  ],
-),
+                _buildSectionWithTabs(
+                  title: 'Recommended Activities',
+                  children: [
+                    _buildActivityTab(
+                      'Deep Breathing',
+                      Icons.accessibility,
+                      '5 mins',
+                    ),
+                    _buildActivityTab(
+                      'Nature Walk',
+                      Icons.directions_walk,
+                      '15 mins',
+                    ),
+                    _buildActivityTab(
+                      'Yoga',
+                      Icons.self_improvement,
+                      '10 mins',
+                    ),
+                    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
+                    _buildActivityTab(
+                      'Stretching',
+                      Icons.accessibility_new,
+                      '7 mins',
+                    ),
+                    _buildActivityTab(
+                      'Jogging',
+                      Icons.directions_run,
+                      '30 mins',
+                    ),
+                  ],
+                ),
 
                 const SizedBox(height: 16),
 
@@ -172,11 +303,17 @@ _buildSectionWithTabs(
   // Your Notes section widget (Moved outside of the build method)
   Widget _buildNotesSection() {
     return Container(
-      width: double.infinity,  // Ensure it spans the full width
-      height: 100,  // Adjust the height to match the size of the symptom/activity containers
-      margin: const EdgeInsets.only(bottom: 16),  // Add spacing at the bottom
+      width: double.infinity, // Ensure it spans the full width
+      height:
+          100, // Adjust the height to match the size of the symptom/activity containers
+      margin: const EdgeInsets.only(bottom: 16), // Add spacing at the bottom
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 255, 255), // Light lavender background
+        color: const Color.fromARGB(
+          255,
+          255,
+          255,
+          255,
+        ), // Light lavender background
         borderRadius: BorderRadius.circular(10), // Rounded corners
         boxShadow: [
           BoxShadow(
@@ -194,14 +331,14 @@ _buildSectionWithTabs(
             const Text(
               'Your Notes',
               style: TextStyle(
-                fontSize: 16,  // Title font size
+                fontSize: 16, // Title font size
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              notes.replaceAll('Your Notes: ', ''),  // Remove the redundant prefix
+              widget.Notes.isNotEmpty ? widget.Notes[0] : 'No notes added.',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: const Color.fromARGB(255, 117, 100, 117),
@@ -254,7 +391,10 @@ _buildSectionWithTabs(
   }
 
   // Custom section with title and tabs
-  Widget _buildSectionWithTabs({required String title, required List<Widget> children}) {
+  Widget _buildSectionWithTabs({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -337,7 +477,11 @@ _buildSectionWithTabs(
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(color: const Color.fromARGB(255, 177, 38, 119), fontSize: 14, fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(
+              color: const Color.fromARGB(255, 177, 38, 119),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -364,11 +508,19 @@ _buildSectionWithTabs(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: const Color.fromARGB(255, 88, 35, 104)), // Icon with color
+          Icon(
+            icon,
+            color: const Color.fromARGB(255, 88, 35, 104),
+          ), // Icon with color
           Text(
             label,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 83, 33, 99), // Text color same as icon
+              color: const Color.fromARGB(
+                255,
+                83,
+                33,
+                99,
+              ), // Text color same as icon
               fontWeight: FontWeight.bold, // Bold text
             ),
           ),
@@ -376,7 +528,12 @@ _buildSectionWithTabs(
             time,
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              color: const Color.fromARGB(255, 166, 121, 180), // Text color same as icon
+              color: const Color.fromARGB(
+                255,
+                166,
+                121,
+                180,
+              ), // Text color same as icon
               fontWeight: FontWeight.bold, // Bold text
             ),
           ),
@@ -388,7 +545,6 @@ _buildSectionWithTabs(
   // Helper method to get icon for each cause
   IconData _getCauseIcon(String cause) {
     switch (cause.toLowerCase()) {
-      case 'work':
       case 'work/study':
         return Icons.work;
       case 'relationships':
@@ -399,8 +555,16 @@ _buildSectionWithTabs(
         return Icons.family_restroom;
       case 'financial':
         return Icons.account_balance_wallet;
-      case 'social':
-        return Icons.people;
+      case 'social media':
+        return Icons.phone_android;
+      case 'academic':
+        return Icons.school;
+      case 'environmental':
+        return Icons.nature;
+      case 'sleep':
+        return Icons.bedtime;
+      case 'time management':
+        return Icons.access_time;
       case 'other':
         return Icons.more_horiz;
       default:
@@ -417,10 +581,17 @@ _buildSectionWithTabs(
         icon: Icon(icon, color: const Color.fromARGB(255, 138, 5, 78)),
         label: Text(
           label,
-          style: GoogleFonts.poppins(color: const Color.fromARGB(255, 138, 5, 78)),
+          style: GoogleFonts.poppins(
+            color: const Color.fromARGB(255, 138, 5, 78),
+          ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 243, 211, 247), // Background color
+          backgroundColor: const Color.fromARGB(
+            255,
+            243,
+            211,
+            247,
+          ), // Background color
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

@@ -14,6 +14,48 @@ class Sleepinput extends StatefulWidget {
 class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
   int _sleepHours = 0;
 
+  Future<void> _showSuccessPopup() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Success!',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'Your sleep hours have been recorded successfully.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Close the popup
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MainNavBar(),
+                  ), // Navigate to the main page
+                );
+              },
+              child: Text(
+                'Close',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple[700],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -106,50 +148,65 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                 const SizedBox(height: 20),
                 Expanded(
                   child: Center(
-                    child: RotatedBox(
-                      quarterTurns: -1,
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 12,
+                    child: SizedBox(
+                      width: 80, // Set width for hour marks
+                      height: 350, // Increased slider height
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 🌙 Rotated slider
+                          RotatedBox(
+                            quarterTurns: -1,
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                trackHeight: 25, // Increased track height
+                                thumbShape: const RoundSliderThumbShape(
+                                  enabledThumbRadius: 16, // Larger thumb
+                                ),
+                                overlayShape: const RoundSliderOverlayShape(
+                                  overlayRadius: 30, // Larger overlay
+                                ),
+                                activeTrackColor: const Color.fromARGB(
+                                  255,
+                                  211,
+                                  154,
+                                  213,
+                                ),
+                                inactiveTrackColor: const Color.fromARGB(
+                                  80,
+                                  211,
+                                  154,
+                                  213,
+                                ),
+                                thumbColor: const Color.fromARGB(
+                                  255,
+                                  211,
+                                  154,
+                                  213,
+                                ),
+                                overlayColor: const Color.fromARGB(
+                                  120,
+                                  211,
+                                  154,
+                                  213,
+                                ),
+                                trackShape: const RoundedRectSliderTrackShape(),
+                              ),
+                              child: Slider(
+                                value: _sleepHours.toDouble(),
+                                min: 0,
+                                max: 18,
+                                divisions: 18,
+                                label: '$_sleepHours hrs',
+                                onChanged: (value) {
+                                  setState(() {
+                                    _sleepHours = value.toInt();
+                                  });
+                                },
+                              ),
+                            ),
                           ),
-                          overlayShape: const RoundSliderOverlayShape(
-                            overlayRadius: 24,
-                          ),
-                          trackHeight: 6,
-                          activeTrackColor: const Color.fromARGB(
-                            255,
-                            211,
-                            154,
-                            213,
-                          ),
-                          inactiveTrackColor: const Color.fromARGB(
-                            80,
-                            211,
-                            154,
-                            213,
-                          ),
-                          thumbColor: const Color.fromARGB(255, 211, 154, 213),
-                          overlayColor: const Color.fromARGB(
-                            120,
-                            211,
-                            154,
-                            213,
-                          ),
-                          trackShape: const RoundedRectSliderTrackShape(),
-                        ),
-                        child: Slider(
-                          value: _sleepHours.toDouble(),
-                          min: 0,
-                          max: 18,
-                          divisions: 18,
-                          label: '$_sleepHours hrs',
-                          onChanged: (value) {
-                            setState(() {
-                              _sleepHours = value.toInt();
-                            });
-                          },
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -167,10 +224,7 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MainNavBar()),
-                    );
+                    _showSuccessPopup(); // Show success pop-up
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 211, 154, 213),

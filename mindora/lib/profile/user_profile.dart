@@ -432,7 +432,7 @@ class _UserProfilePageState extends State<UserProfilePage>
                 const SizedBox(height: 20),
 
                 // Test Navigation Button
-                _buildTherapistProfileButton(theme, isDark),
+                // _buildTherapistProfileButton(theme, isDark),
                 const SizedBox(height: 100),
               ],
             ),
