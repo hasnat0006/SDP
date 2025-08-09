@@ -1,4 +1,5 @@
 import 'package:client/appointment/bookappt.dart';
+import 'package:client/appointment/booked_appt.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/demo_notification_page.dart';
@@ -266,12 +267,55 @@ class DashboardPage extends StatelessWidget {
           },
         ),
 
-        // _trackerTile(
-        //   Icons.bedtime,
-        //   'Sleep Quality',
-        //   'Healthy (~5.5h Avg)',
-        //   context,
-        // ),
+        _trackerTile(
+          Icons.event_available,
+          'Your Appointments',
+          '1 booked appointment',
+          context,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BookedAppointments(
+                  appointments: [
+                    Appointment(
+                      name: 'Dr. Afsana Rahman',
+                      institution: 'MindCare Clinic',
+                      imagepath: 'mindora/assets/ifrit.jpeg',
+                      location: 'Uttara, Dhaka, Bangladesh',
+                      dateTime: DateTime.now().add(const Duration(days: 2)),
+                      specialty: 'Psychiatrist',
+                      status: AppointmentStatus.booked,
+                    ),
+                    Appointment(
+                      name: 'Dr. Farhan Kabir',
+                      institution: 'Serenity Health',
+                      imagepath: 'assets/doctor_2.jpg',
+                      location: 'Banani, Dhaka, Bangladesh',
+                      dateTime: DateTime.now().subtract(
+                        const Duration(days: 3),
+                      ),
+                      specialty: 'Psychiatrist',
+                      status: AppointmentStatus.completed,
+                    ),
+                    Appointment(
+                      name: 'Dr. Mariam Hossain',
+                      institution: 'Tranquil Minds',
+                      imagepath: 'assets/doctor_3.jpg',
+                      location: 'Dhanmondi, Dhaka, Bangladesh',
+                      dateTime: DateTime.now().subtract(
+                        const Duration(days: 1),
+                      ),
+                      specialty: 'Psychiatrist',
+                      status: AppointmentStatus.completed,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
         _trackerTile(
           Icons.calendar_month,
           'Book an Appointment',

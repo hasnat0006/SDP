@@ -1,53 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(const ChatbotBubbleuser());
-}
-
-class ChatbotBubbleuser extends StatefulWidget {
+class ChatbotBubbleuser extends StatelessWidget {
   const ChatbotBubbleuser({super.key});
 
-  final String text = 'Hey there, How can I help you?';
+  final String text = 'I had a really bad day at work. And I need to vent.';
 
-  @override
-  State<ChatbotBubbleuser> createState() => _ChatbotBubbleuserState();
-}
-
-class _ChatbotBubbleuserState extends State<ChatbotBubbleuser> {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          height: 100,
-          width: 250,
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 211, 154, 213),
-            borderRadius: BorderRadius.all(Radius.circular(30)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'I had a really bad day at work.',
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 243, 243, 243),
-                    fontWeight: FontWeight.w800,
+    final accent = const Color.fromARGB(255, 211, 154, 213); // Your soft purple
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                  textAlign: TextAlign.start,
+                ],
+              ),
+              child: Text(
+                text,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
                 ),
-                // Add Spacer() or SizedBox if you want extra space below the text
-              ],
+              ),
             ),
           ),
-        ),
-        SizedBox(width: 8), // Space between bubble and icon
-        Icon(Icons.done_all, color: Colors.purple, size: 20),
-      ],
+          const SizedBox(width: 6),
+          const Icon(Icons.done_all, color: Colors.white70, size: 18),
+        ],
+      ),
     );
   }
 }

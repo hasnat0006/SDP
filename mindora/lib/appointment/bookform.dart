@@ -1,3 +1,4 @@
+import 'package:client/dashboard/p_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,7 @@ class BookForm extends StatefulWidget {
   final String education;
   final String description;
   final String special;
-  final String exp; // <-- Add this
+  final String exp;
 
   const BookForm({
     super.key,
@@ -22,7 +23,7 @@ class BookForm extends StatefulWidget {
     required this.education,
     required this.description,
     required this.special,
-    required this.exp, // <-- Add this
+    required this.exp,
   });
 
   @override
@@ -41,6 +42,67 @@ class _BookForm extends State<BookForm> {
     '05:00 PM',
     '06:30 PM',
   ];
+
+  // Helper to safely prefix "Dr" only once
+  String get _doctorDisplayName {
+    final n = widget.name.trim();
+    final lower = n.toLowerCase();
+    return (lower.startsWith('dr ') || lower.startsWith('dr.'))
+        ? widget.name
+        : 'Dr ${widget.name}';
+  }
+
+  Future<void> _showSuccessAndGoToDashboard() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Appointment booked',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'Your appointment with $_doctorDisplayName has been booked successfully.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => DashboardPage()),
+                ),
+              },
+              child: Text(
+                'Close',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple[700],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    // Option A: Navigate by named route (set this in your MaterialApp routes)
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+
+    // Option B: Navigate by widget
+    // Navigator.pushAndRemoveUntil(
+    //   context,
+    //   MaterialPageRoute(builder: (_) => const DashboardScreen()),
+    //   (route) => false,
+    // );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,7 +205,7 @@ class _BookForm extends State<BookForm> {
                 ),
               ),
               const SizedBox(height: 12),
-              // Date and Time Booking Section
+
               const SizedBox(height: 24),
               Text(
                 'Book Your Appointment',
@@ -232,8 +294,9 @@ class _BookForm extends State<BookForm> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: (selectedDate != null && selectedTime != null)
-                    ? () {
-                        // Your booking logic here
+                    ? () async {
+                        // Place any booking API call here if needed.
+                        await _showSuccessAndGoToDashboard();
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
