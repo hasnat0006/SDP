@@ -6,6 +6,8 @@ require("dotenv").config();
 const cors = require("cors");
 app.use(cors());
 
+
+const stress = require("./Route/stress");
 const auth = require("./Route/auth/fetchusers");
 const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
@@ -14,6 +16,7 @@ const forumRoutes = require("./Route/forum/forum");
 
 app.use("/", auth);
 app.use("/reset-pass", resetPassword);
+app.use("/stress", stress);
 app.use("/forum", forumRoutes);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);

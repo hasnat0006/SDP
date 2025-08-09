@@ -1,4 +1,5 @@
 import 'package:client/login/signup/login.dart';
+import 'package:client/mood/mood_spinner.dart';
 import 'package:client/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Poppins',
       ),
       home: const LoginPage(), // Using the new navbar
+          //home: const MoodSpinner(),
     );
   }
 }
