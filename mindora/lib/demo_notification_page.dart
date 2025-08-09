@@ -35,165 +35,167 @@ class DemoNotificationPage extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4A148C).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: const Icon(
-                  Icons.notifications,
-                  size: 60,
-                  color: Color(0xFF4A148C),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Title
-              const Text(
-                'Demo Notification',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A148C),
-                  fontFamily: 'Poppins',
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Description
-              const Text(
-                'Tap the button below to send a demo notification to your device. Make sure you have allowed notifications for this app.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF757575),
-                  fontFamily: 'Poppins',
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 40),
-
-              // Notification Button
-              ElevatedButton(
-                onPressed: () async {
-                  await NotificationService.showNotification(
-                    title: '🌟 MindOra Demo',
-                    body:
-                        'This is a demo notification from your Mental Health Dashboard!',
-                    summary: 'Demo notification sent successfully',
-                  );
-
-                  // Show success message
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          'Demo notification sent! Check your notification panel.',
-                          style: TextStyle(fontFamily: 'Poppins'),
-                        ),
-                        backgroundColor: const Color(0xFF4A148C),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A148C),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 3,
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.send, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Send Demo Notification',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Additional notification examples
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icon
+                Container(
                   padding: const EdgeInsets.all(20),
-                  child: Column(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A148C).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: const Icon(
+                    Icons.notifications,
+                    size: 60,
+                    color: Color(0xFF4A148C),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Title
+                const Text(
+                  'Demo Notification',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4A148C),
+                    fontFamily: 'Poppins',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Description
+                const Text(
+                  'Tap the button below to send a demo notification to your device. Make sure you have allowed notifications for this app.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF757575),
+                    fontFamily: 'Poppins',
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Notification Button
+                ElevatedButton(
+                  onPressed: () async {
+                    await NotificationService.showNotification(
+                      title: '🌟 MindOra Demo',
+                      body:
+                          'This is a demo notification from your Mental Health Dashboard!',
+                      summary: 'Demo notification sent successfully',
+                    );
+
+                    // Show success message
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Demo notification sent! Check your notification panel.',
+                            style: TextStyle(fontFamily: 'Poppins'),
+                          ),
+                          backgroundColor: const Color(0xFF4A148C),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A148C),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 3,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'More Notification Types',
+                      Icon(Icons.send, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Send Demo Notification',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A148C),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           fontFamily: 'Poppins',
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Reminder notification
-                      _buildNotificationTile(
-                        context,
-                        'Meditation Reminder',
-                        '🧘‍♀️ Time for your daily meditation session!',
-                        Icons.self_improvement,
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Mood check notification
-                      _buildNotificationTile(
-                        context,
-                        'Mood Check-in',
-                        '💭 How are you feeling today? Track your mood now.',
-                        Icons.emoji_emotions,
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Sleep reminder
-                      _buildNotificationTile(
-                        context,
-                        'Sleep Reminder',
-                        '😴 Time to wind down for a good night\'s sleep.',
-                        Icons.bedtime,
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 30),
+
+                // Additional notification examples
+                Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'More Notification Types',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF4A148C),
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Reminder notification
+                        _buildNotificationTile(
+                          context,
+                          'Meditation Reminder',
+                          '🧘‍♀️ Time for your daily meditation session!',
+                          Icons.self_improvement,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Mood check notification
+                        _buildNotificationTile(
+                          context,
+                          'Mood Check-in',
+                          '💭 How are you feeling today? Track your mood now.',
+                          Icons.emoji_emotions,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Sleep reminder
+                        _buildNotificationTile(
+                          context,
+                          'Sleep Reminder',
+                          '😴 Time to wind down for a good night\'s sleep.',
+                          Icons.bedtime,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
