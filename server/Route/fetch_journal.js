@@ -10,14 +10,14 @@ router.get("/journal", async (req, res) => {
       return res.status(400).json({ error: "Missing user_id" });
     }
 
+    // Include mood and mood_color in the SELECT statement
     const journals = await sql`
-      SELECT j_id, date, time, title, information FROM journal
+      SELECT j_id, date, time, title, information, mood, mood_color FROM journal
       WHERE user_id = ${user_id}
       ORDER BY date DESC, time DESC;
     `;
 
-    // ✅ Wrap in a map so Flutter gets Map<String, dynamic>
-    console.log("Fetched journals:", journals);
+    console.log("Fetched journals with mood data:", journals);
     res.status(200).json({ journals });
   } catch (error) {
     console.error("Error fetching journal:", error);
@@ -34,12 +34,18 @@ router.post('/journal/update', async (req, res) => {
   }
 
   try {
-    await sql`
+    const updatedJournal = await sql`
       UPDATE journal
       SET title = ${title}, information = ${description}
       WHERE j_id = ${id}
+      RETURNING *;
     `;
-    res.json({ success: true });
+    
+    if (updatedJournal.length === 0) {
+      return res.status(404).json({ error: 'Journal not found' });
+    }
+
+    res.json({ success: true, journal: updatedJournal[0] });
   } catch (err) {
     console.error('Error updating journal:', err);
     res.status(500).json({ error: 'Database error' });
