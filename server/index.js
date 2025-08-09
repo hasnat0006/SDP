@@ -3,7 +3,6 @@ const app = express();
 app.use(express.json());
 require("dotenv").config();
 
-
 const cors = require("cors");
 app.use(cors());
 
@@ -19,6 +18,9 @@ app.use("/forum", forumRoutes);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the MindOra API");
+});
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
