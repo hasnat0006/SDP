@@ -19,7 +19,9 @@ class SettingsPage extends StatelessWidget {
         ),
         backgroundColor: const Color(0xFFD1A1E3),
         // rounded corners
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
+        ),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
