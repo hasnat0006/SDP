@@ -1,6 +1,7 @@
-import 'package:client/appointment/viewdetails.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'bookform.dart';
+import 'viewdetails.dart';
 
 class TherapistCard extends StatelessWidget {
   final String name;
@@ -10,7 +11,7 @@ class TherapistCard extends StatelessWidget {
   final String description;
   final String education;
   final String special;
-  final String exp; // <-- Add this
+  final String exp;
 
   const TherapistCard({
     super.key,
@@ -21,117 +22,160 @@ class TherapistCard extends StatelessWidget {
     required this.description,
     required this.education,
     required this.special,
-    required this.exp, // <-- Add this
+    required this.exp,
   });
 
   @override
   Widget build(BuildContext context) {
+    final purple = const Color.fromARGB(255, 211, 154, 213);
+
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
-      margin: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(8),
       child: Padding(
-        padding: EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 40, backgroundImage: AssetImage(imagepath)),
-            SizedBox(height: 10),
-            Text(
-              name,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 6),
-            Flexible(
-              child: Text(
-                institution,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w300,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+            // Circular avatar
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage(imagepath),
               ),
             ),
 
-            SizedBox(height: 12),
+            const SizedBox(height: 10),
+
+            // Therapist Name
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 6),
+
+            // Institution
+            Text(
+              institution,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const Spacer(),
+
+            // Book & Details Buttons — identical look
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BookForm(
-                            name: name,
-                            institution: institution,
-                            imagepath: imagepath,
-                            shortbio: shortbio,
-                            description: description,
-                            education: education,
-                            special: special,
-                            exp: exp,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BookForm(
+                              name: name,
+                              institution: institution,
+                              imagepath: imagepath,
+                              shortbio: shortbio,
+                              description: description,
+                              education: education,
+                              special: special,
+                              exp: exp,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 194, 178, 128),
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.event_available,
+                        size: 18,
+                        color: purple,
                       ),
-                      textStyle: TextStyle(fontSize: 14),
-                    ),
-                    child: Text(
-                      'Book',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      label: Text(
+                        'Book',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: purple,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: purple, width: 1.2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Viewdetails(
-                            name: name,
-                            institution: institution,
-                            imagepath: imagepath,
-                            shortbio: shortbio,
-                            description: description,
-                            education: education,
-                            special: special,
-                            exp: exp,
+                const SizedBox(width: 10),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => Viewdetails(
+                              name: name,
+                              institution: institution,
+                              imagepath: imagepath,
+                              shortbio: shortbio,
+                              description: description,
+                              education: education,
+                              special: special,
+                              exp: exp,
+                            ),
                           ),
+                        );
+                      },
+                      icon: Icon(Icons.info_outline, size: 18, color: purple),
+                      label: Text(
+                        'Details',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: purple,
+                          fontSize: 14,
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 194, 178, 128),
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
                       ),
-                      textStyle: TextStyle(fontSize: 14),
-                    ),
-                    child: Text(
-                      'Details',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: purple, width: 1.2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),

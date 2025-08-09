@@ -1,48 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-void main() {
-  runApp(const ChatbotBubble());
-}
-
-class ChatbotBubble extends StatefulWidget {
+class ChatbotBubble extends StatelessWidget {
   const ChatbotBubble({super.key});
 
-  final String text = 'Hey there, How can I help you?';
+  final String text = 'Hey there, how can I help you?';
 
-  @override
-  State<ChatbotBubble> createState() => _ChatbotBubbleState();
-}
-
-class _ChatbotBubbleState extends State<ChatbotBubble> {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          backgroundImage: AssetImage('assets/therapist.png'),
-          backgroundColor: Colors.white,
-        ),
-        Container(
-          height: 100,
-          width: 250,
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 255, 255, 255),
-            borderRadius: BorderRadius.all(Radius.circular(30)),
+    final purple = const Color.fromARGB(255, 211, 154, 213);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Therapist avatar
+          CircleAvatar(
+            radius: 22,
+            backgroundImage: const AssetImage('assets/therapist.png'),
+            backgroundColor: Colors.white,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              'Hey there, How can I help you?',
-              style: TextStyle(
-                color: const Color.fromARGB(255, 5, 5, 5),
-                fontWeight: FontWeight.w800,
+          const SizedBox(width: 10),
+          // Bubble
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                text,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[900],
+                ),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
