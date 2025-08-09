@@ -92,7 +92,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     : "Welcome back, User!",
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
