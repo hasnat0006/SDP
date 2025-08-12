@@ -60,15 +60,25 @@ Future<bool> updateJournalEntry({
   required String id,
   required String title,
   required String description,
+  required String mood,
 }) async {
   const endpoint = 'journal/update';
  
+  // Get mood color as hex string
+  final moodColor = MoodDetector.getMoodColor(mood);
+  final colorHex = '#${moodColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
   final body = {
     'id': id,
     'title': title,
     'description': description,
+    'mood': mood,
+    'mood_color': colorHex,
   };
+  
   print('backend dart: $id');
+  print('updating with mood: $mood, color: $colorHex');
+  
   try {
     final response = await postToBackend(endpoint, body);
     return response.isNotEmpty;

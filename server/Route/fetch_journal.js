@@ -26,17 +26,19 @@ router.get("/journal", async (req, res) => {
 });
 
 router.post('/journal/update', async (req, res) => {
-  const { id, title, description } = req.body;
+  const { id, title, description, mood, mood_color } = req.body;
   console.log('Update request received:', req.body);
 
-  if (!id || !title || !description) {
+  if (!id || !title || !description || !mood) {
     return res.status(400).json({ error: 'Missing fields' });
   }
+
+  const finalMoodColor = mood_color || '#EEDCF9';
 
   try {
     const updatedJournal = await sql`
       UPDATE journal
-      SET title = ${title}, information = ${description}
+      SET title = ${title}, information = ${description}, mood = ${mood}, mood_color = ${finalMoodColor}
       WHERE j_id = ${id}
       RETURNING *;
     `;
@@ -45,6 +47,7 @@ router.post('/journal/update', async (req, res) => {
       return res.status(404).json({ error: 'Journal not found' });
     }
 
+    console.log('Journal updated successfully:', updatedJournal[0]);
     res.json({ success: true, journal: updatedJournal[0] });
   } catch (err) {
     console.error('Error updating journal:', err);
