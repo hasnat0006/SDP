@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class MoodDetector {
   static const Map<String, List<String>> moodKeywords = {
@@ -6,7 +7,8 @@ class MoodDetector {
     'sad': ['sad', 'depressed', 'down', 'upset', 'crying', 'tears', 'hurt', 'disappointed', 'lonely', 'miserable', 'gloomy', 'devastated', 'heartbroken', 'sorrow', 'grief'],
     'angry': ['angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'pissed', 'outraged', 'livid', 'enraged', 'infuriated'],
     'anxious': ['anxious', 'worried', 'nervous', 'stressed', 'panic', 'fear', 'scared', 'overwhelmed', 'tense', 'uneasy', 'restless', 'troubled'],
-    'calm': ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'content', 'balanced', 'zen', 'comfortable', 'composed']
+    'calm': ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'content', 'balanced', 'zen', 'comfortable', 'composed'],
+    'neutral': ['okay', 'fine', 'alright', 'normal', 'regular', 'usual', 'ordinary', 'standard', 'typical', 'average', 'meh', 'whatever', 'indifferent', 'unchanged', 'steady', 'stable', 'routine', 'mundane', 'bland', 'plain']
   };
 
   static const Map<String, Color> moodColors = {
@@ -30,16 +32,31 @@ class MoodDetector {
   static String detectMood(String text) {
     if (text.trim().isEmpty) return 'neutral';
     
-    final words = text.toLowerCase().split(RegExp(r'[^\w]+'));
+    final lowerText = text.toLowerCase();
+    final words = lowerText.split(RegExp(r'[^\w]+'));
     String lastFoundMood = 'neutral';
     
+    // Negation words that make any emotion neutral
+    final negationWords = ['not', 'never', 'no', 'don\'t', 'doesn\'t', 'didn\'t', 'won\'t', 'can\'t', 'couldn\'t', 'shouldn\'t', 'wouldn\'t', 'isn\'t', 'aren\'t', 'wasn\'t', 'weren\'t', 'haven\'t', 'hasn\'t', 'hadn\'t'];
+    
     // Scan through all words in the text
-    for (String word in words) {
-      // Check each mood category for matches
+    for (int i = 0; i < words.length; i++) {
+      String word = words[i];
+      
+      // Check if this word matches any mood
       for (String mood in moodKeywords.keys) {
         if (moodKeywords[mood]!.contains(word)) {
-          // Update to the last found mood
-          lastFoundMood = mood;
+          // Check if there's a negation word before this mood word (within 3 words)
+          bool isNegated = false;
+          for (int j = math.max(0, i - 3); j < i; j++) {
+            if (negationWords.contains(words[j])) {
+              isNegated = true;
+              break;
+            }
+          }
+          
+          // If negated, set to neutral, otherwise use the detected mood
+          lastFoundMood = isNegated ? 'neutral' : mood;
         }
       }
     }

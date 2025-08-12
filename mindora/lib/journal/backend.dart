@@ -6,9 +6,9 @@ Future<void> saveJournalEntry(String title, String content, String userId, Strin
   final String currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   final String currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
   
-  // Get mood color as hex string
+  // Get mood color as hex string (remove alpha channel)
   final moodColor = MoodDetector.getMoodColor(mood);
-  final colorHex = '#${moodColor.value.toRadixString(16).substring(2).toUpperCase()}';
+  final colorHex = '#${moodColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
   final Map<String, dynamic> data = {
     'user_id': userId,
@@ -21,8 +21,9 @@ Future<void> saveJournalEntry(String title, String content, String userId, Strin
   };
 
   print('📤 SENDING DATA: $data');
-  print('📤 MOOD VALUE: ${data['mood']}');
-  print('📤 MOOD_COLOR VALUE: ${data['mood_color']}');
+  print('📤 MOOD VALUE: ${data['mood']} (type: ${data['mood'].runtimeType})');
+  print('📤 MOOD_COLOR VALUE: ${data['mood_color']} (type: ${data['mood_color'].runtimeType})');
+  print('📤 USER_ID: ${data['user_id']} (type: ${data['user_id'].runtimeType})');
 
   try {
     await postToBackend('journal', data);

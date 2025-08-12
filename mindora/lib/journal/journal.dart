@@ -83,7 +83,11 @@ class _JournalPageState extends State<JournalPage> {
 
     try {
       print('🔍 About to save with mood: $selectedMood'); // Debug print
-      await saveJournalEntry(title, content, widget.userId, selectedMood);
+      // Ensure we have a valid mood string
+      final moodToSave = selectedMood.isNotEmpty ? selectedMood : 'neutral';
+      print('🔍 Final mood to save: $moodToSave'); // Debug print
+      
+      await saveJournalEntry(title, content, widget.userId, moodToSave);
 
       // Clear the text fields and remove focus
       setState(() {
@@ -95,8 +99,8 @@ class _JournalPageState extends State<JournalPage> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Journal saved with ${MoodDetector.getMoodDisplayName(selectedMood)} mood!'),
-          backgroundColor: MoodDetector.getMoodColor(selectedMood),
+          content: Text('Journal saved with ${MoodDetector.getMoodDisplayName(moodToSave)} mood!'),
+          backgroundColor: MoodDetector.getMoodColor(moodToSave),
           duration: const Duration(seconds: 2),
         ),
       );
