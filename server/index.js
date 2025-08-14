@@ -12,12 +12,14 @@ const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
 const journalRoutes = require("./Route/fetch_journal");
 const forumRoutes = require("./Route/forum/forum");
+const therapistRoutes = require("./Route/fetchtherapist");
 
 app.use("/", auth);
 app.use("/reset-pass", resetPassword);
 app.use("/forum", forumRoutes);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);
+app.use("/", therapistRoutes);
 
 
 const PORT = process.env.PORT;

@@ -102,7 +102,7 @@ class DoctorDashboard extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ManageAppointments()),
+                    MaterialPageRoute(builder: (context) => ManageAppointments()),
                   );
                 },
                 child: Column(

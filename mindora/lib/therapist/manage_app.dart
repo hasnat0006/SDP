@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'pending_req.dart';  // Import your PendingRequestsPage here
+import 'backend.dart';
 
 class ManageAppointments extends StatefulWidget {
-  const ManageAppointments({super.key});
+  ManageAppointments({Key? key}) : super(key: key);
 
   @override
   State<ManageAppointments> createState() => _ManageAppointmentsState();
@@ -10,64 +12,34 @@ class ManageAppointments extends StatefulWidget {
 
 class _ManageAppointmentsState extends State<ManageAppointments> {
   bool acceptingAppointments = true;
+  List<Appointment> appointments = [];
+  List<bool> reminders = [];
+  bool isLoading = true;
 
-  List<Map<String, String>> appointments = [
-    {
-      "name": "Zaima Ahmed",
-      "age": "23",
-      "gender": "Female",
-      "profession": "Student",
-      "date": "February 15, 2024",
-      "time": "10:00 AM",
-      "reason": "Individual Therapy",
-    },
-    {
-      "name": "Mehnaj Hridi",
-      "age": "29",
-      "gender": "Female",
-      "profession": "Teacher",
-      "date": "February 15, 2024",
-      "time": "11:00 AM",
-      "reason": "Individual Therapy",
-    },
-    {
-      "name": "Sarah Johnson",
-      "age": "29",
-      "gender": "Female",
-      "profession": "Therapist",
-      "date": "February 15, 2024",
-      "time": "10:00 AM",
-      "reason": "Individual Therapy",
-    },
-  ];
-
-  List<bool> reminders = [true, true, true];
-
-  TableRow _buildTableRow(String label, String value) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ],
-    );
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppointments();
   }
+
+  Future<void> _fetchAppointments() async {
+    try {
+      final fetched = await AppointmentService.fetchConfirmedAppointments();
+      setState(() {
+        appointments = fetched;
+        reminders = List.generate(appointments.length, (_) => true);
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      // Optionally show error
+    }
+  }
+
+
+
 
   void _showRescheduleDialog(BuildContext context, int index) {
     showDialog(
@@ -99,13 +71,11 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
-              _buildTableRow("Patient Name:", appointments[index]["name"] ?? ""),
-              _buildTableRow("Age:", appointments[index]["age"] ?? ""),
-              _buildTableRow("Gender:", appointments[index]["gender"] ?? ""),
-              _buildTableRow("Profession:", appointments[index]["profession"] ?? ""),
-              _buildTableRow("Date:", appointments[index]["date"] ?? ""),
-              _buildTableRow("Time:", appointments[index]["time"] ?? ""),
-              _buildTableRow("Reason:", appointments[index]["reason"] ?? ""),
+              _buildTableRow("Appointment ID:", appointments[index].appId.toString()),
+              _buildTableRow("User ID:", appointments[index].userId.toString()),
+              _buildTableRow("Date:", appointments[index].date),
+              _buildTableRow("Time:", appointments[index].time),
+              _buildTableRow("Status:", appointments[index].status),
             ],
           ),
           actions: [
@@ -172,21 +142,21 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "${appt["date"]} at ${appt["time"]}",
+              "${appt.date} at ${appt.time}",
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
             ),
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(appt["name"] ?? "", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Text("Appointment #${appt.appId}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text("Confirmed", style: TextStyle(fontSize: 12, color: Colors.green)),
+                  child: Text(appt.status, style: const TextStyle(fontSize: 12, color: Colors.green)),
                 ),
               ],
             ),
@@ -286,14 +256,43 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: appointments.length,
-                itemBuilder: (context, index) => _buildAppointmentCard(index),
-              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : appointments.isEmpty
+                      ? const Center(child: Text('No confirmed appointments found.'))
+                      : ListView.builder(
+                          itemCount: appointments.length,
+                          itemBuilder: (context, index) => _buildAppointmentCard(index),
+                        ),
             ),
           ],
         ),
       ),
+    );
+  }
+  TableRow _buildTableRow(String label, String value) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
