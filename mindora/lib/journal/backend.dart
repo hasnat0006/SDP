@@ -30,6 +30,7 @@ Future<void> saveJournalEntry(String title, String content, String userId, Strin
     print('✅ Journal saved with mood: $mood');
   } catch (e) {
     print('❌ Error saving journal: $e');
+    print('❌ Error saving journal: $e');
     rethrow;
   }
 }
@@ -82,6 +83,7 @@ Future<bool> updateJournalEntry({
   try {
     final response = await postToBackend(endpoint, body);
     return response.isNotEmpty;
+    return response.isNotEmpty;
   } catch (e) {
     print('Error updating journal: $e');
     return false;
@@ -97,6 +99,7 @@ Future<bool> deleteJournalEntry(String id) async {
 
   try {
     final response = await postToBackend(endpoint, body);
+    return response.isNotEmpty;
     return response.isNotEmpty;
   } catch (e) {
     print('Error deleting journal: $e');

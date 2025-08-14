@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A148C)),
         fontFamily: 'Poppins',
       ),
-      home: const LoginPage(), // Using the new navbar
+      home: const LoginPage(),
     );
   }
 }

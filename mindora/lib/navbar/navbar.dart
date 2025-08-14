@@ -1,11 +1,14 @@
+import 'package:client/dashboard/t_dashboard.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/therapist/manage_app.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../dashboard/p_dashboard.dart';
 import '../mood/Mood_spin.dart';
 import '../todo_list/todo_list_main.dart';
 import '../profile/user_profile.dart';
+import '../profile/therapist_profile.dart';
 import '../settings/settings_page.dart';
 
 class MainNavBar extends StatefulWidget {
@@ -40,7 +43,6 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
     );
   }
 
-
   Future<void> _loadUserData() async {
     try {
       final userData = await UserService.getUserData();
@@ -62,15 +64,22 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   }
 
   // Navigation items configuration
-  final List<NavItem> _navItems = [
+  List<NavItem> get _navItems => [
     NavItem(
       icon: Icons.dashboard,
       label: '',
-      page: const DashboardPageWrapper(),
+      page: DashboardPageWrapper(userType: _userType),
     ),
     NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
-    NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
-    NavItem(icon: Icons.person, label: '', page: const UserProfilePage()),
+    if (_userType == 'patient')
+      NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
+    if (_userType == 'doctor')
+      NavItem(icon: Icons.event, label: '', page: const ManageAppointments()),
+    NavItem(
+      icon: Icons.person,
+      label: '',
+      page: ProfilePageWrapper(userType: _userType),
+    ),
     NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
   ];
 
@@ -289,11 +298,16 @@ class NavItem {
 
 // Placeholder page widgets
 class DashboardPageWrapper extends StatelessWidget {
-  const DashboardPageWrapper({super.key});
+  final String userType;
+  const DashboardPageWrapper({super.key, required this.userType});
 
   @override
   Widget build(BuildContext context) {
-    return const DashboardPage(); // Using existing dashboard from p_dashboard.dart
+    if (userType == 'patient') {
+      return const DashboardPage(); // Using existing dashboard from p_dashboard.dart
+    } else {
+      return const DoctorDashboard();
+    }
   }
 }
 
@@ -316,10 +330,15 @@ class TodoPageWrapper extends StatelessWidget {
 }
 
 class ProfilePageWrapper extends StatelessWidget {
-  const ProfilePageWrapper({super.key});
+  final String userType;
+  const ProfilePageWrapper({super.key, required this.userType});
 
   @override
   Widget build(BuildContext context) {
-    return const UserProfilePage(); // Using existing profile page
+    if (userType == 'patient') {
+      return const UserProfilePage();
+    } else {
+      return const TherapistProfilePage();
+    }
   }
 }

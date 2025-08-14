@@ -102,4 +102,84 @@ router.get("/get-all-posts", async (req, res) => {
   }
 });
 
+router.post("/add-like", async (req, res) => {
+  const { postId, UserId } = req.body;
+  if (!postId || !UserId) {
+    return res.status(400).json({ error: "Missing post ID or user ID" });
+  }
+  try {
+    await sql`
+            UPDATE forum
+            SET likes = likes + 1
+            WHERE id = ${postId};
+        `;
+
+    await sql`
+            UPDATE forum SET "isLiked" = array_append("isLiked", ${UserId})
+            WHERE id = ${postId};
+        `;
+    res.status(200).json({ message: "Post liked successfully" });
+  } catch (error) {
+    console.error("Error liking post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/remove-like", async (req, res) => {
+  const { postId, UserId } = req.body;
+  if (!postId || !UserId) {
+    return res.status(400).json({ error: "Missing post ID or user ID" });
+  }
+  try {
+    await sql`
+            UPDATE forum
+            SET likes = likes - 1
+            WHERE id = ${postId};
+        `;
+
+    await sql`
+            UPDATE forum SET "isLiked" = array_remove("isLiked", ${UserId})
+            WHERE id = ${postId};
+        `;
+    res.status(200).json({ message: "Post unliked successfully" });
+  } catch (error) {
+    console.error("Error unliking post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/add-save", async (req, res) => {
+  const { postId, UserId } = req.body;
+  if (!postId || !UserId) {
+    return res.status(400).json({ error: "Missing post ID or user ID" });
+  }
+  try {
+    await sql`
+            UPDATE forum SET "isSaved" = array_append("isSaved", ${UserId})
+            WHERE id = ${postId};
+        `;
+    res.status(200).json({ message: "Post saved successfully" });
+  } catch (error) {
+    console.error("Error saving post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/remove-save", async (req, res) => {
+  const { postId, UserId } = req.body;
+  if (!postId || !UserId) {
+    return res.status(400).json({ error: "Missing post ID or user ID" });
+  }
+  try {
+    await sql`
+            UPDATE forum SET "isSaved" = array_remove("isSaved", ${UserId})
+            WHERE id = ${postId};
+        `;
+    res.status(200).json({ message: "Post unsaved successfully" });
+  } catch (error) {
+    console.error("Error unsaving post:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;

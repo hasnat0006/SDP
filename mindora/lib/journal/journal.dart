@@ -9,6 +9,9 @@ class JournalPage extends StatefulWidget {
   final String userId;
   
   const JournalPage({super.key, required this.userId});
+  final String userId;
+  
+  const JournalPage({super.key, required this.userId});
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -198,6 +201,16 @@ class _JournalPageState extends State<JournalPage> {
           },
         );
       },
+    );
+  }
+
+  // When navigating to history page, pass the user ID
+  void _navigateToHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JournalHistoryPage(userId: widget.userId),
+      ),
     );
   }
 

@@ -4,24 +4,26 @@ const router = express.Router();
 
 router.get("/journal", async (req, res) => {
   try {
-    const { user_id } = req.query;
-
+    const { user_id } = req.query; // Get user_id from query parameters
+    
+    console.log('📡 Fetching journals for user:', user_id);
+    
     if (!user_id) {
-      return res.status(400).json({ error: "Missing user_id" });
+      return res.status(400).json({ error: 'User ID is required' });
     }
 
     // Include mood and mood_color in the SELECT statement
     const journals = await sql`
       SELECT j_id, date, time, title, information, mood, mood_color FROM journal
       WHERE user_id = ${user_id}
-      ORDER BY date DESC, time DESC;
+      ORDER BY date DESC, time DESC
     `;
 
     console.log("Fetched journals with mood data:", journals);
     res.status(200).json({ journals });
   } catch (error) {
-    console.error("Error fetching journal:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('❌ Error fetching journals:', error);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 

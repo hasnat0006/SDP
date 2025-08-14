@@ -1,21 +1,8 @@
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../stress/stress_insights.dart'; 
-
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: StressTrackerPage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
+import '../stress/stress_insights.dart';
+import './backend.dart';
 
 class StressTrackerPage extends StatefulWidget {
   const StressTrackerPage({Key? key}) : super(key: key);
@@ -25,6 +12,8 @@ class StressTrackerPage extends StatefulWidget {
 }
 
 class _StressTrackerPageState extends State<StressTrackerPage> {
+  String _userId = '';
+  String _userType = '';
   int selectedStressLevel = 3;
   bool isHovering = false;
   String notes = "";
@@ -34,16 +23,26 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
     'Health',
     'Family',
     'Financial',
-    'Other'
+    'Social Media',
+    'Academic',
+    'Environmental',
+    'Sleep',
+    'Time Management',
+    'Other',
   ];
   List<String> selectedCauses = [];
   List<String> selectedSymptoms = []; // Symptoms list
   List<IconData> causeIcons = [
     Icons.work, // Work/Study
     Icons.people, // Relationships
-    Icons.favorite, // Health
-    Icons.home, // Family
-    Icons.money, // Financial
+    Icons.health_and_safety, // Health
+    Icons.family_restroom, // Family
+    Icons.account_balance_wallet, // Financial
+    Icons.phone_android, // Social Media
+    Icons.school, // Academic
+    Icons.nature, // Environmental
+    Icons.bedtime, // Sleep
+    Icons.access_time, // Time Management
     Icons.more_horiz, // Other
   ];
 
@@ -51,6 +50,24 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
   TextEditingController _otherController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FF),
@@ -63,7 +80,10 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black,
+          ),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -143,24 +163,28 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                     const SizedBox(height: 15),
                     GridView.builder(
                       shrinkWrap: true,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                          ),
                       itemCount: stressCauses.length,
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onDoubleTap: () {
                             setState(() {
-                              if (selectedCauses.contains(stressCauses[index])) {
+                              if (selectedCauses.contains(
+                                stressCauses[index],
+                              )) {
                                 selectedCauses.remove(stressCauses[index]);
                               }
                             });
                           },
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: selectedCauses.contains(stressCauses[index])
+                              backgroundColor:
+                                  selectedCauses.contains(stressCauses[index])
                                   ? Color(0xFFD39AD5)
                                   : Color(0xFFEFD1F5), // Lavender button
                               shape: RoundedRectangleBorder(
@@ -172,7 +196,9 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                                 _showOtherPopup(context);
                               } else {
                                 setState(() {
-                                  if (!selectedCauses.contains(stressCauses[index])) {
+                                  if (!selectedCauses.contains(
+                                    stressCauses[index],
+                                  )) {
                                     selectedCauses.add(stressCauses[index]);
                                   }
                                 });
@@ -184,7 +210,10 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                                 Icon(
                                   causeIcons[index],
                                   size: 32,
-                                  color: selectedCauses.contains(stressCauses[index])
+                                  color:
+                                      selectedCauses.contains(
+                                        stressCauses[index],
+                                      )
                                       ? Colors.white
                                       : Colors.black,
                                 ),
@@ -192,7 +221,10 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                                 Text(
                                   stressCauses[index],
                                   style: GoogleFonts.poppins(
-                                    color: selectedCauses.contains(stressCauses[index])
+                                    color:
+                                        selectedCauses.contains(
+                                          stressCauses[index],
+                                        )
                                         ? Colors.white
                                         : Colors.black,
                                   ),
@@ -279,7 +311,7 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                       maxLines: 4,
                       onChanged: (text) {
                         setState(() {
-                        notes = text;
+                          notes = text;
                         });
                       },
                     ),
@@ -287,65 +319,92 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                 ),
                 const SizedBox(height: 40),
 
-                    // Continue Button
-               Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-  child: MouseRegion(
-    onEnter: (_) => setState(() => isHovering = true),
-    onExit: (_) => setState(() => isHovering = false),
-    child: GestureDetector(
-      onTap: () {
-        // Navigate to StressInsightsPage with data
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StressInsightsPage(
-              stressLevel: selectedStressLevel,
-              selectedCauses: selectedCauses,
-              selectedSymptoms: selectedSymptoms,
-              notes: notes.isNotEmpty ? notes : 'No notes added.',
-            ),
-          ),
-        );
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        transform: Matrix4.identity()..scale(isHovering ? 1.03 : 1.0),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isHovering
-                ? [Color(0xFFE6BCF0), Color(0xFFCF7EE4)]
-                : [Color(0xFFD6A6E1), Color(0xFFB78ED3)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFB89EDF).withOpacity(isHovering ? 0.5 : 0.3),
-              blurRadius: isHovering ? 16 : 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            "Continue →",
-            style: GoogleFonts.poppins(
-              color: const Color(0xFFF9F7F7),
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ),
-      ),
-    ),
-  ),
-),
+                // Continue Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => isHovering = true),
+                    onExit: (_) => setState(() => isHovering = false),
+                    child: GestureDetector(
+                      onTap: () async {
+                        // Save data to backend
+                        final result = await StressTrackerBackend.saveStressData(
+                          userId: _userId, // Replace with actual logged in user's UUID
+                          stressLevel: selectedStressLevel,
+                          cause: selectedCauses, // Changed to match backend parameter name
+                          loggedSymptoms: selectedSymptoms, // Changed to match backend parameter name
+                          Notes: [
+                            notes.isNotEmpty ? notes : 'No notes added.',
+                          ], // Changed to List<String> as per DB schema
+                          date: DateTime.now(),
+                        );
 
+                        if (result['success']) {
+                          
+                          // Navigate to StressInsightsPage with data
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StressInsightsPage(
+                                stressLevel: selectedStressLevel,
+                                cause: selectedCauses,
+                                loggedSymptoms: selectedSymptoms,
+                                Notes: [
+                                  notes.isNotEmpty ? notes : 'No notes added.',
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        transform: Matrix4.identity()
+                          ..scale(isHovering ? 1.03 : 1.0),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isHovering
+                                ? [Color(0xFFE6BCF0), Color(0xFFCF7EE4)]
+                                : [Color(0xFFD6A6E1), Color(0xFFB78ED3)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFB89EDF,
+                              ).withOpacity(isHovering ? 0.5 : 0.3),
+                              blurRadius: isHovering ? 16 : 10,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Continue →",
+                            style: GoogleFonts.poppins(
+                              color: const Color(0xFFF9F7F7),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -418,24 +477,18 @@ class _StressTrackerPageState extends State<StressTrackerPage> {
                   setState(() {
                     selectedCauses.remove('Other');
                     selectedCauses.add(_otherController.text);
-                    _otherController.clear(); 
+                    _otherController.clear();
                   });
                 }
                 Navigator.of(context).pop();
               },
-              child: Text(
-                'OK',
-                style: GoogleFonts.poppins(),
-              ),
+              child: Text('OK', style: GoogleFonts.poppins()),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.poppins(),
-              ),
+              child: Text('Cancel', style: GoogleFonts.poppins()),
             ),
           ],
         );
