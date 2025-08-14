@@ -9,9 +9,13 @@ app.use(cors());
 
 const users = require("./Route/fetchusers");
 const stress = require("./Route/stress");
+const mood = require("./Route/mood");
+const sleep = require("./Route/sleep");
 
 app.use("/", users);
 app.use("/stress", stress);
+app.use("/mood", mood);
+app.use("/sleep", sleep);
 
 
 const PORT = process.env.PORT;

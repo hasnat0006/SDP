@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'Selected_mood_stats.dart';
+import 'backend.dart';
+import '../services/user_service.dart';
 
 class MoodInsightsPage extends StatefulWidget {
   final String moodLabel;
@@ -23,6 +25,63 @@ class MoodInsightsPage extends StatefulWidget {
 
 class _MoodInsightsPageState extends State<MoodInsightsPage> {
   DateTime? selectedDate;
+  Map<String, dynamic>? moodData;
+  Map<String, dynamic>? stressData;
+  Map<String, dynamic>? sleepData;
+  List<Map<String, dynamic>>? weeklyMoodData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Load today's data
+      final today = DateTime.now();
+      String? userId = await UserService.getUserId();
+      
+      // Use fallback user ID for testing if no user is logged in
+      userId ??= 'test_user_123';
+
+      // Get mood data for today
+      final moodResult = await MoodTrackerBackend.getMoodDataForDate(userId, today);
+      if (moodResult['success']) {
+        moodData = moodResult['data'];
+      }
+
+      // Get stress data for today
+      final stressResult = await MoodTrackerBackend.getStressDataForDate(userId, today);
+      if (stressResult['success']) {
+        stressData = stressResult['data'];
+      }
+
+      // Get sleep data for today
+      final sleepResult = await MoodTrackerBackend.getSleepDataForDate(userId, today);
+      if (sleepResult['success']) {
+        sleepData = sleepResult['data'];
+      }
+
+      // Get weekly mood data
+      final weeklyResult = await MoodTrackerBackend.getWeeklyMoodData(userId);
+      if (weeklyResult['success']) {
+        weeklyMoodData = List<Map<String, dynamic>>.from(weeklyResult['data']);
+      }
+
+    } catch (e) {
+      print('Error loading data: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   IconData _getCauseIcon(String cause) {
     switch (cause.toLowerCase()) {
@@ -44,6 +103,31 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
         return Icons.more_horiz;
       default:
         return Icons.label_important;
+    }
+  }
+
+  IconData _getMoodIcon(String moodStatus) {
+    switch (moodStatus.toLowerCase()) {
+      case 'happy':
+        return Icons.sentiment_very_satisfied;
+      case 'sad':
+        return Icons.sentiment_very_dissatisfied;
+      case 'angry':
+        return Icons.sentiment_dissatisfied;
+      case 'anxious':
+        return Icons.sentiment_neutral;
+      case 'excited':
+        return Icons.sentiment_satisfied;
+      case 'calm':
+        return Icons.sentiment_satisfied;
+      case 'confused':
+        return Icons.sentiment_neutral;
+      case 'tired':
+        return Icons.sentiment_dissatisfied;
+      case 'grateful':
+        return Icons.sentiment_very_satisfied;
+      default:
+        return Icons.sentiment_neutral;
     }
   }
 // Filter Tabs
@@ -97,24 +181,38 @@ String getCurrentWeekRange() {
   @override
   Widget build(BuildContext context) {
     final days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final moodIcons = [
-      Icons.sentiment_very_satisfied,
-      Icons.sentiment_satisfied,
-      Icons.sentiment_neutral,
-      Icons.sentiment_dissatisfied,
-      Icons.sentiment_very_dissatisfied,
-      Icons.mood,
-      Icons.emoji_emotions,
-    ];
-    final moodColors = [
-      Colors.green,
-      Colors.lightGreen,
-      Colors.orangeAccent,
-      Colors.deepOrange,
-      Colors.redAccent,
-      Colors.blueAccent,
-      Colors.purpleAccent,
-    ];
+
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFFF9F4),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFD39AD5),
+          elevation: 0,
+          toolbarHeight: 80,
+          centerTitle: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 2, 2, 2)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            "Mood Today",
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: const Color.fromARGB(255, 15, 15, 15),
+            ),
+          ),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFB79AE0),
+          ),
+        ),
+      );
+    }
 
 return Scaffold(
   backgroundColor: const Color(0xFFFFF9F4),
@@ -170,7 +268,15 @@ return Scaffold(
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            "Today you felt a bit down",
+                            moodData != null 
+                                ? MoodTrackerBackend.getMoodIntensityDescription(
+                                    moodData!['mood_status'] ?? widget.moodLabel, 
+                                    moodData!['mood_level'] ?? widget.moodIntensity
+                                  )
+                                : MoodTrackerBackend.getMoodIntensityDescription(
+                                    widget.moodLabel, 
+                                    widget.moodIntensity
+                                  ),
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -181,7 +287,9 @@ return Scaffold(
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "It's okay to have such days",
+                      moodData != null 
+                          ? "It's perfectly normal to feel this way. Take care of yourself!"
+                          : "Remember to track your mood daily for better insights.",
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey.shade600,
@@ -201,31 +309,37 @@ return Scaffold(
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.monitor_heart, color: Colors.deepPurple),
-                                const SizedBox(width: 6),
-                                Text(
-                                  "Stress Level",
-                                  style: GoogleFonts.poppins(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Moderate stress detected today",
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
-                            ),
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.monitor_heart, color: Colors.deepPurple),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    "Stress Level",
+                                    style: GoogleFonts.poppins(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                stressData != null
+                                    ? MoodTrackerBackend.getStressLevelDescription(stressData!['stress_level'])
+                                    : "You haven't given today's stress update yet",
+                                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                         CircleAvatar(
                           backgroundColor: const Color(0xFFEEE6FA),
                           radius: 18,
                           child: Text(
-                            "3",
+                            stressData != null ? stressData!['stress_level'].toString() : "-",
                             style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.deepPurple),
                           ),
                         )
@@ -246,8 +360,18 @@ Divider(
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("7.5 hours of sleep", style: GoogleFonts.poppins(fontSize: 14)),
-                            Text("Slightly below your average", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600))
+                            Text(
+                              sleepData != null 
+                                  ? "${sleepData!['hours_slept']} hours of sleep"
+                                  : "Sleep data not available",
+                              style: GoogleFonts.poppins(fontSize: 14)
+                            ),
+                            Text(
+                              sleepData != null
+                                  ? MoodTrackerBackend.getSleepHoursDescription(sleepData!['hours_slept'].toDouble())
+                                  : "You haven't given today's sleep update yet",
+                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)
+                            )
                           ],
                         )
                       ],
@@ -469,14 +593,40 @@ const SizedBox(height: 8),
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: List.generate(7, (index) {
+    final today = DateTime.now();
+    final dayDate = today.subtract(Duration(days: 6 - index));
+    final dayName = days[index];
+    
+    // Find mood data for this day
+    Map<String, dynamic>? dayMoodData;
+    if (weeklyMoodData != null) {
+      dayMoodData = weeklyMoodData!.firstWhere(
+        (data) => DateTime.parse(data['date']).day == dayDate.day,
+        orElse: () => {},
+      );
+    }
+    
+    // Determine mood icon and color
+    IconData moodIcon;
+    Color moodColor;
+    
+    if (dayMoodData != null && dayMoodData.isNotEmpty) {
+      final moodStatus = dayMoodData['mood_status'];
+      moodIcon = _getMoodIcon(moodStatus);
+      moodColor = MoodTrackerBackend.getMoodColor(moodStatus);
+    } else {
+      moodIcon = Icons.help_outline;
+      moodColor = Colors.grey;
+    }
+    
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: moodColors[index].withOpacity(0.15),
+        color: moodColor.withOpacity(0.15),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: moodColors[index].withOpacity(0.3),
+            color: moodColor.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -485,13 +635,13 @@ Row(
       child: Column(
         children: [
           Icon(
-            moodIcons[index],
-            color: moodColors[index],
+            moodIcon,
+            color: moodColor,
             size: 24,
           ),
           const SizedBox(height: 4),
           Text(
-            days[index],
+            dayName,
             style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w500,

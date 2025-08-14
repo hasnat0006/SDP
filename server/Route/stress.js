@@ -57,6 +57,33 @@ router.get("/data/:userId", async (req, res) => {
   }
 });
 
+// Get stress data for a specific user and date
+router.get("/data/:userId/:date", async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+    console.log("User ID:", userId, "Date:", date);
+    
+    const result = await sql`
+      SELECT * FROM stress_tracker 
+      WHERE user_id = ${userId} AND DATE(date) = ${date}
+      ORDER BY date DESC
+      LIMIT 1
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: "No stress data found for this date",
+        data: null 
+      });
+    }
+
+    res.json(result[0]);
+  } catch (err) {
+    console.error("Error retrieving stress data for date:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get weekly stress data for a user
 router.get("/weekly/:userId", async (req, res) => {
   try {

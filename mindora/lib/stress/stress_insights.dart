@@ -378,10 +378,10 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20), // Apply rounded corners
+            borderRadius: BorderRadius.circular(20), // rounded corners
             child: Image.asset(
-              'assets/graph.png', // Replace with your graph image
-              fit: BoxFit.cover, // Ensure the image fits nicely
+              'assets/graph.png',
+              fit: BoxFit.cover, 
             ),
           ),
         ),

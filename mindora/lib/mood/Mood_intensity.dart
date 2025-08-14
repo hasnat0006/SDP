@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'Mood_insights.dart'; // Add the Mood Insights page import
+import 'Mood_insights.dart';
+import 'backend.dart';
+import '../services/user_service.dart'; 
 
 class MoodIntensityPage extends StatefulWidget {
   final String moodLabel;
@@ -463,18 +465,56 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
                 onEnter: (_) => setState(() => isHovering = true),
                 onExit: (_) => setState(() => isHovering = false),
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MoodInsightsPage(
-                          moodLabel: widget.moodLabel,
-                          moodEmoji: widget.moodEmoji,
-                          moodIntensity: selectedIntensity,
-                          selectedCauses: selectedCauses,
+                  onTap: () async {
+                    // Save mood data to backend
+                    try {
+                      // Get the actual user ID
+                      String? userId = await UserService.getUserId();
+                      
+                      // Use fallback user ID for testing if no user is logged in
+                      userId ??= 'test_user_123';
+
+                      final result = await MoodTrackerBackend.saveMoodData(
+                        userId: userId,
+                        moodStatus: widget.moodLabel,
+                        moodLevel: selectedIntensity,
+                        reason: selectedCauses,
+                        date: DateTime.now(),
+                      );
+
+                      if (result['success']) {
+                        // Navigate to insights page if save successful
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MoodInsightsPage(
+                              moodLabel: widget.moodLabel,
+                              moodEmoji: widget.moodEmoji,
+                              moodIntensity: selectedIntensity,
+                              selectedCauses: selectedCauses,
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Show error message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result['message'] ?? 'Failed to save mood data'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        print('Save error: ${result['error']}');
+                      }
+                    } catch (e) {
+                      // Show error message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
+                          backgroundColor: Colors.red,
                         ),
-                      ),
-                    );
+                      );
+                      print('Exception: $e');
+                    }
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
