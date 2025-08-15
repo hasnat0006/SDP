@@ -166,13 +166,68 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                                 backgroundColor: Colors.red,
                                 foregroundColor: Colors.white,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  appointments.removeAt(index);
-                                  reminders.removeAt(index);
-                                });
+                              onPressed: () async {
+                                // Show loading
                                 Navigator.pop(context); // Close confirmation dialog
                                 Navigator.pop(context); // Close reschedule dialog
+                                
+                                // Show loading dialog
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => AlertDialog(
+                                    content: Row(
+                                      children: const [
+                                        CircularProgressIndicator(),
+                                        SizedBox(width: 20),
+                                        Text('Cancelling appointment...'),
+                                      ],
+                                    ),
+                                  ),
+                                );
+
+                                try {
+                                  // Call backend to cancel appointment
+                                  final success = await AppointmentService.cancelAppointment(appointments[index].appId);
+                                  
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  if (success) {
+                                    // Remove from local list
+                                    setState(() {
+                                      appointments.removeAt(index);
+                                      reminders.removeAt(index);
+                                    });
+                                    
+                                    // Show success message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Appointment cancelled successfully'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else {
+                                    // Show error message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to cancel appointment'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  // Show error message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               },
                               child: const Text("Yes"),
                             ),

@@ -284,4 +284,28 @@ class AppointmentService {
 			throw Exception('Failed to load my appointments: $e');
 		}
 	}
+
+	static Future<bool> cancelAppointment(String appointmentId) async {
+		try {
+			print('🌐 Making request to cancel appointment: $baseUrl/cancel-appointment/$appointmentId');
+			final response = await http.put(
+				Uri.parse('$baseUrl/cancel-appointment/$appointmentId'),
+				headers: {'Content-Type': 'application/json'},
+			);
+			
+			print('📡 Cancel response status: ${response.statusCode}');
+			print('📋 Cancel response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final Map<String, dynamic> data = json.decode(response.body);
+				return data['success'] == true;
+			} else {
+				print('❌ Failed to cancel appointment: ${response.statusCode}');
+				return false;
+			}
+		} catch (e) {
+			print('❌ Error cancelling appointment: $e');
+			return false;
+		}
+	}
 }

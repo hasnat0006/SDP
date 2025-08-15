@@ -187,4 +187,33 @@ router.get('/patient/:userId', async (req, res) => {
   }
 });
 
+// Route to cancel appointment by app_id
+router.put('/cancel-appointment/:appId', async (req, res) => {
+  try {
+    const { appId } = req.params;
+    console.log(`🔍 Cancelling appointment with ID: ${appId}`);
+    
+    // Update the appointment status to 'cancelled'
+    const result = await sql`
+      UPDATE appointment 
+      SET status = 'cancelled'
+      WHERE doc_id = ${appId}
+    `;
+    
+    if (result.count === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    console.log('✅ Appointment cancelled successfully');
+    res.json({ 
+      success: true, 
+      message: 'Appointment cancelled successfully',
+      appointmentId: appId
+    });
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 module.exports = router;
