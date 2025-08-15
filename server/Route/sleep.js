@@ -22,7 +22,7 @@ router.post("/track", async (req, res) => {
         ${sleep_quality}, 
         ${bedtime}, 
         ${wake_time}, 
-        ${date}
+        (${date}::timestamp AT TIME ZONE '+06:00')::timestamp with time zone
       )
       RETURNING *
     `;
@@ -66,9 +66,11 @@ router.get("/data/:userId/:date", async (req, res) => {
     const { userId, date } = req.params;
     console.log("User ID:", userId, "Date:", date);
     
+    // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
     const result = await sql`
       SELECT * FROM sleep_tracker 
-      WHERE user_id = ${userId} AND DATE(date) = ${date}
+      WHERE user_id = ${userId} 
+      AND DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${date}
       ORDER BY date DESC
       LIMIT 1
     `;
