@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../todo_list/todo_list_main.dart';
 import '../stress/stress_tracker.dart';
+import '../stress/stress_insights.dart';
+import '../stress/backend.dart';
 import '../chatbot/chatbot.dart';
 import '../sleep/sleeptracker.dart';
 
@@ -21,6 +23,8 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   String _userId = '';
   String _userType = '';
+  Map<String, dynamic>? _todayStressData;
+  String _stressButtonText = 'Log your details for today';
 
   @override
   void initState() {
@@ -36,8 +40,95 @@ class _DashboardPageState extends State<DashboardPage> {
         _userType = userData['userType'] ?? '';
       });
       print('Loaded user data - ID: $_userId, Type: $_userType');
+      
+      // Load today's stress data after user data is loaded
+      if (_userId.isNotEmpty) {
+        await _loadTodayStressData();
+      }
     } catch (e) {
       print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadTodayStressData() async {
+    try {
+      final result = await StressTrackerBackend.getTodayStressData(_userId);
+      if (result['success']) {
+        setState(() {
+          _todayStressData = result['data'];
+          _stressButtonText = _getStressButtonText();
+        });
+      } else {
+        setState(() {
+          _todayStressData = null;
+          _stressButtonText = 'Log your details for today';
+        });
+      }
+    } catch (e) {
+      print('Error loading today\'s stress data: $e');
+      setState(() {
+        _todayStressData = null;
+        _stressButtonText = 'Log your details for today';
+      });
+    }
+  }
+
+  String _getStressButtonText() {
+    if (_todayStressData == null) {
+      return 'Log your details for today';
+    }
+    
+    final stressLevel = _todayStressData!['stress_level'] ?? 1;
+    String levelText;
+    
+    switch (stressLevel) {
+      case 1:
+        levelText = 'Very Low';
+        break;
+      case 2:
+        levelText = 'Low';
+        break;
+      case 3:
+        levelText = 'Moderate';
+        break;
+      case 4:
+        levelText = 'High';
+        break;
+      case 5:
+        levelText = 'Extreme';
+        break;
+      default:
+        levelText = 'Unknown';
+    }
+    
+    return 'Level $stressLevel | $levelText';
+  }
+
+  void _handleStressTrackerTap() {
+    if (_todayStressData != null) {
+      // Data exists for today, navigate to insights
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StressInsightsPage(
+            stressLevel: _todayStressData!['stress_level'] ?? 1,
+            cause: [], // Will be loaded from backend
+            loggedSymptoms: [], // Will be loaded from backend
+            Notes: [], // Will be loaded from backend
+          ),
+        ),
+      );
+    } else {
+      // No data for today, navigate to tracker for input
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const StressTrackerPage(),
+        ),
+      ).then((_) {
+        // Refresh data when returning from stress tracker
+        _loadTodayStressData();
+      });
     }
   }
 
@@ -283,17 +374,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.emoji_emotions_outlined,
           'Stress Level',
-          'Level 3 | Normal',
+          _stressButtonText,
           context,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const StressTrackerPage(), // Use MaterialPageRoute for simplicity
-              ),
-            );
-          },
+          onTap: _handleStressTrackerTap,
         ),
 
         // _trackerTile(
