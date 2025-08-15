@@ -37,36 +37,80 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
       // Use fallback user ID for testing if no user is logged in
       userId ??= 'test_user_123';
 
+      print('🔍 Loading data for user: $userId, date: ${widget.selectedDate}');
+
       // Get mood data for selected date
-      final moodResult = await MoodTrackerBackend.getMoodDataForDate(userId, widget.selectedDate);
-      if (moodResult['success']) {
-        moodData = moodResult['data'];
+      try {
+        final moodResult = await MoodTrackerBackend.getMoodDataForDate(userId, widget.selectedDate);
+        print('📊 Mood result: $moodResult');
+        if (moodResult['success'] && moodResult['data'] != null) {
+          moodData = moodResult['data'];
+          print('✅ Mood data loaded: $moodData');
+        } else {
+          print('❌ Failed to load mood data: ${moodResult['message']}');
+        }
+      } catch (e) {
+        print('🚨 Error loading mood data: $e');
       }
 
       // Get stress data for selected date
-      final stressResult = await MoodTrackerBackend.getStressDataForDate(userId, widget.selectedDate);
-      if (stressResult['success']) {
-        stressData = stressResult['data'];
+      try {
+        final stressResult = await MoodTrackerBackend.getStressDataForDate(userId, widget.selectedDate);
+        if (stressResult['success'] && stressResult['data'] != null) {
+          stressData = stressResult['data'];
+          print('✅ Stress data loaded: $stressData');
+        } else {
+          print('❌ Failed to load stress data: ${stressResult['message']}');
+        }
+      } catch (e) {
+        print('🚨 Error loading stress data: $e');
       }
 
       // Get sleep data for selected date
-      final sleepResult = await MoodTrackerBackend.getSleepDataForDate(userId, widget.selectedDate);
-      if (sleepResult['success']) {
-        sleepData = sleepResult['data'];
+      try {
+        final sleepResult = await MoodTrackerBackend.getSleepDataForDate(userId, widget.selectedDate);
+        if (sleepResult['success'] && sleepResult['data'] != null) {
+          sleepData = sleepResult['data'];
+          print('✅ Sleep data loaded: $sleepData');
+        } else {
+          print('❌ Failed to load sleep data: ${sleepResult['message']}');
+        }
+      } catch (e) {
+        print('🚨 Error loading sleep data: $e');
       }
 
       // Get monthly data for weekly overview
-      final monthlyResult = await MoodTrackerBackend.getMonthlyMoodData(userId, widget.selectedDate);
-      if (monthlyResult['success']) {
-        monthlyData = monthlyResult['data'];
+      try {
+        final monthlyResult = await MoodTrackerBackend.getMonthlyMoodData(userId, widget.selectedDate);
+        print('📅 Monthly result: $monthlyResult');
+        if (monthlyResult['success'] && monthlyResult['data'] != null) {
+          monthlyData = monthlyResult['data'];
+          print('✅ Monthly data loaded: $monthlyData');
+        } else {
+          print('❌ Failed to load monthly data: ${monthlyResult['message']}');
+        }
+      } catch (e) {
+        print('🚨 Error loading monthly data: $e');
       }
 
     } catch (e) {
-      print('Error loading data: $e');
+      print('🚨 General error loading data: $e');
+      print('📍 Stack trace: ${StackTrace.current}');
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -84,23 +128,44 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
     List<Map<String, String>> weeklyOverview = [];
     for (int week = 1; week <= 4; week++) {
       final weekKey = "Week $week";
-      if (monthlyData!.containsKey(weekKey)) {
-        final weekData = monthlyData![weekKey];
-        final moodStatuses = weekData.map((entry) => entry['mood_status']).toList();
-        
-        // Calculate date range for the week
-        final startDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, (week - 1) * 7 + 1);
-        final endDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, week * 7);
-        final range = "${DateFormat.MMMd().format(startDate)}-${DateFormat.d().format(endDate)}";
-        
-        // Generate summary based on most common mood
-        String summary = _getMoodSummary(moodStatuses);
-        
-        weeklyOverview.add({
-          "week": weekKey,
-          "range": range,
-          "summary": summary,
-        });
+      if (monthlyData!.containsKey(weekKey) && monthlyData![weekKey] != null) {
+        try {
+          final weekData = monthlyData![weekKey];
+          if (weekData is List && weekData.isNotEmpty) {
+            final moodStatuses = weekData
+                .where((entry) => entry is Map && entry['mood_status'] != null)
+                .map((entry) => entry['mood_status'].toString())
+                .toList()
+                .cast<String>();
+            
+            // Calculate date range for the week
+            final startDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, (week - 1) * 7 + 1);
+            final endDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, week * 7);
+            final range = "${DateFormat.MMMd().format(startDate)}-${DateFormat.d().format(endDate)}";
+            
+            // Generate summary based on most common mood
+            String summary = _getMoodSummary(moodStatuses);
+            
+            weeklyOverview.add({
+              "week": weekKey,
+              "range": range,
+              "summary": summary,
+            });
+          } else {
+            weeklyOverview.add({
+              "week": weekKey,
+              "range": "No data",
+              "summary": "No input found",
+            });
+          }
+        } catch (e) {
+          print('Error processing week $week: $e');
+          weeklyOverview.add({
+            "week": weekKey,
+            "range": "No data",
+            "summary": "No input found",
+          });
+        }
       } else {
         weeklyOverview.add({
           "week": weekKey,
@@ -114,20 +179,42 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
   }
 
   String _getMoodSummary(List<String> moodStatuses) {
-    if (moodStatuses.isEmpty) return "No input found";
-    
-    // Count mood occurrences
-    Map<String, int> moodCounts = {};
-    for (String mood in moodStatuses) {
-      moodCounts[mood] = (moodCounts[mood] ?? 0) + 1;
+    try {
+      if (moodStatuses.isEmpty) return "No input found";
+      
+      // Count mood occurrences
+      Map<String, int> moodCounts = {};
+      for (String mood in moodStatuses) {
+        String moodStr = mood.toString(); // Extra safety
+        moodCounts[moodStr] = (moodCounts[moodStr] ?? 0) + 1;
+      }
+      
+      if (moodCounts.isEmpty) return "No input found";
+      
+      // Find most common mood
+      String mostCommonMood = moodCounts.entries
+          .reduce((a, b) => a.value > b.value ? a : b)
+          .key;
+      
+      return "Mostly $mostCommonMood";
+    } catch (e) {
+      print('Error in _getMoodSummary: $e');
+      return "No input found";
     }
+  }
+
+  // Helper method to safely get reason list from mood data
+  List<String> _getReasonList(Map<String, dynamic>? data) {
+    if (data == null || !data.containsKey('reason')) return [];
     
-    // Find most common mood
-    String mostCommonMood = moodCounts.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
+    final reasonData = data['reason'];
+    if (reasonData == null) return [];
     
-    return "Mostly $mostCommonMood";
+    if (reasonData is List) {
+      return reasonData.map((item) => item.toString()).toList();
+    } else {
+      return [reasonData.toString()];
+    }
   }
 
   IconData _getMoodIcon(String moodStatus) {
@@ -185,9 +272,32 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
             ),
           ),
         ),
-        body: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFB79AE0),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: Color(0xFFB79AE0),
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Loading your mood data...',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Please wait while we fetch your stats',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -355,7 +465,43 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
                     ),
                   );
                 }).toList(),
-              )
+              ),
+
+              // Display mood reasons if available
+              if (moodData != null && _getReasonList(moodData).isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  "Mood Reasons",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: _getReasonList(moodData).map((reason) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.purple.shade200),
+                      ),
+                      child: Text(
+                        reason,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.purple.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ),

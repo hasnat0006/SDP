@@ -42,8 +42,12 @@ class MoodTrackerBackend {
       if (response.containsKey('reason') && response['reason'] != null) {
         final reasonData = response['reason'];
         if (reasonData is List) {
-          response['reason'] = List<String>.from(reasonData);
+          response['reason'] = reasonData.map((item) => item.toString()).toList();
+        } else {
+          response['reason'] = <String>[];
         }
+      } else {
+        response['reason'] = <String>[];
       }
       
       // The response will include all fields as per the database schema
@@ -73,8 +77,12 @@ class MoodTrackerBackend {
           if (entry is Map && entry.containsKey('reason') && entry['reason'] != null) {
             final reasonData = entry['reason'];
             if (reasonData is List) {
-              entry['reason'] = List<String>.from(reasonData);
+              entry['reason'] = reasonData.map((item) => item.toString()).toList();
+            } else {
+              entry['reason'] = <String>[];
             }
+          } else if (entry is Map) {
+            entry['reason'] = <String>[];
           }
         }
       }
@@ -103,8 +111,12 @@ class MoodTrackerBackend {
       if (response.containsKey('reason') && response['reason'] != null) {
         final reasonData = response['reason'];
         if (reasonData is List) {
-          response['reason'] = List<String>.from(reasonData);
+          response['reason'] = reasonData.map((item) => item.toString()).toList();
+        } else {
+          response['reason'] = <String>[];
         }
+      } else {
+        response['reason'] = <String>[];
       }
       
       return {
@@ -161,6 +173,27 @@ class MoodTrackerBackend {
   static Future<Map<String, dynamic>> getMonthlyMoodData(String userId, DateTime date) async {
     try {
       final response = await getFromBackend('mood/monthly/$userId/${date.year}/${date.month}');
+      
+      // Process the response to ensure all reason fields are List<String>
+      if (response is Map<String, dynamic>) {
+        response.forEach((week, weekData) {
+          if (weekData is List) {
+            for (var entry in weekData) {
+              if (entry is Map && entry.containsKey('reason') && entry['reason'] != null) {
+                final reasonData = entry['reason'];
+                if (reasonData is List) {
+                  entry['reason'] = reasonData.map((item) => item.toString()).toList();
+                } else {
+                  entry['reason'] = <String>[];
+                }
+              } else if (entry is Map) {
+                entry['reason'] = <String>[];
+              }
+            }
+          }
+        });
+      }
+      
       return {
         'success': true,
         'data': response,

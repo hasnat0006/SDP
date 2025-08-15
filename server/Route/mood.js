@@ -63,7 +63,16 @@ router.get("/data/:userId", async (req, res) => {
       });
     }
 
-    res.json(result[0]);
+    // Ensure reason is always an array
+    const moodData = result[0];
+    if (moodData.reason && !Array.isArray(moodData.reason)) {
+      moodData.reason = [moodData.reason];
+    } else if (!moodData.reason) {
+      moodData.reason = [];
+    }
+
+    console.log('✅ Latest mood data retrieved:', moodData);
+    res.json(moodData);
   } catch (err) {
     console.error("Error retrieving mood data:", err);
     res.status(500).json({ error: err.message });
@@ -90,7 +99,16 @@ router.get("/data/:userId/:date", async (req, res) => {
       });
     }
 
-    res.json(result[0]);
+    // Ensure reason is always an array
+    const moodData = result[0];
+    if (moodData.reason && !Array.isArray(moodData.reason)) {
+      moodData.reason = [moodData.reason];
+    } else if (!moodData.reason) {
+      moodData.reason = [];
+    }
+
+    console.log('✅ Mood data for date retrieved:', moodData);
+    res.json(moodData);
   } catch (err) {
     console.error("Error retrieving mood data for date:", err);
     res.status(500).json({ error: err.message });
@@ -120,7 +138,18 @@ router.get("/weekly/:userId", async (req, res) => {
       });
     }
 
-    res.json(result);
+    // Ensure reason is always an array for each entry
+    const processedData = result.map(entry => {
+      if (entry.reason && !Array.isArray(entry.reason)) {
+        entry.reason = [entry.reason];
+      } else if (!entry.reason) {
+        entry.reason = [];
+      }
+      return entry;
+    });
+
+    console.log('✅ Weekly mood data retrieved:', processedData);
+    res.json(processedData);
   } catch (err) {
     console.error("Error retrieving weekly mood data:", err);
     res.status(500).json({ error: err.message });
@@ -156,6 +185,13 @@ router.get("/monthly/:userId/:year/:month", async (req, res) => {
     // Group by weeks
     const weeklyData = {};
     result.forEach(entry => {
+      // Ensure reason is always an array
+      if (entry.reason && !Array.isArray(entry.reason)) {
+        entry.reason = [entry.reason];
+      } else if (!entry.reason) {
+        entry.reason = [];
+      }
+      
       const week = `Week ${entry.week_number}`;
       if (!weeklyData[week]) {
         weeklyData[week] = [];
@@ -163,6 +199,7 @@ router.get("/monthly/:userId/:year/:month", async (req, res) => {
       weeklyData[week].push(entry);
     });
 
+    console.log('✅ Monthly mood data retrieved:', weeklyData);
     res.json(weeklyData);
   } catch (err) {
     console.error("Error retrieving monthly mood data:", err);
