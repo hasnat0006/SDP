@@ -224,4 +224,67 @@ router.get("/monthly/:userId/:year/:month", async (req, res) => {
   }
 });
 
+// Get yearly mood data (12 months)
+router.get("/yearly/:userId/:year", async (req, res) => {
+  try {
+    const { userId, year } = req.params;
+    
+    const result = await sql`
+      SELECT 
+        EXTRACT(MONTH FROM date) as month,
+        AVG(mood_level::float) as avg_mood_level,
+        COUNT(*) as entry_count
+      FROM mood_tracker 
+      WHERE user_id = ${userId} 
+        AND EXTRACT(YEAR FROM date) = ${year}
+      GROUP BY EXTRACT(MONTH FROM date)
+      ORDER BY month ASC
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: "No mood data found for this year",
+        data: [] 
+      });
+    }
+
+    console.log('✅ Yearly mood data retrieved:', result);
+    res.json(result);
+  } catch (err) {
+    console.error("❌ Error retrieving yearly mood data:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all-time mood data
+router.get("/all-time/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const result = await sql`
+      SELECT 
+        EXTRACT(YEAR FROM date) as year,
+        AVG(mood_level::float) as avg_mood_level,
+        COUNT(*) as entry_count
+      FROM mood_tracker 
+      WHERE user_id = ${userId}
+      GROUP BY EXTRACT(YEAR FROM date)
+      ORDER BY year ASC
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: "No mood data found",
+        data: [] 
+      });
+    }
+
+    console.log('✅ All-time mood data retrieved:', result);
+    res.json(result);
+  } catch (err) {
+    console.error("❌ Error retrieving all-time mood data:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

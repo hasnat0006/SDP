@@ -224,6 +224,44 @@ class MoodTrackerBackend {
     }
   }
 
+  // Get yearly mood data (12 months)
+  static Future<Map<String, dynamic>> getYearlyMoodData(String userId, DateTime date) async {
+    try {
+      final response = await getFromBackend('mood/yearly/$userId/${date.year}');
+      
+      return {
+        'success': true,
+        'data': response,
+        'message': 'Yearly mood data retrieved successfully'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+        'message': 'Failed to retrieve yearly mood data'
+      };
+    }
+  }
+
+  // Get all-time mood data
+  static Future<Map<String, dynamic>> getAllTimeMoodData(String userId) async {
+    try {
+      final response = await getFromBackend('mood/all-time/$userId');
+      
+      return {
+        'success': true,
+        'data': response,
+        'message': 'All-time mood data retrieved successfully'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': e.toString(),
+        'message': 'Failed to retrieve all-time mood data'
+      };
+    }
+  }
+
   // Helper function to get mood emoji
   static String getMoodEmoji(String moodStatus) {
     switch (moodStatus.toLowerCase()) {

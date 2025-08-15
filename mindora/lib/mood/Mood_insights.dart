@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 import 'Selected_mood_stats.dart';
 import 'backend.dart';
 import '../services/user_service.dart';
@@ -29,12 +30,52 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
   Map<String, dynamic>? stressData;
   Map<String, dynamic>? sleepData;
   List<Map<String, dynamic>>? weeklyMoodData;
+  dynamic chartData; // For storing chart data based on filter
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  Future<void> _loadChartData() async {
+    String? userId = await UserService.getUserId();
+    userId ??= 'test_user_123';
+    
+    final now = DateTime.now();
+    
+    try {
+      switch (selectedFilterIndex) {
+        case 0: // 1 Week
+          final weeklyResult = await MoodTrackerBackend.getWeeklyMoodData(userId);
+          if (weeklyResult['success']) {
+            chartData = weeklyResult['data'];
+          }
+          break;
+        case 1: // 1 Month (4 weeks)
+          final monthlyResult = await MoodTrackerBackend.getMonthlyMoodData(userId, now);
+          if (monthlyResult['success']) {
+            chartData = monthlyResult['data'];
+          }
+          break;
+        case 2: // 1 Year (12 months)
+          final yearlyResult = await MoodTrackerBackend.getYearlyMoodData(userId, now);
+          if (yearlyResult['success']) {
+            chartData = yearlyResult['data'];
+          }
+          break;
+        case 3: // All Time
+          final allTimeResult = await MoodTrackerBackend.getAllTimeMoodData(userId);
+          if (allTimeResult['success']) {
+            chartData = allTimeResult['data'];
+          }
+          break;
+      }
+    } catch (e) {
+      print('Error loading chart data: $e');
+      chartData = null;
+    }
   }
 
   Future<void> _loadData() async {
@@ -109,6 +150,9 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
       } else {
         print('⚠️ Failed to load weekly mood data: ${weeklyResult['message']}');
       }
+
+      // Load initial chart data (weekly by default)
+      await _loadChartData();
 
     } catch (e) {
       print('Error loading data: $e');
@@ -592,10 +636,13 @@ Container(
       final isSelected = index == selectedFilterIndex;
 
       return GestureDetector(
-        onTap: () {
+        onTap: () async {
           setState(() {
             selectedFilterIndex = index;
           });
+          // Load new chart data for the selected filter
+          await _loadChartData();
+          setState(() {});
         },
         child: AnimatedContainer(
   duration: const Duration(milliseconds: 200),
@@ -623,18 +670,9 @@ Container(
 
 const SizedBox(height: 20),
 
+_buildMoodChart(),
 
-
-ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        'assets/graph.png',
-                        height: 310,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+const SizedBox(height: 20),
 
 
               const SizedBox(height: 20),
@@ -816,6 +854,601 @@ Row(
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Dynamic mood chart widget based on selected filter
+  Widget _buildMoodChart() {
+    if (chartData == null && selectedFilterIndex == 0 && weeklyMoodData != null) {
+      // Use weekly mood data for the weekly view if chart data is not loaded yet
+      chartData = weeklyMoodData;
+    }
+
+    if (chartData == null) {
+      return Container(
+        width: double.infinity,
+        height: 310,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFB79AE0),
+          ),
+        ),
+      );
+    }
+
+    switch (selectedFilterIndex) {
+      case 0: // Weekly
+        return _buildWeeklyChart();
+      case 1: // Monthly (4 weeks)
+        return _buildMonthlyChart();
+      case 2: // Yearly (12 months)
+        return _buildYearlyChart();
+      case 3: // All Time
+        return _buildAllTimeChart();
+      default:
+        return _buildWeeklyChart();
+    }
+  }
+
+  // Weekly chart (7 days)
+  Widget _buildWeeklyChart() {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final List<double> data = List.filled(7, 0.0);
+    
+    if (chartData is List) {
+      final weeklyList = chartData as List<dynamic>;
+      
+      for (var dayData in weeklyList) {
+        if (dayData is Map<String, dynamic> && dayData['date'] != null) {
+          try {
+            final DateTime dayDate = DateTime.parse(dayData['date']);
+            final double moodLevel = double.tryParse(dayData['mood_level']?.toString() ?? '0') ?? 0.0;
+            
+            // Map weekday to array index
+            int dayOfWeek;
+            switch (dayDate.weekday) {
+              case DateTime.monday: dayOfWeek = 0; break;
+              case DateTime.tuesday: dayOfWeek = 1; break;
+              case DateTime.wednesday: dayOfWeek = 2; break;
+              case DateTime.thursday: dayOfWeek = 3; break;
+              case DateTime.friday: dayOfWeek = 4; break;
+              case DateTime.saturday: dayOfWeek = 5; break;
+              case DateTime.sunday: dayOfWeek = 6; break;
+              default: dayOfWeek = -1;
+            }
+            
+            if (dayOfWeek >= 0 && dayOfWeek < 7) {
+              data[dayOfWeek] = moodLevel;
+            }
+          } catch (e) {
+            print('Error parsing weekly mood data: $e');
+          }
+        }
+      }
+    }
+    
+    final double maxVal = data.every((element) => element == 0.0) 
+        ? 5.0 
+        : data.reduce(max).clamp(1.0, 5.0);
+
+    return Container(
+      width: double.infinity,
+      height: 310,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Weekly Mood Overview',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.brown.shade800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(7, (i) {
+                final double barHeight = data[i] == 0 
+                    ? 20.0 
+                    : maxVal > 0 
+                        ? ((data[i] / maxVal) * 180) + 20 
+                        : 20.0;
+                
+                Color getBarColor(double moodValue) {
+                  if (moodValue == 0) return Colors.grey[300]!;
+                  
+                  final colors = [
+                    const Color(0xFF81C784), // Light green
+                    const Color(0xFF66BB6A), // Medium green
+                    const Color(0xFF4CAF50), // Green
+                    const Color(0xFF43A047), // Dark green
+                    const Color(0xFF388E3C), // Darker green
+                  ];
+                  
+                  int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
+                  return colors[colorIndex];
+                }
+                
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 500),
+                          height: barHeight,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                getBarColor(data[i]),
+                                getBarColor(data[i]).withOpacity(0.7),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: getBarColor(data[i]).withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          days[i],
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Monthly chart (4 weeks)
+  Widget _buildMonthlyChart() {
+    final List<double> data = List.filled(4, 0.0);
+    final List<String> weekLabels = ['W1', 'W2', 'W3', 'W4'];
+    
+    if (chartData is Map<String, dynamic>) {
+      final weeklyData = chartData as Map<String, dynamic>;
+      
+      weeklyData.forEach((week, weekData) {
+        if (weekData is List && weekData.isNotEmpty) {
+          int weekIndex = -1;
+          if (week.contains('1')) weekIndex = 0;
+          else if (week.contains('2')) weekIndex = 1;
+          else if (week.contains('3')) weekIndex = 2;
+          else if (week.contains('4')) weekIndex = 3;
+          
+          if (weekIndex >= 0 && weekIndex < 4) {
+            double totalMood = 0.0;
+            int count = 0;
+            
+            for (var entry in weekData) {
+              if (entry is Map && entry['mood_level'] != null) {
+                totalMood += double.tryParse(entry['mood_level'].toString()) ?? 0.0;
+                count++;
+              }
+            }
+            
+            if (count > 0) {
+              data[weekIndex] = totalMood / count;
+            }
+          }
+        }
+      });
+    }
+    
+    final double maxVal = data.every((element) => element == 0.0) 
+        ? 5.0 
+        : data.reduce(max).clamp(1.0, 5.0);
+
+    return Container(
+      width: double.infinity,
+      height: 310,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Monthly Mood Overview (4 Weeks)',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.brown.shade800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(4, (i) {
+                final double barHeight = data[i] == 0 
+                    ? 20.0 
+                    : maxVal > 0 
+                        ? ((data[i] / maxVal) * 180) + 20 
+                        : 20.0;
+                
+                Color getBarColor(double moodValue) {
+                  if (moodValue == 0) return Colors.grey[300]!;
+                  
+                  final colors = [
+                    const Color(0xFF81C784),
+                    const Color(0xFF66BB6A),
+                    const Color(0xFF4CAF50),
+                    const Color(0xFF43A047),
+                    const Color(0xFF388E3C),
+                  ];
+                  
+                  int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
+                  return colors[colorIndex];
+                }
+                
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 500),
+                          height: barHeight,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                getBarColor(data[i]),
+                                getBarColor(data[i]).withOpacity(0.7),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: getBarColor(data[i]).withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          weekLabels[i],
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Yearly chart (12 months) - scrollable
+  Widget _buildYearlyChart() {
+    final List<double> data = List.filled(12, 0.0);
+    final List<String> monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    if (chartData is List) {
+      final yearlyList = chartData as List<dynamic>;
+      
+      for (var monthData in yearlyList) {
+        if (monthData is Map<String, dynamic> && monthData['month'] != null) {
+          try {
+            final int month = int.parse(monthData['month'].toString());
+            final double avgMood = double.tryParse(monthData['avg_mood_level']?.toString() ?? '0') ?? 0.0;
+            
+            if (month >= 1 && month <= 12) {
+              data[month - 1] = avgMood;
+            }
+          } catch (e) {
+            print('Error parsing yearly mood data: $e');
+          }
+        }
+      }
+    }
+    
+    final double maxVal = data.every((element) => element == 0.0) 
+        ? 5.0 
+        : data.reduce(max).clamp(1.0, 5.0);
+
+    return Container(
+      width: double.infinity,
+      height: 310,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Yearly Mood Overview (12 Months)',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.brown.shade800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(12, (i) {
+                  final double barHeight = data[i] == 0 
+                      ? 20.0 
+                      : maxVal > 0 
+                          ? ((data[i] / maxVal) * 180) + 20 
+                          : 20.0;
+                  
+                  Color getBarColor(double moodValue) {
+                    if (moodValue == 0) return Colors.grey[300]!;
+                    
+                    final colors = [
+                      const Color(0xFF81C784),
+                      const Color(0xFF66BB6A),
+                      const Color(0xFF4CAF50),
+                      const Color(0xFF43A047),
+                      const Color(0xFF388E3C),
+                    ];
+                    
+                    int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
+                    return colors[colorIndex];
+                  }
+                  
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 500),
+                          height: barHeight,
+                          width: 45,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                getBarColor(data[i]),
+                                getBarColor(data[i]).withOpacity(0.7),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: getBarColor(data[i]).withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          monthLabels[i],
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // All-time chart (years) - scrollable
+  Widget _buildAllTimeChart() {
+    List<double> data = [];
+    List<String> yearLabels = [];
+    
+    if (chartData is List) {
+      final allTimeList = chartData as List<dynamic>;
+      
+      for (var yearData in allTimeList) {
+        if (yearData is Map<String, dynamic> && yearData['year'] != null) {
+          try {
+            final String year = yearData['year'].toString();
+            final double avgMood = double.tryParse(yearData['avg_mood_level']?.toString() ?? '0') ?? 0.0;
+            
+            yearLabels.add(year);
+            data.add(avgMood);
+          } catch (e) {
+            print('Error parsing all-time mood data: $e');
+          }
+        }
+      }
+    }
+    
+    if (data.isEmpty) {
+      data = [0.0];
+      yearLabels = ['No Data'];
+    }
+    
+    final double maxVal = data.every((element) => element == 0.0) 
+        ? 5.0 
+        : data.reduce(max).clamp(1.0, 5.0);
+
+    return Container(
+      width: double.infinity,
+      height: 310,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'All-Time Mood Overview',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.brown.shade800,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(data.length, (i) {
+                  final double barHeight = data[i] == 0 
+                      ? 20.0 
+                      : maxVal > 0 
+                          ? ((data[i] / maxVal) * 180) + 20 
+                          : 20.0;
+                  
+                  Color getBarColor(double moodValue) {
+                    if (moodValue == 0) return Colors.grey[300]!;
+                    
+                    final colors = [
+                      const Color(0xFF81C784),
+                      const Color(0xFF66BB6A),
+                      const Color(0xFF4CAF50),
+                      const Color(0xFF43A047),
+                      const Color(0xFF388E3C),
+                    ];
+                    
+                    int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
+                    return colors[colorIndex];
+                  }
+                  
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 500),
+                          height: barHeight,
+                          width: 50,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                getBarColor(data[i]),
+                                getBarColor(data[i]).withOpacity(0.7),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: getBarColor(data[i]).withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          yearLabels[i],
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
