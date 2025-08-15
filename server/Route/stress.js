@@ -98,7 +98,8 @@ router.get("/weekly/:userId", async (req, res) => {
       FROM stress_tracker 
       WHERE 
         user_id = ${userId}
-        AND date >= NOW() - INTERVAL '7 days'
+        AND date >= date_trunc('week', NOW())
+        AND date < date_trunc('week', NOW()) + INTERVAL '7 days'
       GROUP BY date_trunc('day', date)
       ORDER BY day DESC
     `;
