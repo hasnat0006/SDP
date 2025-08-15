@@ -107,16 +107,22 @@ class MoodTrackerBackend {
     try {
       final response = await getFromBackend('mood/data/$userId/${date.toIso8601String().split('T')[0]}');
       
+      print('🔍 Backend Debug - Raw response: $response');
+      
       // Cast the reason field to List<String> if it exists
       if (response.containsKey('reason') && response['reason'] != null) {
         final reasonData = response['reason'];
+        print('🔍 Backend Debug - reasonData: $reasonData');
         if (reasonData is List) {
           response['reason'] = reasonData.map((item) => item.toString()).toList();
+          print('✅ Backend Debug - Processed reason as List: ${response['reason']}');
         } else {
           response['reason'] = <String>[];
+          print('⚠️ Backend Debug - reasonData is not a List, set to empty');
         }
       } else {
         response['reason'] = <String>[];
+        print('⚠️ Backend Debug - No reason field found, set to empty');
       }
       
       return {
@@ -125,6 +131,16 @@ class MoodTrackerBackend {
         'message': 'Mood data for date retrieved successfully'
       };
     } catch (e) {
+      print('❌ Backend Debug - Exception caught: $e');
+      // Check if it's a 404 error (no data found)
+      if (e.toString().contains('404')) {
+        print('ℹ️ Backend Debug - No mood data found for this date');
+        return {
+          'success': true,
+          'data': null,
+          'message': 'No mood data found for this date'
+        };
+      }
       return {
         'success': false,
         'error': e.toString(),
@@ -212,25 +228,27 @@ class MoodTrackerBackend {
   static String getMoodEmoji(String moodStatus) {
     switch (moodStatus.toLowerCase()) {
       case 'happy':
-        return '😊';
+        return '�'; // Big smile
       case 'sad':
-        return '😢';
+        return '�'; // Crying loudly
       case 'angry':
-        return '😠';
+        return '�'; // Red angry face
       case 'anxious':
-        return '😰';
+        return '😰'; // Anxious with sweat
       case 'excited':
-        return '🤗';
+        return '�'; // Star-struck excited
       case 'calm':
-        return '😌';
+        return '🧘'; // Meditation pose
       case 'confused':
-        return '😕';
+        return '🤔'; // Thinking face
       case 'tired':
-        return '😴';
+        return '😴'; // Sleeping
       case 'grateful':
-        return '🙏';
+        return '🙏'; // Prayer hands
+      case 'stressed':
+        return '😫'; // Stressed/overwhelmed
       default:
-        return '😐';
+        return '😐'; // Neutral
     }
   }
 
@@ -238,25 +256,27 @@ class MoodTrackerBackend {
   static Color getMoodColor(String moodStatus) {
     switch (moodStatus.toLowerCase()) {
       case 'happy':
-        return Colors.yellow;
+        return const Color(0xFFFFD700); // Bright gold instead of yellow
       case 'sad':
-        return Colors.blue;
+        return const Color(0xFF4A90E2); // Bright blue
       case 'angry':
-        return Colors.red;
+        return const Color(0xFFE74C3C); // Bright red
       case 'anxious':
-        return Colors.orange;
+        return const Color(0xFFFF8C00); // Bright orange
       case 'excited':
-        return Colors.green;
+        return const Color(0xFF2ECC71); // Bright green
       case 'calm':
-        return Colors.lightBlue;
+        return const Color(0xFF87CEEB); // Sky blue
       case 'confused':
-        return Colors.purple;
+        return const Color(0xFF9B59B6); // Purple
       case 'tired':
-        return Colors.grey;
+        return const Color(0xFF95A5A6); // Light grey
       case 'grateful':
-        return Colors.pink;
+        return const Color(0xFFE91E63); // Bright pink
+      case 'stressed':
+        return const Color(0xFFFF6B6B); // Coral red
       default:
-        return Colors.grey;
+        return const Color(0xFFBDC3C7); // Light grey
     }
   }
 
@@ -277,21 +297,72 @@ class MoodTrackerBackend {
     };
   }
 
-  // Get mood intensity description
-  static String getMoodIntensityDescription(String moodStatus, int moodLevel) {
+  // Get mood intensity description for historical viewing
+  static String getMoodIntensityDescriptionForHistory(String moodStatus, int moodLevel) {
+    final lowerCaseMood = moodStatus.toLowerCase();
     switch (moodLevel) {
       case 1:
-        return "I feel just a little $moodStatus today.";
+        return "You felt just a little $lowerCaseMood on this day.";
       case 2:
-        return "I feel mildly $moodStatus today.";
+        return "You felt mildly $lowerCaseMood on this day.";
       case 3:
-        return "I feel moderately $moodStatus today.";
+        return "You felt moderately $lowerCaseMood on this day.";
       case 4:
-        return "I feel pretty $moodStatus today.";
+        return "You felt pretty $lowerCaseMood on this day.";
       case 5:
-        return "I feel extremely $moodStatus today.";
+        return "You felt extremely $lowerCaseMood on this day.";
       default:
-        return "I feel $moodStatus today.";
+        return "You felt $lowerCaseMood on this day.";
+    }
+  }
+
+  // Get stress level description for historical viewing
+  static String getStressLevelDescriptionForHistory(int stressLevel) {
+    switch (stressLevel) {
+      case 1:
+        return "Very low stress - You were feeling relaxed and peaceful on this day.";
+      case 2:
+        return "Low stress - You were feeling calm with minor concerns on this day.";
+      case 3:
+        return "Moderate stress - You were managing well but feeling some pressure on this day.";
+      case 4:
+        return "High stress - You were feeling overwhelmed on this day.";
+      case 5:
+        return "Very high stress - You were feeling extremely stressed on this day.";
+      default:
+        return "Stress level recorded for this day.";
+    }
+  }
+
+  // Get sleep hours description for historical viewing
+  static String getSleepHoursDescriptionForHistory(double sleepHours) {
+    if (sleepHours < 6) {
+      return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep on this day - quite short rest.";
+    } else if (sleepHours < 7) {
+      return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep on this day - a bit below optimal.";
+    } else if (sleepHours <= 9) {
+      return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep on this day - good rest!";
+    } else {
+      return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep on this day - quite a lot of rest!";
+    }
+  }
+
+  // Get mood intensity description
+  static String getMoodIntensityDescription(String moodStatus, int moodLevel) {
+    final lowerCaseMood = moodStatus.toLowerCase();
+    switch (moodLevel) {
+      case 1:
+        return "I feel just a little $lowerCaseMood today.";
+      case 2:
+        return "I feel mildly $lowerCaseMood today.";
+      case 3:
+        return "I feel moderately $lowerCaseMood today.";
+      case 4:
+        return "I feel pretty $lowerCaseMood today.";
+      case 5:
+        return "I feel extremely $lowerCaseMood today.";
+      default:
+        return "I feel $lowerCaseMood today.";
     }
   }
 
@@ -323,6 +394,96 @@ class MoodTrackerBackend {
       return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep - Great job on getting adequate rest!";
     } else {
       return "You got ${sleepHours.toStringAsFixed(1)} hours of sleep - That's quite a lot of rest!";
+    }
+  }
+
+  // Get dynamic mood-based notes
+  static String getMoodBasedNote(String moodStatus, int moodLevel) {
+    final lowerCaseMood = moodStatus.toLowerCase();
+    
+    switch (lowerCaseMood) {
+      case 'happy':
+        if (moodLevel >= 4) {
+          return "Your positive energy is amazing!\nKeep spreading those good vibes.";
+        } else {
+          return "It's wonderful that you're feeling good.\nTake time to appreciate these moments.";
+        }
+      
+      case 'sad':
+        if (moodLevel >= 4) {
+          return "It's okay to feel deeply sad sometimes.\nConsider reaching out to someone you trust.";
+        } else {
+          return "Remember that these feelings will pass.\nBe gentle with yourself today.";
+        }
+      
+      case 'angry':
+        if (moodLevel >= 4) {
+          return "Strong anger can be overwhelming.\nTry some deep breathing or physical exercise.";
+        } else {
+          return "It's normal to feel frustrated sometimes.\nTake a moment to identify what's bothering you.";
+        }
+      
+      case 'anxious':
+        if (moodLevel >= 4) {
+          return "High anxiety can feel intense.\nGrounding techniques or talking to someone might help.";
+        } else {
+          return "Mild anxiety is manageable.\nTry some calming activities or mindfulness.";
+        }
+      
+      case 'excited':
+        if (moodLevel >= 4) {
+          return "It's great to feel enthusiastic.\nEnjoy this uplifting feeling";
+        } else {
+          return "It's great to feel enthusiastic.\nEnjoy this uplifting feeling.";
+        }
+      
+      case 'calm':
+        return "Peace of mind is precious.\nTake advantage of this tranquil state.";
+      
+      case 'confused':
+        if (moodLevel >= 4) {
+          return "Feeling very confused can be stressful.\nBreak things down into smaller, manageable pieces.";
+        } else {
+          return "It's okay to feel uncertain sometimes.\nTrust that clarity will come with time.";
+        }
+      
+      case 'tired':
+        if (moodLevel >= 4) {
+          return "Deep fatigue needs attention.\nMake sure you're getting enough rest and nutrition.";
+        } else {
+          return "A little tiredness is normal.\nConsider what your body might need right now.";
+        }
+      
+      case 'grateful':
+        return "Gratitude is a beautiful feeling.\nTake a moment to appreciate what you're thankful for.";
+      
+      case 'stressed':
+        if (moodLevel >= 4) {
+          return "High stress levels need attention.\nConsider stress-reduction techniques or seeking support.";
+        } else {
+          return "Some stress is manageable.\nTry to identify what's causing it and how to address it.";
+        }
+      
+      default:
+        return "It's perfectly normal to feel this way.\nTake care of yourself today.";
+    }
+  }
+
+  // Get dynamic stress-based notes
+  static String getStressBasedNote(int stressLevel) {
+    switch (stressLevel) {
+      case 1:
+        return "You're in a great peaceful state.\nThis is the perfect time for planning and creativity.";
+      case 2:
+        return "You're handling things well with minimal stress.\nKeep maintaining your healthy coping strategies.";
+      case 3:
+        return "Moderate stress is manageable but worth addressing.\nConsider taking short breaks and practicing mindfulness.";
+      case 4:
+        return "High stress levels need your attention.\nTry relaxation techniques, exercise, or talking to someone.";
+      case 5:
+        return "Very high stress requires immediate self-care.\nConsider deep breathing, seeking support, or professional help.";
+      default:
+        return "Monitor your stress levels regularly.\nYour mental health matters.";
     }
   }
 }

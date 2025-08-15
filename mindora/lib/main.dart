@@ -1,5 +1,4 @@
 import 'package:client/login/signup/login.dart';
-import 'package:client/mood/mood_spinner.dart';
 import 'package:client/services/notification_service.dart';
 
 import 'package:flutter/material.dart';

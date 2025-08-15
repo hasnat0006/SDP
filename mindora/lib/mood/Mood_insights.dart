@@ -50,10 +50,15 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
       // Use fallback user ID for testing if no user is logged in
       userId ??= 'test_user_123';
 
-      // Get mood data for today
-      final moodResult = await MoodTrackerBackend.getMoodDataForDate(userId, today);
-      if (moodResult['success']) {
-        moodData = moodResult['data'];
+      // Get mood data for today - with retry logic
+      for (int retry = 0; retry < 3; retry++) {
+        final moodResult = await MoodTrackerBackend.getMoodDataForDate(userId, today);
+        if (moodResult['success'] && moodResult['data'] != null) {
+          moodData = moodResult['data'];
+          break;
+        }
+        // Wait a bit before retry to allow backend to sync
+        if (retry < 2) await Future.delayed(Duration(milliseconds: 500));
       }
 
       // Get stress data for today
@@ -72,6 +77,37 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
       final weeklyResult = await MoodTrackerBackend.getWeeklyMoodData(userId);
       if (weeklyResult['success']) {
         weeklyMoodData = List<Map<String, dynamic>>.from(weeklyResult['data']);
+        print('🔍 Weekly mood data loaded: $weeklyMoodData');
+        
+        // Debug: Print each entry with its date
+        if (weeklyMoodData != null) {
+          print('🔍 === WEEKLY MOOD DATA DEBUG ===');
+          print('🔍 Total entries received: ${weeklyMoodData!.length}');
+          for (var entry in weeklyMoodData!) {
+            print('🔍 Entry: ${entry['date']} -> ${entry['mood_status']} (level: ${entry['mood_level']})');
+          }
+          print('🔍 === END WEEKLY DATA ===');
+        }
+        
+        // Debug: Print the current week range for comparison
+        final now = DateTime.now();
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(Duration(days: 6));
+        print('🔍 === WEEK CALCULATION DEBUG ===');
+        print('🔍 Today is: ${now.toIso8601String().split('T')[0]} (weekday: ${now.weekday}/7)');
+        print('🔍 Today name: ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now.weekday - 1]}');
+        print('🔍 Current week start (Monday): ${startOfWeek.toIso8601String().split('T')[0]}');
+        print('🔍 Current week end (Sunday): ${endOfWeek.toIso8601String().split('T')[0]}');
+        print('🔍 Current week range string: ${getCurrentWeekRange()}');
+        print('🔍 Expected dates for this week:');
+        for (int i = 0; i < 7; i++) {
+          final dayDate = startOfWeek.add(Duration(days: i));
+          final dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i];
+          print('🔍   $dayName: ${dayDate.toIso8601String().split('T')[0]}');
+        }
+        print('🔍 === END WEEK CALCULATION ===');
+      } else {
+        print('⚠️ Failed to load weekly mood data: ${weeklyResult['message']}');
       }
 
     } catch (e) {
@@ -98,36 +134,65 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
       case 'money':
         return Icons.account_balance_wallet;
       case 'social':
-        return Icons.people;
-      case 'other':
-        return Icons.more_horiz;
+        return Icons.group;
+      case 'personal':
+        return Icons.person;
+      case 'academic':
+        return Icons.school;
+      case 'deadlines':
+        return Icons.alarm;
+      case 'weather':
+        return Icons.cloud;
+      case 'medication':
+        return Icons.local_pharmacy;
       default:
-        return Icons.label_important;
+        return Icons.add_circle_outline;
     }
+  }
+
+  List<String> _getDisplayedCauses() {
+    print('🔍 Debug - moodData: $moodData');
+    print('🔍 Debug - widget.selectedCauses: ${widget.selectedCauses}');
+    
+    // ALWAYS use backend data if available
+    if (moodData != null && moodData!.containsKey('reason')) {
+      final backendReasons = moodData!['reason'];
+      print('🔍 Debug - backendReasons: $backendReasons');
+      if (backendReasons is List) {
+        print('✅ Using backend reasons: $backendReasons');
+        return List<String>.from(backendReasons);
+      }
+    }
+    
+    // Return empty list if no backend data (don't use widget causes)
+    print('⚠️ No backend data available, returning empty list');
+    return <String>[];
   }
 
   IconData _getMoodIcon(String moodStatus) {
     switch (moodStatus.toLowerCase()) {
       case 'happy':
-        return Icons.sentiment_very_satisfied;
+        return Icons.sentiment_very_satisfied; // Big smile
       case 'sad':
-        return Icons.sentiment_very_dissatisfied;
+        return Icons.sentiment_very_dissatisfied; // Crying face
       case 'angry':
-        return Icons.sentiment_dissatisfied;
+        return Icons.local_fire_department; // Fire icon
       case 'anxious':
-        return Icons.sentiment_neutral;
+        return Icons.psychology; // Brain/worry icon
       case 'excited':
-        return Icons.sentiment_satisfied;
+        return Icons.celebration; // Party/celebration icon
       case 'calm':
-        return Icons.sentiment_satisfied;
+        return Icons.self_improvement; // Meditation icon
       case 'confused':
-        return Icons.sentiment_neutral;
+        return Icons.help_outline; // Question mark
       case 'tired':
-        return Icons.sentiment_dissatisfied;
+        return Icons.bedtime; // Sleep icon
       case 'grateful':
-        return Icons.sentiment_very_satisfied;
+        return Icons.volunteer_activism; // Heart hands icon
+      case 'stressed':
+        return Icons.warning; // Warning icon for stress
       default:
-        return Icons.sentiment_neutral;
+        return Icons.sentiment_neutral; // Neutral face
     }
   }
 // Filter Tabs
@@ -180,8 +245,6 @@ String getCurrentWeekRange() {
 
   @override
   Widget build(BuildContext context) {
-    final days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
     if (isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFFFFF9F4),
@@ -288,8 +351,14 @@ return Scaffold(
                     const SizedBox(height: 6),
                     Text(
                       moodData != null 
-                          ? "It's perfectly normal to feel this way. Take care of yourself!"
-                          : "Remember to track your mood daily for better insights.",
+                          ? MoodTrackerBackend.getMoodBasedNote(
+                              moodData!['mood_status'] ?? widget.moodLabel, 
+                              moodData!['mood_level'] ?? widget.moodIntensity
+                            )
+                          : MoodTrackerBackend.getMoodBasedNote(
+                              widget.moodLabel, 
+                              widget.moodIntensity
+                            ),
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey.shade600,
@@ -326,7 +395,7 @@ return Scaffold(
                               const SizedBox(height: 4),
                               Text(
                                 stressData != null
-                                    ? MoodTrackerBackend.getStressLevelDescription(stressData!['stress_level'])
+                                    ? MoodTrackerBackend.getStressBasedNote(stressData!['stress_level'])
                                     : "You haven't given today's stress update yet",
                                 style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
                                 maxLines: 2,
@@ -382,7 +451,7 @@ Divider(
               const SizedBox(height: 20),
 
               // Causes Section
-              if (widget.selectedCauses.isNotEmpty) Container(
+              if (_getDisplayedCauses().isNotEmpty) Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -411,7 +480,7 @@ Divider(
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: widget.selectedCauses.map((cause) {
+                      children: _getDisplayedCauses().map((cause) {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
@@ -593,16 +662,61 @@ const SizedBox(height: 8),
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: List.generate(7, (index) {
-    final today = DateTime.now();
-    final dayDate = today.subtract(Duration(days: 6 - index));
-    final dayName = days[index];
+    final now = DateTime.now();
+    // Calculate the start of the current week (Monday)
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    // Calculate each day of the week
+    final dayDate = startOfWeek.add(Duration(days: index));
     
-    // Find mood data for this day
+    // Get the correct day name for this date
+    final dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    final dayName = dayNames[index];
+    
+    // Debug: Print what date we're looking for
+    print('🔍 Looking for mood data for $dayName: ${dayDate.toIso8601String().split('T')[0]}');
+    
+    // Find mood data for this specific date
     Map<String, dynamic>? dayMoodData;
     if (weeklyMoodData != null) {
+      print('🔍 Available mood data dates:');
+      for (var data in weeklyMoodData!) {
+        print('   ${data['date']} -> ${data['mood_status']}');
+      }
+      
       dayMoodData = weeklyMoodData!.firstWhere(
-        (data) => DateTime.parse(data['date']).day == dayDate.day,
-        orElse: () => {},
+        (data) {
+          final dayDateStr = dayDate.toIso8601String().split('T')[0];
+          
+          // Try different date matching approaches
+          DateTime dataDate;
+          try {
+            // Handle both DateTime and String formats
+            if (data['date'] is String) {
+              dataDate = DateTime.parse(data['date']);
+            } else {
+              dataDate = data['date'];
+            }
+          } catch (e) {
+            print('❌ Error parsing date: ${data['date']} - $e');
+            return false;
+          }
+          
+          final matches = dataDate.year == dayDate.year &&
+                         dataDate.month == dayDate.month &&
+                         dataDate.day == dayDate.day;
+          
+          // Debug logging for date matching
+          print('🔍 Comparing: $dayDateStr vs ${dataDate.toIso8601String().split('T')[0]} = $matches');
+          if (matches) {
+            print('✅ Found match for $dayName: ${data['mood_status']}');
+          }
+          
+          return matches;
+        },
+        orElse: () {
+          print('⚠️ No mood data found for $dayName (${dayDate.toIso8601String().split('T')[0]})');
+          return <String, dynamic>{};
+        },
       );
     }
     
@@ -610,42 +724,72 @@ Row(
     IconData moodIcon;
     Color moodColor;
     
-    if (dayMoodData != null && dayMoodData.isNotEmpty) {
-      final moodStatus = dayMoodData['mood_status'];
+    if (dayMoodData != null && 
+        dayMoodData.isNotEmpty && 
+        dayMoodData.containsKey('mood_status') && 
+        dayMoodData['mood_status'] != null &&
+        dayMoodData['mood_status'].toString().isNotEmpty) {
+      
+      final moodStatus = dayMoodData['mood_status'].toString();
+      print('✅ Using mood status for $dayName: $moodStatus');
+      
       moodIcon = _getMoodIcon(moodStatus);
       moodColor = MoodTrackerBackend.getMoodColor(moodStatus);
     } else {
+      print('❌ No valid mood data for $dayName - using default');
       moodIcon = Icons.help_outline;
       moodColor = Colors.grey;
     }
     
+    // Check if this is today to add special styling
+    final isToday = dayDate.year == now.year && 
+                   dayDate.month == now.month && 
+                   dayDate.day == now.day;
+    
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: moodColor.withOpacity(0.15),
+        color: moodColor.withOpacity(0.2),
         shape: BoxShape.circle,
+        border: isToday 
+          ? Border.all(color: moodColor, width: 3) 
+          : Border.all(color: moodColor.withOpacity(0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: moodColor.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: moodColor.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         children: [
-          Icon(
-            moodIcon,
-            color: moodColor,
-            size: 24,
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: moodColor.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              moodIcon,
+              color: moodColor,
+              size: 26,
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             dayName,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.brown.shade700,
+              fontSize: 11,
+              fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+              color: isToday ? moodColor : Colors.brown.shade800,
             ),
           ),
         ],

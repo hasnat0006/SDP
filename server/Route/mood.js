@@ -115,43 +115,60 @@ router.get("/data/:userId/:date", async (req, res) => {
   }
 });
 
-// Get weekly mood data for a user
+// Get weekly mood data for a user (current week Monday to Sunday)
 router.get("/weekly/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
+    
+    // Get data for a wider range to ensure we catch all relevant data
     const result = await sql`
       SELECT 
         DATE(date) as date,
         mood_status,
         mood_level,
-        reason
+        reason,
+        EXTRACT(DOW FROM date) as day_of_week,
+        TO_CHAR(date, 'YYYY-MM-DD') as formatted_date
       FROM mood_tracker 
       WHERE user_id = ${userId} 
-        AND date >= CURRENT_DATE - INTERVAL '7 days'
-      ORDER BY date DESC
+        AND date >= CURRENT_DATE - INTERVAL '10 days'
+        AND date <= CURRENT_DATE + INTERVAL '3 days'
+      ORDER BY date ASC
     `;
 
-    if (result.length === 0) {
-      return res.status(404).json({ 
-        message: "No mood data found for the past week",
-        data: [] 
-      });
-    }
-
-    // Ensure reason is always an array for each entry
+    console.log('📊 Weekly query for user:', userId);
+    console.log('📊 Query date range: CURRENT_DATE - 10 days to CURRENT_DATE + 3 days');
+    console.log('📊 Raw query result:', JSON.stringify(result.map(r => ({
+      date: r.date,
+      formatted_date: r.formatted_date,
+      mood_status: r.mood_status,
+      day_of_week: r.day_of_week
+    })), null, 2));
+    
+    // Always return an array, even if empty
     const processedData = result.map(entry => {
       if (entry.reason && !Array.isArray(entry.reason)) {
         entry.reason = [entry.reason];
       } else if (!entry.reason) {
         entry.reason = [];
       }
+      
+      console.log('📊 Processing entry:', {
+        date: entry.date,
+        formatted_date: entry.formatted_date,
+        mood_status: entry.mood_status,
+        mood_level: entry.mood_level,
+        day_of_week: entry.day_of_week
+      });
+      
       return entry;
     });
 
-    console.log('✅ Weekly mood data retrieved:', processedData);
+    console.log('✅ Weekly mood data processed:', processedData.length, 'entries');
+    console.log('✅ Final processed data:', JSON.stringify(processedData, null, 2));
     res.json(processedData);
   } catch (err) {
-    console.error("Error retrieving weekly mood data:", err);
+    console.error("❌ Error retrieving weekly mood data:", err);
     res.status(500).json({ error: err.message });
   }
 });

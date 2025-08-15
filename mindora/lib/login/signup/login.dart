@@ -2,7 +2,6 @@ import 'package:client/login/signup/backend.dart';
 import 'package:client/navbar/navbar.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
-import '../../dashboard/p_dashboard.dart';
 import 'signup1.dart';
 
 class LoginPage extends StatefulWidget {

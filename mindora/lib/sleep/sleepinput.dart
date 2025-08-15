@@ -207,7 +207,6 @@ class _TwinklingStar extends StatefulWidget {
   final double size;
 
   const _TwinklingStar({
-    super.key,
     required this.assetPath,
     this.delay = Duration.zero,
     this.size = 18.0,

@@ -132,19 +132,26 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
         try {
           final weekData = monthlyData![weekKey];
           if (weekData is List && weekData.isNotEmpty) {
-            final moodStatuses = weekData
+            // Extract all mood data with levels
+            final moodEntries = weekData
                 .where((entry) => entry is Map && entry['mood_status'] != null)
-                .map((entry) => entry['mood_status'].toString())
-                .toList()
-                .cast<String>();
+                .map((entry) => {
+                  'status': entry['mood_status'].toString(),
+                  'level': entry['mood_level'] ?? 3,
+                })
+                .toList();
             
-            // Calculate date range for the week
-            final startDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, (week - 1) * 7 + 1);
-            final endDate = DateTime(widget.selectedDate.year, widget.selectedDate.month, week * 7);
-            final range = "${DateFormat.MMMd().format(startDate)}-${DateFormat.d().format(endDate)}";
+            // Calculate proper week boundaries
+            final firstDayOfMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month, 1);
+            final startOfFirstWeek = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
+            final weekStart = startOfFirstWeek.add(Duration(days: (week - 1) * 7));
+            final weekEnd = weekStart.add(Duration(days: 6));
             
-            // Generate summary based on most common mood
-            String summary = _getMoodSummary(moodStatuses);
+            // Format date range properly
+            final range = "${DateFormat.MMMd().format(weekStart)} - ${DateFormat.MMMd().format(weekEnd)}";
+            
+            // Generate comprehensive summary
+            String summary = _getAdvancedMoodSummary(moodEntries);
             
             weeklyOverview.add({
               "week": weekKey,
@@ -152,25 +159,39 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
               "summary": summary,
             });
           } else {
+            // Calculate empty week range
+            final firstDayOfMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month, 1);
+            final startOfFirstWeek = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
+            final weekStart = startOfFirstWeek.add(Duration(days: (week - 1) * 7));
+            final weekEnd = weekStart.add(Duration(days: 6));
+            final range = "${DateFormat.MMMd().format(weekStart)} - ${DateFormat.MMMd().format(weekEnd)}";
+            
             weeklyOverview.add({
               "week": weekKey,
-              "range": "No data",
-              "summary": "No input found",
+              "range": range,
+              "summary": "No mood data tracked",
             });
           }
         } catch (e) {
           print('Error processing week $week: $e');
           weeklyOverview.add({
             "week": weekKey,
-            "range": "No data",
-            "summary": "No input found",
+            "range": "Error calculating range",
+            "summary": "Unable to analyze",
           });
         }
       } else {
+        // Calculate week range even when no data
+        final firstDayOfMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month, 1);
+        final startOfFirstWeek = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - 1));
+        final weekStart = startOfFirstWeek.add(Duration(days: (week - 1) * 7));
+        final weekEnd = weekStart.add(Duration(days: 6));
+        final range = "${DateFormat.MMMd().format(weekStart)} - ${DateFormat.MMMd().format(weekEnd)}";
+        
         weeklyOverview.add({
           "week": weekKey,
-          "range": "No data",
-          "summary": "No input found",
+          "range": range,
+          "summary": "No mood data tracked",
         });
       }
     }
@@ -178,29 +199,106 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
     return weeklyOverview;
   }
 
-  String _getMoodSummary(List<String> moodStatuses) {
+  String _getAdvancedMoodSummary(List<Map<String, dynamic>> moodEntries) {
     try {
-      if (moodStatuses.isEmpty) return "No input found";
+      if (moodEntries.isEmpty) return "No mood data tracked";
       
-      // Count mood occurrences
+      // Calculate basic statistics
       Map<String, int> moodCounts = {};
-      for (String mood in moodStatuses) {
-        String moodStr = mood.toString(); // Extra safety
-        moodCounts[moodStr] = (moodCounts[moodStr] ?? 0) + 1;
+      int totalEntries = moodEntries.length;
+      double totalMoodScore = 0;
+      
+      // Analyze each mood entry
+      for (var entry in moodEntries) {
+        String mood = entry['status'];
+        int level = entry['level'];
+        
+        moodCounts[mood] = (moodCounts[mood] ?? 0) + 1;
+        totalMoodScore += level;
       }
       
-      if (moodCounts.isEmpty) return "No input found";
+      if (moodCounts.isEmpty) return "No valid mood data";
       
-      // Find most common mood
-      String mostCommonMood = moodCounts.entries
+      // Calculate average mood intensity
+      double averageIntensity = totalMoodScore / totalEntries;
+      
+      // Find dominant mood (most frequent)
+      String dominantMood = moodCounts.entries
           .reduce((a, b) => a.value > b.value ? a : b)
           .key;
       
-      return "Mostly $mostCommonMood";
+      // Count unique moods
+      int uniqueMoods = moodCounts.keys.length;
+      
+      // Categorize moods by positivity
+      List<String> positiveMoods = ['happy', 'excited', 'grateful', 'calm'];
+      List<String> negativeMoods = ['sad', 'angry', 'anxious', 'stressed', 'confused'];
+      
+      int positiveCount = 0;
+      int negativeCount = 0;
+      
+      for (var entry in moodCounts.entries) {
+        String mood = entry.key.toLowerCase();
+        int count = entry.value;
+        
+        if (positiveMoods.contains(mood)) {
+          positiveCount += count;
+        } else if (negativeMoods.contains(mood)) {
+          negativeCount += count;
+        }
+      }
+      
+      // Generate simple, one-line summaries
+      if (totalEntries == 1) {
+        String intensityWord = _getSimpleIntensity(averageIntensity);
+        return "$intensityWord ${dominantMood.toLowerCase()}";
+      }
+      
+      if (totalEntries == 2) {
+        if (uniqueMoods == 1) {
+          String intensityWord = _getSimpleIntensity(averageIntensity);
+          return "Consistently $intensityWord ${dominantMood.toLowerCase()}";
+        } else {
+          // Two different moods
+          String trend = positiveCount > negativeCount ? "positive" : 
+                        negativeCount > positiveCount ? "challenging" : "mixed";
+          return "Mixed emotions, leaning $trend";
+        }
+      }
+      
+      if (uniqueMoods == 1) {
+        // All same mood
+        String intensityWord = _getSimpleIntensity(averageIntensity);
+        return "Consistently $intensityWord ${dominantMood.toLowerCase()}";
+      }
+      
+      if (uniqueMoods >= 4) {
+        // High variety
+        String trend = positiveCount > negativeCount ? "positive" : 
+                      negativeCount > positiveCount ? "challenging" : "balanced";
+        return "Variable emotions, mostly $trend";
+      }
+      
+      // 2-3 different moods
+      if (positiveCount >= negativeCount * 2) {
+        return "Mostly positive emotions";
+      } else if (negativeCount >= positiveCount * 2) {
+        return "Mostly challenging emotions";
+      } else {
+        String dominantIntensity = _getSimpleIntensity(averageIntensity);
+        return "Mixed emotions, $dominantIntensity ${dominantMood.toLowerCase()} dominant";
+      }
+      
     } catch (e) {
-      print('Error in _getMoodSummary: $e');
-      return "No input found";
+      print('Error in _getAdvancedMoodSummary: $e');
+      return "Unable to analyze mood data";
     }
+  }
+  
+  String _getSimpleIntensity(double avgLevel) {
+    if (avgLevel >= 4.0) return "intensely";
+    if (avgLevel >= 3.0) return "moderately";
+    return "mildly";
   }
 
   // Helper method to safely get reason list from mood data
@@ -220,25 +318,27 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
   IconData _getMoodIcon(String moodStatus) {
     switch (moodStatus.toLowerCase()) {
       case 'happy':
-        return Icons.sentiment_very_satisfied;
+        return Icons.sentiment_very_satisfied; // Big smile
       case 'sad':
-        return Icons.sentiment_very_dissatisfied;
+        return Icons.sentiment_very_dissatisfied; // Crying face
       case 'angry':
-        return Icons.sentiment_dissatisfied;
+        return Icons.local_fire_department; // Fire icon
       case 'anxious':
-        return Icons.sentiment_neutral;
+        return Icons.psychology; // Brain/worry icon
       case 'excited':
-        return Icons.sentiment_satisfied;
+        return Icons.celebration; // Party/celebration icon
       case 'calm':
-        return Icons.sentiment_satisfied;
+        return Icons.self_improvement; // Meditation icon
       case 'confused':
-        return Icons.sentiment_neutral;
+        return Icons.help_outline; // Question mark
       case 'tired':
-        return Icons.sentiment_dissatisfied;
+        return Icons.bedtime; // Sleep icon
       case 'grateful':
-        return Icons.sentiment_very_satisfied;
+        return Icons.volunteer_activism; // Heart hands icon
+      case 'stressed':
+        return Icons.warning; // Warning icon for stress
       default:
-        return Icons.sentiment_neutral;
+        return Icons.sentiment_neutral; // Neutral face
     }
   }
 
@@ -370,6 +470,12 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
                     value: moodData != null 
                         ? "${moodData!['mood_status']} (${moodData!['mood_level']}/5)"
                         : "No input found",
+                    description: moodData != null 
+                        ? MoodTrackerBackend.getMoodIntensityDescriptionForHistory(
+                            moodData!['mood_status'], 
+                            moodData!['mood_level']
+                          )
+                        : null,
                     icon: moodData != null 
                         ? _getMoodIcon(moodData!['mood_status'])
                         : Icons.help_outline,
@@ -383,6 +489,9 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
                     value: stressData != null 
                         ? "${stressData!['stress_level']}/5"
                         : "No input found",
+                    description: stressData != null 
+                        ? MoodTrackerBackend.getStressLevelDescriptionForHistory(stressData!['stress_level'])
+                        : null,
                     icon: Icons.bar_chart,
                     color: stressData != null ? Colors.redAccent : Colors.grey,
                   ),
@@ -392,6 +501,9 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
                     value: sleepData != null 
                         ? "${sleepData!['hours_slept']} hours"
                         : "No input found",
+                    description: sleepData != null 
+                        ? MoodTrackerBackend.getSleepHoursDescriptionForHistory(sleepData!['hours_slept'].toDouble())
+                        : null,
                     icon: Icons.nightlight_round,
                     color: sleepData != null ? Colors.deepPurple : Colors.grey,
                   ),
@@ -513,12 +625,14 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
 class _InfoCard extends StatelessWidget {
   final String title;
   final String value;
+  final String? description;
   final IconData icon;
   final Color color;
 
   const _InfoCard({
     required this.title,
     required this.value,
+    this.description,
     required this.icon,
     required this.color,
   });
@@ -542,20 +656,33 @@ class _InfoCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade700)),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.brown,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade700)),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown,
+                  ),
                 ),
-              ),
-            ],
+                if (description != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    description!,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
           Icon(icon, color: color, size: 24),
         ],
