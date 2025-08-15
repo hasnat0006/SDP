@@ -74,7 +74,7 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
     if (_userType == 'patient')
       NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
     if (_userType == 'doctor')
-      NavItem(icon: Icons.event, label: '', page: const ManageAppointments()),
+      NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
     NavItem(
       icon: Icons.person,
       label: '',

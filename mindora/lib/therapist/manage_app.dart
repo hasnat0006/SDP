@@ -24,17 +24,35 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
 
   Future<void> _fetchAppointments() async {
     try {
+      print('🔄 Fetching appointments...');
       final fetched = await AppointmentService.fetchConfirmedAppointments();
+      print('✅ Fetched ${fetched.length} appointments');
       setState(() {
         appointments = fetched;
         reminders = List.generate(appointments.length, (_) => true);
         isLoading = false;
       });
     } catch (e) {
+      print('❌ Error fetching appointments: $e');
       setState(() {
         isLoading = false;
       });
-      // Optionally show error
+      // Show error dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to load appointments: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -71,8 +89,8 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
-              _buildTableRow("Appointment ID:", appointments[index].appId.toString()),
-              _buildTableRow("User ID:", appointments[index].userId.toString()),
+              _buildTableRow("Appointment ID:", appointments[index].appId),
+              _buildTableRow("User ID:", appointments[index].userId),
               _buildTableRow("Date:", appointments[index].date),
               _buildTableRow("Time:", appointments[index].time),
               _buildTableRow("Status:", appointments[index].status),
@@ -149,7 +167,13 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Appointment #${appt.appId}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: Text(
+                    "Appointment #${appt.appId.substring(0, 8)}", // Show first 8 chars of UUID
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                   decoration: BoxDecoration(

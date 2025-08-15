@@ -1,7 +1,6 @@
 import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import '../journal/journal_history.dart';
-import '../dashboard/p_dashboard.dart'; 
 import 'backend.dart';
 import 'mood_detector.dart'; // Add this import
 
@@ -9,9 +8,7 @@ class JournalPage extends StatefulWidget {
   final String userId;
   
   const JournalPage({super.key, required this.userId});
-  final String userId;
   
-  const JournalPage({super.key, required this.userId});
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -205,15 +202,6 @@ class _JournalPageState extends State<JournalPage> {
   }
 
   // When navigating to history page, pass the user ID
-  void _navigateToHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => JournalHistoryPage(userId: widget.userId),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
