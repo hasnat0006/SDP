@@ -4,7 +4,10 @@ import 'pending_req.dart';  // Import your PendingRequestsPage here
 import 'backend.dart';
 
 class ManageAppointments extends StatefulWidget {
-  ManageAppointments({Key? key}) : super(key: key);
+  final String? doctorId;
+  final String? userType; // Add user type to determine doctor vs patient
+  
+  const ManageAppointments({Key? key, this.doctorId, this.userType}) : super(key: key);
 
   @override
   State<ManageAppointments> createState() => _ManageAppointmentsState();
@@ -25,7 +28,18 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
   Future<void> _fetchAppointments() async {
     try {
       print('🔄 Fetching appointments...');
-      final fetched = await AppointmentService.fetchConfirmedAppointments();
+      
+      List<Appointment> fetched;
+      
+      // Check if user is doctor or patient
+      if (widget.userType == 'doctor') {
+        // For doctors, fetch appointments where they are the doctor
+        fetched = await AppointmentService.fetchConfirmedAppointmentsForDoctor(widget.doctorId);
+      } else {
+        // For patients, fetch appointments where they are the patient
+        fetched = await AppointmentService.fetchMyAppointments(widget.doctorId); // doctorId is actually userId in this case
+      }
+      
       print('✅ Fetched ${fetched.length} appointments');
       setState(() {
         appointments = fetched;
@@ -259,6 +273,10 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
 
   Widget _buildAppointmentCard(int index) {
     final appt = appointments[index];
+    
+    // Determine what name to show based on user type
+    String displayName = appt.userName;
+    
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -274,9 +292,9 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
             ),
             const SizedBox(height: 8),
-            // Patient name in bold
+            // Name in bold (Patient name for doctor, Doctor name for patient)
             Text(
-              appt.userName,
+              displayName,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 4),
@@ -302,7 +320,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                   onPressed: () => _showRescheduleDialog(context, index),
-                  child: const Text('Reschedule', style: TextStyle(color: Colors.brown)),
+                  child: const Text('View Details', style: TextStyle(color: Colors.brown)),
                 ),
                 Row(
                   children: [

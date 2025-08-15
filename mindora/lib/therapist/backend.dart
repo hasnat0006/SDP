@@ -189,4 +189,99 @@ class AppointmentService {
 			throw Exception('Failed to load confirmed appointments: $e');
 		}
 	}
+
+	static Future<List<Appointment>> fetchConfirmedAppointmentsForDoctor(String? doctorId) async {
+		if (doctorId == null || doctorId.isEmpty) {
+			// Fallback to all appointments if no doctor ID
+			return fetchConfirmedAppointments();
+		}
+
+		try {
+			print('🌐 Making request to: $baseUrl/confirmed-appointments/doctor/$doctorId');
+			final response = await http.get(
+				Uri.parse('$baseUrl/confirmed-appointments/doctor/$doctorId'),
+				headers: {'Content-Type': 'application/json'},
+			);
+			
+			print('📡 Response status: ${response.statusCode}');
+			print('📋 Response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final List<dynamic> data = json.decode(response.body);
+				print('✅ Parsed ${data.length} appointments from API for doctor: $doctorId');
+				
+				// Create appointments and fetch user names
+				List<Appointment> appointments = [];
+				for (var json in data) {
+					var appointment = Appointment.fromJson(json);
+					// Fetch user name for this appointment
+					String userName = await fetchUserName(appointment.userId);
+					
+					// Create new appointment with user name
+					appointments.add(Appointment(
+						appId: appointment.appId,
+						userId: appointment.userId,
+						userName: userName,
+						date: appointment.date,
+						time: appointment.time,
+						status: appointment.status,
+					));
+				}
+				
+				return appointments;
+			} else {
+				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+			}
+		} catch (e) {
+			print('❌ AppointmentService error: $e');
+			throw Exception('Failed to load confirmed appointments for doctor: $e');
+		}
+	}
+
+	static Future<List<Appointment>> fetchMyAppointments(String? userId) async {
+		if (userId == null || userId.isEmpty) {
+			throw Exception('User ID is required');
+		}
+
+		try {
+			print('🌐 Making request to: $baseUrl/my-appointments/$userId');
+			final response = await http.get(
+				Uri.parse('$baseUrl/my-appointments/$userId'),
+				headers: {'Content-Type': 'application/json'},
+			);
+			
+			print('📡 Response status: ${response.statusCode}');
+			print('📋 Response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final List<dynamic> data = json.decode(response.body);
+				print('✅ Parsed ${data.length} my appointments from API for user: $userId');
+				
+				// Create appointments and fetch doctor names
+				List<Appointment> appointments = [];
+				for (var json in data) {
+					var appointment = Appointment.fromJson(json);
+					// For patient view, we want to show doctor name instead of user name
+					String doctorName = await fetchUserName(appointment.appId); // appId contains doc_id
+					
+					// Create new appointment with doctor name
+					appointments.add(Appointment(
+						appId: appointment.appId,
+						userId: appointment.userId,
+						userName: doctorName, // This will show the doctor's name for patient view
+						date: appointment.date,
+						time: appointment.time,
+						status: appointment.status,
+					));
+				}
+				
+				return appointments;
+			} else {
+				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+			}
+		} catch (e) {
+			print('❌ AppointmentService error: $e');
+			throw Exception('Failed to load my appointments: $e');
+		}
+	}
 }

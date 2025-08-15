@@ -110,6 +110,27 @@ router.get('/confirmed-appointments/user/:userId', async (req, res) => {
   }
 });
 
+// Route to fetch confirmed appointments where user is the patient
+router.get('/my-appointments/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(`🔍 Fetching my appointments for user ID: ${userId}`);
+    
+    const appointments = await sql`
+      SELECT doc_id, user_id, status, date, time 
+      FROM appointment 
+      WHERE status = 'confirmed' AND doc_id = ${userId}
+    `;
+    
+    console.log('📊 Found my appointments:', appointments.length);
+    
+    res.json(appointments);
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 // Route to get user details by user ID
 router.get('/user/:userId', async (req, res) => {
   try {
