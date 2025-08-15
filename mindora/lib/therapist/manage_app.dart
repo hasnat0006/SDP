@@ -16,7 +16,6 @@ class ManageAppointments extends StatefulWidget {
 class _ManageAppointmentsState extends State<ManageAppointments> {
   bool acceptingAppointments = true;
   List<Appointment> appointments = [];
-  List<bool> reminders = [];
   bool isLoading = true;
 
   @override
@@ -43,7 +42,6 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
       print('✅ Fetched ${fetched.length} appointments');
       setState(() {
         appointments = fetched;
-        reminders = List.generate(appointments.length, (_) => true);
         isLoading = false;
       });
     } catch (e) {
@@ -197,7 +195,6 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                                     // Remove from local list
                                     setState(() {
                                       appointments.removeAt(index);
-                                      reminders.removeAt(index);
                                     });
                                     
                                     // Show success message
@@ -381,10 +378,50 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   children: [
                     const Text("Reminder"),
                     Switch(
-                      value: reminders[index],
+                      value: appointments[index].reminder == 'on',
                       activeColor: Colors.green,
-                      onChanged: (value) {
-                        setState(() => reminders[index] = value);
+                      onChanged: (value) async {
+                        final newReminderStatus = value ? 'on' : 'off';
+                        
+                        // Update the database
+                        final success = await AppointmentService.updateReminder(
+                          appointments[index].appId, 
+                          newReminderStatus
+                        );
+                        
+                        if (success) {
+                          // Update the local state
+                          setState(() {
+                            // Create a new appointment object with updated reminder
+                            appointments[index] = Appointment(
+                              appId: appointments[index].appId,
+                              userId: appointments[index].userId,
+                              userName: appointments[index].userName,
+                              date: appointments[index].date,
+                              time: appointments[index].time,
+                              status: appointments[index].status,
+                              reminder: newReminderStatus,
+                            );
+                          });
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Reminder ${value ? 'enabled' : 'disabled'}'),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        } else {
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to update reminder'),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       },
                     )
                   ],

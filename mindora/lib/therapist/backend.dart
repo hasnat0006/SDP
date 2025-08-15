@@ -9,6 +9,7 @@ class Appointment {
 	final String date;
 	final String time;
 	final String status;
+	final String reminder; // Add reminder field
 
 	Appointment({
 		required this.appId,
@@ -17,6 +18,7 @@ class Appointment {
 		required this.date,
 		required this.time,
 		required this.status,
+		required this.reminder,
 	});
 
 	factory Appointment.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class Appointment {
 			date: formattedDate,
 			time: formattedTime,
 			status: json['status']?.toString() ?? '',
+			reminder: json['reminder']?.toString() ?? 'off', // Default to 'off' if not provided
 		);
 	}
 }
@@ -177,6 +180,7 @@ class AppointmentService {
 						date: appointment.date,
 						time: appointment.time,
 						status: appointment.status,
+						reminder: appointment.reminder,
 					));
 				}
 				
@@ -225,6 +229,7 @@ class AppointmentService {
 						date: appointment.date,
 						time: appointment.time,
 						status: appointment.status,
+						reminder: appointment.reminder,
 					));
 				}
 				
@@ -272,6 +277,7 @@ class AppointmentService {
 						date: appointment.date,
 						time: appointment.time,
 						status: appointment.status,
+						reminder: appointment.reminder,
 					));
 				}
 				
@@ -305,6 +311,31 @@ class AppointmentService {
 			}
 		} catch (e) {
 			print('❌ Error cancelling appointment: $e');
+			return false;
+		}
+	}
+
+	static Future<bool> updateReminder(String appointmentId, String reminderStatus) async {
+		try {
+			print('🌐 Making request to update reminder: $baseUrl/update-reminder/$appointmentId');
+			final response = await http.put(
+				Uri.parse('$baseUrl/update-reminder/$appointmentId'),
+				headers: {'Content-Type': 'application/json'},
+				body: json.encode({'reminder': reminderStatus}),
+			);
+			
+			print('📡 Update reminder response status: ${response.statusCode}');
+			print('📋 Update reminder response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final Map<String, dynamic> data = json.decode(response.body);
+				return data['success'] == true;
+			} else {
+				print('❌ Failed to update reminder: ${response.statusCode}');
+				return false;
+			}
+		} catch (e) {
+			print('❌ Error updating reminder: $e');
 			return false;
 		}
 	}

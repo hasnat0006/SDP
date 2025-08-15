@@ -52,7 +52,7 @@ router.get('/confirmed-appointments', async (req, res) => {
     console.log('🔍 Fetching confirmed appointments...');
     
     const appointments = await sql`
-      SELECT doc_id, user_id, status, date, time 
+      SELECT doc_id, user_id, status, date, time, reminder 
       FROM appointment 
       WHERE status = 'confirmed'
     `;
@@ -75,7 +75,7 @@ router.get('/confirmed-appointments/doctor/:docId', async (req, res) => {
     console.log(`🔍 Fetching confirmed appointments for doctor ID: ${docId}`);
     
     const appointments = await sql`
-      SELECT doc_id, user_id, status, date, time 
+      SELECT doc_id, user_id, status, date, time, reminder 
       FROM appointment 
       WHERE status = 'confirmed' AND doc_id = ${docId}
     `;
@@ -96,7 +96,7 @@ router.get('/confirmed-appointments/user/:userId', async (req, res) => {
     console.log(`🔍 Fetching confirmed appointments for user ID: ${userId}`);
     
     const appointments = await sql`
-      SELECT doc_id, user_id, status, date, time 
+      SELECT doc_id, user_id, status, date, time, reminder 
       FROM appointment 
       WHERE status = 'confirmed' AND user_id = ${userId}
     `;
@@ -117,7 +117,7 @@ router.get('/my-appointments/:userId', async (req, res) => {
     console.log(`🔍 Fetching my appointments for user ID: ${userId}`);
     
     const appointments = await sql`
-      SELECT doc_id, user_id, status, date, time 
+      SELECT doc_id, user_id, status, date, time, reminder 
       FROM appointment 
       WHERE status = 'confirmed' AND doc_id = ${userId}
     `;
@@ -209,6 +209,43 @@ router.put('/cancel-appointment/:appId', async (req, res) => {
       success: true, 
       message: 'Appointment cancelled successfully',
       appointmentId: appId
+    });
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Route to update reminder status for an appointment
+router.put('/update-reminder/:appId', async (req, res) => {
+  try {
+    const { appId } = req.params;
+    const { reminder } = req.body;
+    
+    console.log(`🔍 Updating reminder for appointment ID: ${appId} to: ${reminder}`);
+    
+    // Validate reminder value
+    if (!reminder || (reminder !== 'on' && reminder !== 'off')) {
+      return res.status(400).json({ error: 'Reminder must be "on" or "off"' });
+    }
+    
+    // Update the appointment reminder status
+    const result = await sql`
+      UPDATE appointment 
+      SET reminder = ${reminder}
+      WHERE doc_id = ${appId}
+    `;
+    
+    if (result.count === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    console.log('✅ Appointment reminder updated successfully');
+    res.json({ 
+      success: true, 
+      message: 'Reminder status updated successfully',
+      appointmentId: appId,
+      reminder: reminder
     });
   } catch (error) {
     console.error('❌ Server error:', error);
