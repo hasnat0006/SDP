@@ -43,6 +43,9 @@ dependencies:
   http: ^1.4.0
   flutter_dotenv: ^5.1.0
   awesome_notifications: ^0.10.1
+  flutter_hooks: ^0.20.3
+  vector_math: ^2.1.4
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

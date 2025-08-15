@@ -1,10 +1,17 @@
+import 'package:client/forum/backend.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'forum_models.dart';
 
 class CreatePostPage extends StatefulWidget {
   final Function(ForumPost) onPostCreated;
+  final String? initialContent;
 
-  const CreatePostPage({super.key, required this.onPostCreated});
+  const CreatePostPage({
+    super.key,
+    required this.onPostCreated,
+    this.initialContent,
+  });
 
   @override
   State<CreatePostPage> createState() => _CreatePostPageState();
@@ -21,9 +28,19 @@ class _CreatePostPageState extends State<CreatePostPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  String _userId = '';
+  String _userType = '';
+
   @override
   void initState() {
     super.initState();
+    _loadUserData();
+
+    // Set initial content if provided
+    if (widget.initialContent != null) {
+      _contentController.text = widget.initialContent!;
+    }
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -42,6 +59,17 @@ class _CreatePostPageState extends State<CreatePostPage>
     );
 
     _fadeController.forward();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      _userId = userData['userId'] ?? '';
+      _userType = userData['userType'] ?? '';
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   @override
@@ -65,21 +93,22 @@ class _CreatePostPageState extends State<CreatePostPage>
     // Simulate posting delay
     await Future.delayed(const Duration(seconds: 1));
 
-    final newPost = ForumPost(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final posting = await ForumBackend().post(
       content: _contentController.text.trim(),
-      mood: _selectedMood!,
-      timestamp: DateTime.now(),
-      likes: 0,
-      isLiked: false,
-      isSaved: false,
+      mood: _selectedMood!.displayName,
+      userId: _userId,
     );
 
-    widget.onPostCreated(newPost);
-
-    setState(() {
-      _isPosting = false;
-    });
+    if (posting['success']) {
+      setState(() {
+        _isPosting = false;
+      });
+    } else {
+      setState(() {
+        _isPosting = false;
+      });
+      _showSnackBar('Failed to create post: ${posting['message']}');
+    }
 
     Navigator.pop(context);
     _showSnackBar('Your post has been shared anonymously ✨');

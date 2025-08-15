@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../navbar/navbar.dart'; // <-- Fixed import path
 import 'login.dart'; // <-- Import for LoginPage navigation
 import './backend.dart'; // <-- Import backend service
 
@@ -13,8 +12,8 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _isPatient = true; // true for patient, false for psychiatrist
-  // Add TextEditingControllers to store field data
+  bool _isLoading = false;
+  bool _isPatient = true;
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -76,36 +75,48 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
-                          color: _isPatient ? const Color(0xFFD6A9E5) : Colors.white,
-                          borderRadius: BorderRadius.circular(15),
+                          color: _isPatient
+                              ? const Color(0xFFD6A9E5)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _isPatient ? const Color(0xFFD6A9E5) : Colors.grey[300]!,
+                            color: _isPatient
+                                ? const Color(0xFFD6A9E5)
+                                : Colors.grey[300]!,
                             width: 2,
                           ),
                           boxShadow: _isPatient
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFFD6A9E5).withOpacity(0.3),
+                                    color: const Color(
+                                      0xFFD6A9E5,
+                                    ).withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
-                        child: Column(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.person_outline,
                               size: 32,
-                              color: _isPatient ? Colors.white : Colors.grey[600],
+                              color: _isPatient
+                                  ? Colors.white
+                                  : Colors.grey[600],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(width: 8),
                             Text(
                               "Patient",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: _isPatient ? Colors.white : Colors.grey[600],
+                                color: _isPatient
+                                    ? Colors.white
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -122,36 +133,48 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
-                          color: !_isPatient ? const Color(0xFFD6A9E5) : Colors.white,
-                          borderRadius: BorderRadius.circular(15),
+                          color: !_isPatient
+                              ? const Color(0xFFD6A9E5)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: !_isPatient ? const Color(0xFFD6A9E5) : Colors.grey[300]!,
+                            color: !_isPatient
+                                ? const Color(0xFFD6A9E5)
+                                : Colors.grey[300]!,
                             width: 2,
                           ),
                           boxShadow: !_isPatient
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFFD6A9E5).withOpacity(0.3),
+                                    color: const Color(
+                                      0xFFD6A9E5,
+                                    ).withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
-                        child: Column(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.medical_services_outlined,
                               size: 32,
-                              color: !_isPatient ? Colors.white : Colors.grey[600],
+                              color: !_isPatient
+                                  ? Colors.white
+                                  : Colors.grey[600],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(width: 8),
                             Text(
                               "Psychiatrist",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: !_isPatient ? Colors.white : Colors.grey[600],
+                                color: !_isPatient
+                                    ? Colors.white
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -206,8 +229,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 controller: _bdnController,
               ),
 
-            if (!_isPatient)
-              const SizedBox(height: 20),
+            if (!_isPatient) const SizedBox(height: 20),
 
             // Password Field
             _buildTextField(
@@ -239,90 +261,132 @@ class _SignUpPageState extends State<SignUpPage> {
             // Sign Up Button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD0B375),
+                backgroundColor: _isLoading
+                    ? const Color(0xFFD0B375).withOpacity(0.7)
+                    : const Color(0xFFD0B375),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 100,
                   vertical: 16,
                 ),
               ),
-              onPressed: () async {
-                // Access the field data
-                String email = _emailController.text.trim();
-                String password = _passwordController.text;
-                String confirmPassword = _confirmPasswordController.text;
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      // Set loading state
+                      setState(() {
+                        _isLoading = true;
+                      });
 
-                // Validate form using backend service
-                final validation = BackendService.validateSignupForm(
-                  email: email,
-                  password: password,
-                  confirmPassword: confirmPassword,
-                );
+                      try {
+                        // Access the field data
+                        String email = _emailController.text.trim();
+                        String password = _passwordController.text;
+                        String confirmPassword =
+                            _confirmPasswordController.text;
 
-                if (!validation['isValid']) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(validation['message']),
-                      backgroundColor: Colors.red,
+                        // Validate form using backend service
+                        final validation = BackendService.validateSignupForm(
+                          email: email,
+                          password: password,
+                          confirmPassword: confirmPassword,
+                        );
+
+                        if (!validation['isValid']) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(validation['message']),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Print or process the data (you can replace this with your signup logic)
+                        print('Email: $email');
+                        print('Password: $password');
+                        print('Confirm Password: $confirmPassword');
+                        print('Full Name: ${_fullNameController.text}');
+                        if (!_isPatient) {
+                          print('BDN Number: ${_bdnController.text}');
+                        }
+
+                        // Apply backend signup logic here
+                        final result = await BackendService.signUpUser(
+                          email: email,
+                          password: password,
+                          name: _fullNameController.text,
+                          bdn: !_isPatient ? _bdnController.text : null,
+                          isPatient: _isPatient,
+                        );
+
+                        if (result['success']) {
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                          );
+                        } else {
+                          // Handle backend errors
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result['message']),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } finally {
+                        // Reset loading state
+                        if (mounted) {
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        }
+                      }
+                    },
+              child: _isLoading
+                  ? const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          "Signing Up...",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ],
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Sign Up",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(Icons.arrow_forward, color: Colors.white),
+                      ],
                     ),
-                  );
-                  return;
-                }
-
-                // Print or process the data (you can replace this with your signup logic)
-                print('Email: $email');
-                print('Password: $password');
-                print('Confirm Password: $confirmPassword');
-                print('Full Name: ${_fullNameController.text}');
-                if (!_isPatient) {
-                  print('BDN Number: ${_bdnController.text}');
-                }
-
-                // Apply backend signup logic here
-                final result = await BackendService.signUpUser(
-                  email: email,
-                  password: password,
-                  name: _fullNameController.text,
-                  bdn: !_isPatient ? _bdnController.text : null,
-                  isPatient: _isPatient,
-                );
-
-                if (result['success']) {
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result['message']),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const MainNavBar()),
-                  );
-                } else {
-                  // Handle backend errors
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result['message']),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Sign Up",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, color: Colors.white),
-                ],
-              ),
             ),
 
             const SizedBox(height: 20),
@@ -381,7 +445,7 @@ class _SignUpPageState extends State<SignUpPage> {
             decoration: BoxDecoration(
               border: isPassword ? null : Border.all(color: Color(0xFFE89B5F)),
               color: isPassword ? const Color(0xFFF4F2F2) : null,
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: TextField(
               controller: controller,

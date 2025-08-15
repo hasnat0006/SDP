@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'backend.dart'; // Make sure this has fetchJournalEntries()
 
 class JournalHistoryPage extends StatefulWidget {
-  const JournalHistoryPage({super.key});
+  final String userId; // Add user ID parameter
+  
+  const JournalHistoryPage({super.key, required this.userId});
 
   @override
   State<JournalHistoryPage> createState() => _JournalHistoryPageState();
@@ -11,50 +14,110 @@ class JournalHistoryPage extends StatefulWidget {
 class _JournalHistoryPageState extends State<JournalHistoryPage> {
   String sortOrder = 'Newest';
 
-  final List<JournalEntry> journalEntries = [
-    JournalEntry(
-      time: "10:00",
-      title: "Feeling Positive Today! 😊",
-      description:
-          "I'm grateful for the supportive phone call I had with my best friend.",
-      moodColor: Colors.green,
-      dateTime: DateTime(2025, 7, 11, 10, 0),
-    ),
-    JournalEntry(
-      time: "9:00",
-      title: "I Love my Dog!",
-      description:
-          "I experienced pure joy today while playing with my dog in the park.",
-      moodColor: Colors.orange,
-      dateTime: DateTime(2025, 7, 11, 9, 0),
-    ),
-    JournalEntry(
-      time: "8:00",
-      title: "Felt Bad, but it's all OK",
-      description:
-          "I felt anxious today during the team meeting, but it helped stay truthful.",
-      moodColor: Colors.purple,
-      dateTime: DateTime(2025, 7, 11, 8, 0),
-    ),
-    JournalEntry(
-      time: "7:00",
-      title: "Felt Sad & Grief",
-      description:
-          "Feeling sad today after hearing a touching but heartbreaking news.",
-      moodColor: Colors.blue,
-      dateTime: DateTime(2025, 7, 11, 7, 0),
-    ),
-  ];
+  List<JournalEntry> journalEntries = [];
+
+  DateTime? selectedDate; // Add this state variable to track the selected date
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJournalEntries();
+  }
+
+  Future<void> _loadJournalEntries() async {
+    try {
+      final rawEntries = await fetchJournalEntries(widget.userId); // Use dynamic user ID
+
+      final List<JournalEntry> loadedEntries = rawEntries.map((json) {
+        final j_id = json['j_id'] ?? '';
+        final time = json['time'] ?? '00:00';
+        final title = json['title'] ?? 'No Title';
+        final description = json['information'] ?? '';
+        final dateStr = json['date'] ?? DateTime.now().toIso8601String();
+
+        // Parse date string
+        DateTime dateTime;
+        try {
+          dateTime = DateTime.parse(dateStr);
+        } catch (_) {
+          dateTime = DateTime.now();
+        }
+
+        Color moodColor = Colors.grey;
+
+        if (json['mood_color'] != null) {
+          final mc = json['mood_color'];
+          if (mc is String) {
+            try {
+              final hexColor = mc.replaceAll('#', '');
+              moodColor = Color(int.parse('FF$hexColor', radix: 16));
+            } catch (_) {}
+          } else if (mc is int) {
+            moodColor = Color(mc);
+          }
+        }
+
+       return JournalEntry(
+        id: j_id,
+        time: time,
+        title: title,
+        description: description,
+        dateTime: dateTime,
+);
+      }).toList();
+
+      setState(() {
+        journalEntries = loadedEntries;
+      });
+    } catch (e) {
+      debugPrint('Error loading journal entries: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sort journal entries based on the selected order
-    List<JournalEntry> sortedEntries = [...journalEntries];
+    List<JournalEntry> filteredEntries = [...journalEntries];
+
+    // Filter entries based on selected date
+    if (selectedDate != null) {
+      filteredEntries = filteredEntries.where((entry) {
+        return entry.dateTime.year == selectedDate!.year &&
+            entry.dateTime.month == selectedDate!.month &&
+            entry.dateTime.day == selectedDate!.day;
+      }).toList();
+    }
+
+    List<JournalEntry> sortedEntries = [...filteredEntries];
+
+    // Sort by combined date and time
     sortedEntries.sort((a, b) {
+      DateTime parseFullDateTime(JournalEntry entry) {
+        try {
+          final timeParts = entry.time.split(':');
+          final hour = int.tryParse(timeParts[0]) ?? 0;
+          final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) ?? 0 : 0;
+          final second = timeParts.length > 2 ? int.tryParse(timeParts[2]) ?? 0 : 0;
+
+          return DateTime(
+            entry.dateTime.year,
+            entry.dateTime.month,
+            entry.dateTime.day,
+            hour,
+            minute,
+            second,
+          );
+        } catch (_) {
+          return entry.dateTime;
+        }
+      }
+
+      final aDateTime = parseFullDateTime(a);
+      final bDateTime = parseFullDateTime(b);
+
       if (sortOrder == 'Newest') {
-        return b.dateTime.compareTo(a.dateTime);
+        return bDateTime.compareTo(aDateTime);
       } else {
-        return a.dateTime.compareTo(b.dateTime);
+        return aDateTime.compareTo(bDateTime);
       }
     });
 
@@ -99,36 +162,62 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   Widget _buildDateScroller() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7)); // Start from Sunday
 
     return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 14, // Show two weeks
+        itemCount: 7, // Only show 7 days (Sunday to Saturday)
         itemBuilder: (context, index) {
           final date = startOfWeek.add(Duration(days: index));
-          final weekday = DateFormat.E().format(date); // Mon, Tue
-          final day = DateFormat.d().format(date); // 25, 26
-          final isToday = date.day == now.day &&
-              date.month == now.month &&
-              date.year == now.year;
+          final weekday = DateFormat.E().format(date); // Day name (e.g., Sun, Mon)
+          final day = DateFormat.d().format(date); // Day number (e.g., 6, 7)
+          
+          // Better date comparison - compare only year, month, and day
+          final isSelected = selectedDate != null && 
+              selectedDate!.year == date.year &&
+              selectedDate!.month == date.month &&
+              selectedDate!.day == date.day;
 
-          return Container(
-            width: 60,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: isToday ? const Color(0xFFDCB8F5) : const Color(0xFFF3E9FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              "$weekday\n$day",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: isToday ? Colors.white : Colors.black87,
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  selectedDate = null; // Untoggle if already selected
+                } else {
+                  selectedDate = DateTime(date.year, date.month, date.day); // Set selected date
+                }
+              });
+            },
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF6A1B9A) : const Color(0xFFF3E9FF), // Much darker purple for selected
+                borderRadius: BorderRadius.circular(12),
+                border: isSelected 
+                    ? Border.all(color: const Color(0xFF4A148C), width: 2)
+                    : null,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF6A1B9A).withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                "$weekday\n$day",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
               ),
             ),
           );
@@ -200,7 +289,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: entry.moodColor,
+                  color: Colors.grey,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -239,14 +328,19 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                     content: const Text('Do you really want to delete this entry?'),
                     actions: [
                       ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            journalEntries.remove(entry);
-                          });
-                          Navigator.pop(context);
+                        onPressed: () async {
+                          final success = await deleteJournalEntry(entry.id);
+                          if (success) {
+                            setState(() {
+                              journalEntries.remove(entry);
+                            });
+                            Navigator.pop(context); // Close the dialog
+                          } else {
+                            // Optionally show an error message
+                            debugPrint("Failed to delete journal entry.");
+                          }
                         },
-                        style: ElevatedButton.styleFrom(
-                        ),
+                        style: ElevatedButton.styleFrom(),
                         child: const Text('Yes'),
                       ),
                       ElevatedButton(
@@ -309,16 +403,29 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  entry.title = titleController.text;
-                  entry.description = descController.text;
-                });
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
+           ElevatedButton(
+  onPressed: () async {
+    
+    final success = await updateJournalEntry(
+      id: entry.id, 
+      title: titleController.text,
+      description: descController.text,
+    );
+
+    if (success) {
+      setState(() {
+        entry.title = titleController.text;
+        entry.description = descController.text;
+      });
+      Navigator.pop(context);
+    } else {
+      // Optionally show error
+      debugPrint("Failed to update journal entry.");
+    }
+  },
+  child: const Text('Save'),
+),
+
           ],
         );
       },
@@ -326,19 +433,19 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
   }
 }
 
-// Update JournalEntry to allow editing fields:
 class JournalEntry {
+  final String id;
   String time;
   String title;
   String description;
-  final Color moodColor;
   final DateTime dateTime;
 
   JournalEntry({
+    required this.id,
     required this.time,
     required this.title,
     required this.description,
-    required this.moodColor,
     required this.dateTime,
   });
+
 }

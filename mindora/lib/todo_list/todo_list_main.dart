@@ -1,6 +1,13 @@
 import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
-import '../dashboard/p_dashboard.dart'; // <-- Add this import
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'models/task_model.dart';
+import 'services/task_suggestion_service.dart';
+import 'services/task_notification_service.dart';
+import 'widgets/task_suggestion_popup.dart';
+import 'widgets/add_task_dialog.dart';
+import 'widgets/improved_task_tile.dart';
 
 class ToDoApp extends StatelessWidget {
   const ToDoApp({super.key});
@@ -20,108 +27,281 @@ class ToDoPage extends StatefulWidget {
 }
 
 class _ToDoPageState extends State<ToDoPage> {
-  final List<String> dates = [
-    '28',
-    '29',
-    '30',
-    '31',
-    '01',
-    '02',
-    '03',
-    '04',
-    '05',
-    '06',
-  ];
-  final List<String> days = [
-    'SAT',
-    'SUN',
-    'MON',
-    'TUE',
-    'WED',
-    'THU',
-    'FRI',
-    'SAT',
-    'SUN',
-    'MON',
-  ];
-  int selectedDateIndex = 1;
+  List<DateTime> dateList = [];
+  List<String> daysList = [];
+  int selectedDateIndex = 7; // Start from the middle (current date)
 
-  List<String> tasks = [
-    "Drink 8 glasses of water",
-    "Go for a 30-minute walk",
-    "Write in thought journal",
-  ];
+  List<Task> tasks = [];
+  List<Task> completedTasks = [];
+  bool hasShownSuggestions = false;
 
-  List<String> completedTasks = [
-    "Practice deep breathing exercises",
-    "Plan meals for the day",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _generateDateList();
+    _loadTasks();
+    _checkForTaskSuggestions();
+    _scheduleNotificationCheck();
+  }
 
-  final TextEditingController taskController = TextEditingController();
+  void _generateDateList() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
 
-  void addTask(String task) {
-    if (task.isNotEmpty) {
-      setState(() {
-        tasks.add(task);
-        taskController.clear();
-      });
+    // Generate 15 days: 7 days before today, today, and 7 days after today
+    dateList.clear();
+    daysList.clear();
+
+    for (int i = -7; i <= 7; i++) {
+      final date = today.add(Duration(days: i));
+      dateList.add(date);
+
+      // Get day name
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      daysList.add(dayNames[date.weekday - 1]);
     }
   }
 
-  void markTaskComplete(int index) {
+  // Get tasks for the selected date
+  List<Task> getTasksForSelectedDate() {
+    if (selectedDateIndex < 0 || selectedDateIndex >= dateList.length) {
+      return tasks;
+    }
+
+    final selectedDate = dateList[selectedDateIndex];
+    return tasks.where((task) {
+      if (task.dueDate == null) {
+        // Tasks without due date are shown on current day (today)
+        return selectedDateIndex == 7;
+      }
+
+      final taskDate = DateTime(
+        task.dueDate!.year,
+        task.dueDate!.month,
+        task.dueDate!.day,
+      );
+
+      return taskDate == selectedDate;
+    }).toList();
+  }
+
+  // Get completed tasks for the selected date
+  List<Task> getCompletedTasksForSelectedDate() {
+    if (selectedDateIndex < 0 || selectedDateIndex >= dateList.length) {
+      return completedTasks;
+    }
+
+    final selectedDate = dateList[selectedDateIndex];
+    return completedTasks.where((task) {
+      if (task.dueDate == null) {
+        // Tasks without due date are shown on current day (today)
+        return selectedDateIndex == 7;
+      }
+
+      final taskDate = DateTime(
+        task.dueDate!.year,
+        task.dueDate!.month,
+        task.dueDate!.day,
+      );
+
+      return taskDate == selectedDate;
+    }).toList();
+  }
+
+  Future<void> _loadTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tasksString = prefs.getString('tasks') ?? '[]';
+    final completedTasksString = prefs.getString('completed_tasks') ?? '[]';
+
+    final tasksJson = json.decode(tasksString) as List;
+    final completedTasksJson = json.decode(completedTasksString) as List;
+
     setState(() {
-      completedTasks.add(tasks[index]);
-      tasks.removeAt(index);
+      tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
+      completedTasks = completedTasksJson
+          .map((json) => Task.fromJson(json))
+          .toList();
     });
   }
 
+  Future<void> _saveTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final tasksString = json.encode(
+      tasks.map((task) => task.toJson()).toList(),
+    );
+    final completedTasksString = json.encode(
+      completedTasks.map((task) => task.toJson()).toList(),
+    );
+
+    await prefs.setString('tasks', tasksString);
+    await prefs.setString('completed_tasks', completedTasksString);
+  }
+
+  Future<void> _checkForTaskSuggestions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSuggestionDate = prefs.getString('last_suggestion_date');
+    final today = DateTime.now().toIso8601String().split('T')[0];
+
+    if (lastSuggestionDate != today && !hasShownSuggestions) {
+      setState(() {
+        hasShownSuggestions = true;
+      });
+
+      // Show suggestions after a short delay
+      Future.delayed(Duration(milliseconds: 1000), () {
+        _showTaskSuggestions();
+      });
+
+      await prefs.setString('last_suggestion_date', today);
+    }
+  }
+
+  void _scheduleNotificationCheck() {
+    // Check for overdue tasks every hour
+    Future.delayed(Duration(hours: 1), () {
+      TaskNotificationService.checkAndNotifyOverdueTasks(tasks);
+      _scheduleNotificationCheck();
+    });
+  }
+
+  void _showTaskSuggestions() {
+    final suggestions = TaskSuggestionService.getPersonalizedSuggestions(
+      userMood: 'neutral', // You can get this from user data
+      stressLevel: 5, // You can get this from user data
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => TaskSuggestionPopup(
+        suggestions: suggestions,
+        onAcceptTasks: (selectedTasks) {
+          setState(() {
+            tasks.addAll(selectedTasks);
+          });
+          _saveTasks();
+
+          // Schedule notifications for tasks with due dates
+          for (final task in selectedTasks) {
+            if (task.dueDate != null) {
+              TaskNotificationService.scheduleTaskReminder(task);
+            }
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${selectedTasks.length} task(s) added successfully!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void addTask(Task task) {
+    setState(() {
+      tasks.add(task);
+    });
+    _saveTasks();
+
+    // Schedule notification if task has due date
+    if (task.dueDate != null) {
+      TaskNotificationService.scheduleTaskReminder(task);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Task added successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void markTaskComplete(int index) {
+    final task = tasks[index];
+    final completedTask = task.copyWith(isCompleted: true);
+
+    setState(() {
+      completedTasks.add(completedTask);
+      tasks.removeAt(index);
+    });
+    _saveTasks();
+
+    // Cancel notifications for completed task
+    TaskNotificationService.cancelTaskNotifications(task.id);
+
+    // Show completion notification
+    TaskNotificationService.showTaskCompletedNotification(task);
+  }
+
   void deleteTask(int index) {
+    final task = tasks[index];
     setState(() {
       tasks.removeAt(index);
     });
+    _saveTasks();
+
+    // Cancel notifications for deleted task
+    TaskNotificationService.cancelTaskNotifications(task.id);
   }
 
   void deleteCompletedTask(int index) {
     setState(() {
       completedTasks.removeAt(index);
     });
+    _saveTasks();
   }
 
   void editTask(int index) {
-    final TextEditingController editController = TextEditingController(
-      text: tasks[index],
-    );
+    final task = tasks[index];
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Task'),
-          content: TextField(
-            controller: editController,
-            decoration: InputDecoration(
-              hintText: 'Enter task title',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (editController.text.isNotEmpty) {
-                  setState(() {
-                    tasks[index] = editController.text;
-                  });
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text('Save'),
-            ),
-          ],
+        return AddTaskDialog(
+          existingTask: task, // Pass the existing task for editing
+          onTaskAdded: (updatedTask) {
+            // Cancel old notifications
+            TaskNotificationService.cancelTaskNotifications(task.id);
+
+            // Update task with same ID
+            final newTask = updatedTask.copyWith(id: task.id);
+            setState(() {
+              tasks[index] = newTask;
+            });
+            _saveTasks();
+
+            // Schedule new notifications if needed
+            if (newTask.dueDate != null) {
+              TaskNotificationService.scheduleTaskReminder(newTask);
+            }
+          },
         );
       },
+    );
+  }
+
+  void _showAddTaskDialog() {
+    // Create a task with the selected date as the default due date
+    Task? defaultTask;
+    if (selectedDateIndex >= 0 && selectedDateIndex < dateList.length) {
+      final selectedDate = dateList[selectedDateIndex];
+      // Set default due time to end of day
+      final defaultDueDate = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        23,
+        59,
+      );
+      defaultTask = Task(id: '', title: '', dueDate: defaultDueDate);
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) =>
+          AddTaskDialog(onTaskAdded: addTask, existingTask: defaultTask),
     );
   }
 
@@ -137,17 +317,25 @@ class _ToDoPageState extends State<ToDoPage> {
             Navigator.pushReplacement(
               context,
               PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => const MainNavBar(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  const begin = Offset(-1.0, 0.0); // Slide from left to right
-                  const end = Offset.zero;
-                  const curve = Curves.ease;
-                  final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    const MainNavBar(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(
+                        -1.0,
+                        0.0,
+                      ); // Slide from left to right
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
@@ -164,7 +352,7 @@ class _ToDoPageState extends State<ToDoPage> {
         centerTitle: true,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
         ),
         actions: [
           IconButton(
@@ -196,11 +384,12 @@ class _ToDoPageState extends State<ToDoPage> {
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           // padding: EdgeInsets.zero,
-                          itemCount: days.length,
+                          itemCount: daysList.length,
                           padding: EdgeInsets.symmetric(horizontal: 5),
 
                           itemBuilder: (context, index) {
                             final isSelected = index == selectedDateIndex;
+                            final isToday = index == 7; // Today is at index 7
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -214,7 +403,7 @@ class _ToDoPageState extends State<ToDoPage> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      days[index],
+                                      daysList[index],
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: isSelected
@@ -229,16 +418,26 @@ class _ToDoPageState extends State<ToDoPage> {
                                       decoration: BoxDecoration(
                                         color: isSelected
                                             ? Colors.purple[200]
+                                            : isToday
+                                            ? Colors.blue[100]
                                             : Colors.grey[200],
                                         borderRadius: BorderRadius.circular(10),
+                                        border: isToday && !isSelected
+                                            ? Border.all(
+                                                color: Colors.blue,
+                                                width: 2,
+                                              )
+                                            : null,
                                       ),
                                       child: Center(
                                         child: Text(
-                                          dates[index],
+                                          dateList[index].day.toString(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             color: isSelected
                                                 ? Colors.white
+                                                : isToday
+                                                ? Colors.blue[700]
                                                 : Colors.black,
                                           ),
                                         ),
@@ -254,49 +453,97 @@ class _ToDoPageState extends State<ToDoPage> {
                     ),
 
                     SizedBox(height: 8),
-                    Text(
-                      "Task remaining (${tasks.length})",
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.purple[400],
-                        decorationColor: Color.fromARGB(255, 209, 24, 24),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          "Task remaining (",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.purple[400],
+                          ),
+                        ),
+                        Text(
+                          "${getTasksForSelectedDate().length}",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple[600],
+                          ),
+                        ),
+                        Text(
+                          ")",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.purple[400],
+                          ),
+                        ),
+                        Spacer(),
+                        Text(
+                          selectedDateIndex == 7
+                              ? "Today"
+                              : "${dateList[selectedDateIndex].day}/${dateList[selectedDateIndex].month}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 8),
 
-                    ...tasks.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      String task = entry.value;
-                      return TaskTile(
+                    ...getTasksForSelectedDate().asMap().entries.map((entry) {
+                      Task task = entry.value;
+                      // Find the actual index in the main tasks list
+                      int actualIndex = tasks.indexOf(task);
+                      return ImprovedTaskTile(
                         task: task,
-                        onChanged: (_) => markTaskComplete(index),
-                        value: false,
-                        onEdit: () => editTask(index),
-                        onDelete: () => deleteTask(index),
+                        onChanged: (_) => markTaskComplete(actualIndex),
+                        onEdit: () => editTask(actualIndex),
+                        onDelete: () => deleteTask(actualIndex),
                       );
                     }),
                     SizedBox(height: 20),
-                    Text(
-                      "Completed (${completedTasks.length})",
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.purple[400],
-                        decorationColor: Color.fromARGB(255, 209, 24, 24),
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          "Completed (",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.purple[400],
+                          ),
+                        ),
+                        Text(
+                          "${getCompletedTasksForSelectedDate().length}",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple[600],
+                          ),
+                        ),
+                        Text(
+                          ")",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.purple[400],
+                          ),
+                        ),
+                      ],
                     ),
-                    ...completedTasks.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      String task = entry.value;
-                      return TaskTile(
+                    ...getCompletedTasksForSelectedDate().asMap().entries.map((
+                      entry,
+                    ) {
+                      Task task = entry.value;
+                      // Find the actual index in the main completed tasks list
+                      int actualIndex = completedTasks.indexOf(task);
+                      return ImprovedTaskTile(
                         task: task,
-                        value: true,
                         onChanged: (_) {},
-                        isCompleted: true,
-                        onDelete: () => deleteCompletedTask(index),
+                        onDelete: () => deleteCompletedTask(actualIndex),
                       );
                     }),
                   ],
@@ -320,38 +567,42 @@ class _ToDoPageState extends State<ToDoPage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
+                    child: ElevatedButton.icon(
+                      onPressed: _showAddTaskDialog,
+                      icon: Icon(Icons.add, color: Colors.white),
+                      label: Text(
+                        "Add New Task",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
                       ),
-                      child: TextField(
-                        controller: taskController,
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "Add new task...",
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD1A1E3),
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => addTask(taskController.text),
+                  SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: _showTaskSuggestions,
+                    icon: Icon(Icons.lightbulb_outline, color: Colors.white),
+                    label: Text(
+                      "Suggestions",
+                      style: TextStyle(fontSize: 14, color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD1A1E3),
+                      backgroundColor: Colors.amber[600],
+                      padding: EdgeInsets.symmetric(
+                        vertical: 15,
+                        horizontal: 15,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      "Add",
-                      textAlign: TextAlign.start,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                        decorationColor: Colors.white,
                       ),
                     ),
                   ),
@@ -361,134 +612,6 @@ class _ToDoPageState extends State<ToDoPage> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class TaskTile extends StatelessWidget {
-  final String task;
-  final bool value;
-  final ValueChanged<bool?> onChanged;
-  final bool isCompleted;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
-  const TaskTile({
-    super.key,
-    required this.task,
-    required this.value,
-    required this.onChanged,
-    this.isCompleted = false,
-    this.onEdit,
-    this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 6),
-      padding: EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isCompleted ? Colors.grey[100] : Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-      ),
-
-      child: Row(
-        children: [
-          Checkbox(
-            value: value,
-            onChanged: onChanged,
-            activeColor: Colors.grey,
-          ),
-          Expanded(
-            child: Text(
-              task,
-              style: TextStyle(
-                color: isCompleted ? Colors.grey : Colors.black,
-                decoration: isCompleted
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-              ),
-            ),
-          ),
-          Transform.rotate(
-            angle: 1.5708, // 90 degrees in radians
-            child: _buildPopupMenu(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPopupMenu() {
-    return PopupMenuButton<String>(
-      icon: Icon(Icons.more_horiz, color: Colors.grey),
-      onSelected: (String value) {
-        switch (value) {
-          case 'edit_title':
-            if (onEdit != null) onEdit!();
-            break;
-          case 'edit_details':
-            if (onEdit != null) onEdit!();
-            break;
-          case 'update_date':
-            // Handle date update
-            break;
-          case 'delete':
-            if (onDelete != null) onDelete!();
-            break;
-        }
-      },
-      itemBuilder: (BuildContext context) => _buildPopupMenuItems(),
-    );
-  }
-
-  List<PopupMenuEntry<String>> _buildPopupMenuItems() {
-    return <PopupMenuEntry<String>>[
-      PopupMenuItem<String>(
-        value: 'edit_title',
-        child: _buildMenuItem(Icons.edit, 'Edit Title', Colors.grey[600]),
-      ),
-      PopupMenuItem<String>(
-        value: 'edit_details',
-        child: _buildMenuItem(
-          Icons.description,
-          'Edit Details',
-          Colors.grey[600],
-        ),
-      ),
-      PopupMenuItem<String>(
-        value: 'update_date',
-        child: _buildMenuItem(
-          Icons.calendar_today,
-          'Update Date',
-          Colors.grey[600],
-        ),
-      ),
-      PopupMenuItem<String>(
-        value: 'delete',
-        child: _buildMenuItem(
-          Icons.delete,
-          'Delete',
-          Colors.red[400],
-          isDestructive: true,
-        ),
-      ),
-    ];
-  }
-
-  Widget _buildMenuItem(
-    IconData icon,
-    String text,
-    Color? color, {
-    bool isDestructive = false,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: color, size: 20),
-        SizedBox(width: 8),
-        Text(text, style: TextStyle(color: isDestructive ? color : null)),
-      ],
     );
   }
 }

@@ -25,6 +25,12 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
     'Family',
     'Health',
     'Financial',
+    'Medication',
+    'Social',
+    'Personal',
+    'Academic',
+    'Deadlines',
+    'Weather',
     'Other',
   ];
   List<IconData> causeIcons = [
@@ -32,6 +38,12 @@ class _MoodIntensityPageState extends State<MoodIntensityPage> with SingleTicker
     Icons.family_restroom,
     Icons.health_and_safety,
     Icons.attach_money,
+    Icons.local_pharmacy,
+    Icons.group,
+    Icons.person,  // For 'Personal' cause
+    Icons.school,        // For 'Academic' cause
+    Icons.alarm,         // For 'Deadlines' cause
+    Icons.cloud,         // For 'Weather' cause
     Icons.add_circle_outline,
   ];
 
