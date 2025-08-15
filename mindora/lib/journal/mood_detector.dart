@@ -6,8 +6,8 @@ class MoodDetector {
     'happy': ['happy', 'joy', 'excited', 'great', 'amazing', 'wonderful', 'fantastic', 'good', 'pleased', 'delighted', 'cheerful', 'glad', 'awesome', 'brilliant', 'excellent', 'love', 'loved', 'loving'],
     'sad': ['sad', 'depressed', 'down', 'upset', 'crying', 'tears', 'hurt', 'disappointed', 'lonely', 'miserable', 'gloomy', 'devastated', 'heartbroken', 'sorrow', 'grief'],
     'angry': ['angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'pissed', 'outraged', 'livid', 'enraged', 'infuriated'],
-    'anxious': ['anxious', 'worried', 'nervous', 'stressed', 'panic', 'fear', 'scared', 'overwhelmed', 'tense', 'uneasy', 'restless', 'troubled'],
-    'calm': ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'content', 'balanced', 'zen', 'comfortable', 'composed'],
+    'stressed': ['stressed', 'anxious', 'worried', 'nervous', 'panic', 'fear', 'scared', 'overwhelmed', 'tense', 'uneasy', 'restless', 'troubled', 'pressure', 'burden', 'panicking'],
+    'excited': ['excited', 'thrilled', 'pumped', 'energetic', 'enthusiastic', 'eager', 'hyped', 'exhilarated', 'elated', 'animated', 'vibrant', 'dynamic', 'charged', 'yay'],
     'neutral': ['okay', 'fine', 'alright', 'normal', 'regular', 'usual', 'ordinary', 'standard', 'typical', 'average', 'meh', 'whatever', 'indifferent', 'unchanged', 'steady', 'stable', 'routine', 'mundane', 'bland', 'plain']
   };
 
@@ -15,8 +15,8 @@ class MoodDetector {
     'happy': Color(0xFFFDD835), // Bright Yellow
     'sad': Color(0xFF1976D2),   // Blue
     'angry': Color(0xFFD32F2F), // Red
-    'anxious': Color(0xFFFF9800), // Orange
-    'calm': Color(0xFF388E3C),  // Green
+    'stressed': Color(0xFFFF9800), // Orange
+    'excited': Color(0xFFFF6F00), // Bright Orange
     'neutral': Color(0xFFEEDCF9), // Default lavender
   };
 
@@ -24,8 +24,8 @@ class MoodDetector {
     'happy': Icons.sentiment_very_satisfied,
     'sad': Icons.sentiment_very_dissatisfied,
     'angry': Icons.sentiment_very_dissatisfied,
-    'anxious': Icons.sentiment_dissatisfied,
-    'calm': Icons.sentiment_satisfied,
+    'stressed': Icons.sentiment_dissatisfied,
+    'excited': Icons.sentiment_satisfied,
     'neutral': Icons.sentiment_neutral,
   };
 
@@ -36,17 +36,17 @@ class MoodDetector {
     final words = lowerText.split(RegExp(r'[^\w]+'));
     String lastFoundMood = 'neutral';
     
-    // Negation words that make any emotion neutral
+    
     final negationWords = ['not', 'never', 'no', 'don\'t', 'doesn\'t', 'didn\'t', 'won\'t', 'can\'t', 'couldn\'t', 'shouldn\'t', 'wouldn\'t', 'isn\'t', 'aren\'t', 'wasn\'t', 'weren\'t', 'haven\'t', 'hasn\'t', 'hadn\'t'];
     
-    // Scan through all words in the text
+   
     for (int i = 0; i < words.length; i++) {
       String word = words[i];
       
-      // Check if this word matches any mood
+     
       for (String mood in moodKeywords.keys) {
         if (moodKeywords[mood]!.contains(word)) {
-          // Check if there's a negation word before this mood word (within 3 words)
+         
           bool isNegated = false;
           for (int j = math.max(0, i - 3); j < i; j++) {
             if (negationWords.contains(words[j])) {
@@ -77,8 +77,8 @@ class MoodDetector {
       case 'happy': return 'Happy 😊';
       case 'sad': return 'Sad 😢';
       case 'angry': return 'Angry 😠';
-      case 'anxious': return 'Anxious 😰';
-      case 'calm': return 'Calm 😌';
+      case 'stressed': return 'Stressed 😰';
+      case 'excited': return 'Excited 🤩';
       default: return 'Neutral 😐';
     }
   }
