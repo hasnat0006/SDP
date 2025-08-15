@@ -1,6 +1,8 @@
+import 'dart:convert';
+import 'package:client/appointment/therapistcard.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:client/appointment/therapistcard.dart';
+import 'package:http/http.dart' as http;
 
 class Therapist {
   final String name;
@@ -37,68 +39,54 @@ class _BookAppt extends State<BookAppt> {
 
   final Color purple = const Color.fromARGB(255, 211, 154, 213);
 
-  final List<Therapist> therapistinfo = [
-    Therapist(
-      name: 'Nabiha Parvez',
-      institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'assets/nabiha.jpeg',
-      shortbio:
-          'Dr Nabiha is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. She specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
-      education:
-          'MBBS, Sir Salimullah Medical College, 2005\n'
-          'MD in Psychiatry, 2015\n'
-          'FCPS Part 1 in Psychiatry, CPSB, 2018',
-      description:
-          '''Dr. Nabiha Parvez is a caring and dedicated psychiatrist who believes in providing holistic care to individuals struggling with mental health issues. With a patient-centered approach, Dr. Nabiha Parvez works to create a safe space for individuals to explore their thoughts, emotions, and behaviors.
+  List<Therapist> therapistinfo = [];
+  bool isLoading = true;
 
-Dr. Nabiha Parvez aims to empower individuals to take control of their mental health by offering support, understanding, and evidence-based treatment options. She values building trust with patients and is committed to making each consultation a personalized and productive experience.''',
-      special:
-          'Depression & Anxiety Disorders\nStress Management\nBehavioural Therapy\nTrauma And PTSD',
-      exp:
-          '10 Years of Experience\n'
-          'Former Consulting Psychiatrist at Dhaka Medical College, 8 years\n'
-          'Former Psychiatrist at Apollo Hospital, 2 years',
-    ),
-    Therapist(
-      name: 'Yusuf Reza',
-      institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'assets/hasnat.jpg',
-      shortbio:
-          'Dr Yusuf is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. He specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
-      education: '',
-      description: '',
-      special: '',
-      exp: '10 years of experience',
-    ),
-    Therapist(
-      name: 'Nazifa Zahin Ifrit',
-      institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'assets/ifrit.jpeg',
-      shortbio:
-          'Dr Ifrit is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. She specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
-      education: '',
-      description: '',
-      special: '',
-      exp: '10 years of experience',
-    ),
-    Therapist(
-      name: 'Tanvin Sarkar',
-      institution: 'National Institute of Mental Health and Hospital',
-      imagepath: 'assets/therapist.png',
-      shortbio:
-          'Dr Tanvin is a qualified and compassionate psychiatrist with over 10 years of experience helping individuals manage mental health concerns. He specializes in anxiety, depression, and stress management, and provides personalized care tailored to each patient\'s unique needs.',
-      education: '',
-      description: '',
-      special: '',
-      exp: '10 years of experience',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchTherapists();
+  }
 
   @override
   void dispose() {
     searchController.dispose();
     focusNode.dispose();
     super.dispose();
+  }
+
+  // Fetch therapists data from the backend API
+  Future<void> fetchTherapists() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:5000/api/therapists'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        therapistinfo = data.map((item) {
+          return Therapist(
+            name: item['name'],
+            institution: item['institution'],
+            imagepath: item['imagepath'],
+            shortbio: item['shortbio'],
+            education: item['education'],
+            description: item['description'],
+            special: item['special'],
+            exp: item['exp'],
+          );
+        }).toList();
+        isLoading = false;
+      });
+    } else {
+      // Handle error response
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load therapist data')));
+    }
   }
 
   @override
@@ -174,54 +162,60 @@ Dr. Nabiha Parvez aims to empower individuals to take control of their mental he
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      int crossCount = 2;
-                      if (constraints.maxWidth >= 700 &&
-                          constraints.maxWidth < 1000) {
-                        crossCount = 3;
-                      } else if (constraints.maxWidth >= 1000) {
-                        crossCount = 4;
-                      }
+                  child: isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossCount = 2;
+                            if (constraints.maxWidth >= 700 &&
+                                constraints.maxWidth < 1000) {
+                              crossCount = 3;
+                            } else if (constraints.maxWidth >= 1000) {
+                              crossCount = 4;
+                            }
 
-                      final filtered = therapistinfo.where((t) {
-                        final q = searchController.text.trim().toLowerCase();
-                        if (q.isEmpty) return true;
-                        return t.name.toLowerCase().contains(q) ||
-                            t.institution.toLowerCase().contains(q) ||
-                            t.special.toLowerCase().contains(q) ||
-                            t.shortbio.toLowerCase().contains(q);
-                      }).toList();
+                            final filtered = therapistinfo.where((t) {
+                              final q = searchController.text
+                                  .trim()
+                                  .toLowerCase();
+                              if (q.isEmpty) return true;
+                              return t.name.toLowerCase().contains(q) ||
+                                  t.institution.toLowerCase().contains(q) ||
+                                  t.special.toLowerCase().contains(q) ||
+                                  t.shortbio.toLowerCase().contains(q);
+                            }).toList();
 
-                      return GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossCount,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.62,
+                            return GridView.builder(
+                              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossCount,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 0.62,
+                                  ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final t = filtered[index];
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () =>
+                                      _showTherapistDetails(context, t),
+                                  child: TherapistCard(
+                                    name: t.name,
+                                    institution: t.institution,
+                                    imagepath: t.imagepath,
+                                    shortbio: t.shortbio,
+                                    description: t.description,
+                                    education: t.education,
+                                    special: t.special,
+                                    exp: t.exp,
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final t = filtered[index];
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () => _showTherapistDetails(context, t),
-                            child: TherapistCard(
-                              name: t.name,
-                              institution: t.institution,
-                              imagepath: t.imagepath,
-                              shortbio: t.shortbio,
-                              description: t.description,
-                              education: t.education,
-                              special: t.special,
-                              exp: t.exp,
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
