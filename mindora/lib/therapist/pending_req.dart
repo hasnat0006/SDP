@@ -157,7 +157,7 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
     );
 
     try {
-      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'rejected');
+      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'cancelled');
       
       // Close loading dialog
       Navigator.pop(context);

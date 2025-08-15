@@ -51,7 +51,7 @@ class Appointment {
 		}
 
 		return Appointment(
-			appId: json['doc_id']?.toString() ?? json['app_id']?.toString() ?? '', // Handle both doc_id and app_id as strings
+			appId: json['app_id']?.toString() ?? json['doc_id']?.toString() ?? '', // Use app_id first, then doc_id as fallback
 			userId: json['user_id']?.toString() ?? '',
 			userName: json['user_name']?.toString() ?? '', // Will be populated later
 			date: formattedDate,
