@@ -481,7 +481,10 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),
+                      pageBuilder: (context, animation, secondaryAnimation) => PendingRequestsPage(
+                        doctorId: widget.doctorId,
+                        userType: widget.userType,
+                      ),
                       transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         const begin = Offset(1.0, 0.0);
                         const end = Offset.zero;

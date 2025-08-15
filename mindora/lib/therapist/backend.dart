@@ -339,4 +339,77 @@ class AppointmentService {
 			return false;
 		}
 	}
+
+	static Future<List<Appointment>> fetchPendingAppointmentsForDoctor(String? doctorId) async {
+		if (doctorId == null || doctorId.isEmpty) {
+			throw Exception('Doctor ID is required');
+		}
+
+		try {
+			print('🌐 Making request to: $baseUrl/pending-appointments/doctor/$doctorId');
+			final response = await http.get(
+				Uri.parse('$baseUrl/pending-appointments/doctor/$doctorId'),
+				headers: {'Content-Type': 'application/json'},
+			);
+			
+			print('📡 Response status: ${response.statusCode}');
+			print('📋 Response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final List<dynamic> data = json.decode(response.body);
+				print('✅ Parsed ${data.length} pending appointments from API for doctor: $doctorId');
+				
+				// Create appointments and fetch user names
+				List<Appointment> appointments = [];
+				for (var json in data) {
+					var appointment = Appointment.fromJson(json);
+					// Fetch user name for this appointment
+					String userName = await fetchUserName(appointment.userId);
+					
+					// Create new appointment with user name
+					appointments.add(Appointment(
+						appId: appointment.appId,
+						userId: appointment.userId,
+						userName: userName,
+						date: appointment.date,
+						time: appointment.time,
+						status: appointment.status,
+						reminder: appointment.reminder,
+					));
+				}
+				
+				return appointments;
+			} else {
+				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+			}
+		} catch (e) {
+			print('❌ AppointmentService error: $e');
+			throw Exception('Failed to load pending appointments for doctor: $e');
+		}
+	}
+
+	static Future<bool> updateAppointmentStatus(String appointmentId, String status) async {
+		try {
+			print('🌐 Making request to update appointment status: $baseUrl/update-appointment-status/$appointmentId');
+			final response = await http.put(
+				Uri.parse('$baseUrl/update-appointment-status/$appointmentId'),
+				headers: {'Content-Type': 'application/json'},
+				body: json.encode({'status': status}),
+			);
+			
+			print('📡 Update status response status: ${response.statusCode}');
+			print('📋 Update status response body: ${response.body}');
+			
+			if (response.statusCode == 200) {
+				final Map<String, dynamic> data = json.decode(response.body);
+				return data['success'] == true;
+			} else {
+				print('❌ Failed to update appointment status: ${response.statusCode}');
+				return false;
+			}
+		} catch (e) {
+			print('❌ Error updating appointment status: $e');
+			return false;
+		}
+	}
 }

@@ -253,4 +253,62 @@ router.put('/update-reminder/:appId', async (req, res) => {
   }
 });
 
+// Route to fetch pending appointments for a specific doctor
+router.get('/pending-appointments/doctor/:docId', async (req, res) => {
+  try {
+    const { docId } = req.params;
+    console.log(`🔍 Fetching pending appointments for doctor ID: ${docId}`);
+    
+    const appointments = await sql`
+      SELECT doc_id, user_id, status, date, time, reminder 
+      FROM appointment 
+      WHERE status = 'pending' AND doc_id = ${docId}
+    `;
+    
+    console.log('📊 Found pending appointments for doctor:', appointments.length);
+    
+    res.json(appointments);
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Route to accept/reject appointment requests
+router.put('/update-appointment-status/:appId', async (req, res) => {
+  try {
+    const { appId } = req.params;
+    const { status } = req.body;
+    
+    console.log(`🔍 Updating appointment status for ID: ${appId} to: ${status}`);
+    
+    // Validate status value
+    if (!status || !['confirmed', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be "confirmed" or "rejected"' });
+    }
+    
+    // Update the appointment status
+    const result = await sql`
+      UPDATE appointment 
+      SET status = ${status}
+      WHERE doc_id = ${appId}
+    `;
+    
+    if (result.count === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    console.log('✅ Appointment status updated successfully');
+    res.json({ 
+      success: true, 
+      message: 'Appointment status updated successfully',
+      appointmentId: appId,
+      status: status
+    });
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 module.exports = router;
