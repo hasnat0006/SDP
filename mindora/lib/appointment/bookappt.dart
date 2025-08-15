@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:client/appointment/therapistcard.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'therapistcard.dart'; // Import the TherapistCard widget
 
 class Therapist {
   final String name;
@@ -57,35 +57,58 @@ class _BookAppt extends State<BookAppt> {
 
   // Fetch therapists data from the backend API
   Future<void> fetchTherapists() async {
-    final response = await http.get(
-      Uri.parse('http://localhost:5000/api/therapists'),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:5000/therapists'),
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      setState(() {
-        therapistinfo = data.map((item) {
-          return Therapist(
-            name: item['name'],
-            institution: item['institution'],
-            imagepath: item['imagepath'],
-            shortbio: item['shortbio'],
-            education: item['education'],
-            description: item['description'],
-            special: item['special'],
-            exp: item['exp'],
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body); // Decode the response body
+
+        if (data is Map) {
+          // If the response is a map (single object), parse it directly
+          final therapist = Therapist(
+            name: data['name'] ?? 'Unknown', // Provide a default value if null
+            institution: data['institute'] ?? 'Unknown Institution',
+            imagepath:
+                data['image_path'] ??
+                'assets/default_image.png', // Default image if null
+            shortbio:
+                data['shortbio'] ?? 'No bio available', // Default bio if null
+            education:
+                data['education'] ??
+                'No education details', // Default education
+            description:
+                data['description'] ??
+                'No description available', // Default description
+            special:
+                data['special'] ?? 'No specialties listed', // Default specialty
+            exp:
+                data['exp'] ??
+                'No experience listed', // Default experience if null
           );
-        }).toList();
-        isLoading = false;
-      });
-    } else {
-      // Handle error response
+
+          setState(() {
+            therapistinfo = [therapist]; // Wrap the single therapist in a list
+            isLoading = false; // Stop the loading spinner once data is fetched
+          });
+        } else {
+          throw Exception('Unexpected response format');
+        }
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        throw Exception('Failed to load therapist data');
+      }
+    } catch (e) {
       setState(() {
         isLoading = false;
       });
+      print('Error: $e'); // Print the error message in the console
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load therapist data')));
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -163,7 +186,9 @@ class _BookAppt extends State<BookAppt> {
                 const SizedBox(height: 16),
                 Expanded(
                   child: isLoading
-                      ? Center(child: CircularProgressIndicator())
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        ) // Show loading spinner when fetching
                       : LayoutBuilder(
                           builder: (context, constraints) {
                             int crossCount = 2;

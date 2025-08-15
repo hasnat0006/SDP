@@ -33,6 +33,9 @@ class BookForm extends StatefulWidget {
 class _BookForm extends State<BookForm> {
   DateTime? selectedDate;
   String? selectedTime;
+  bool isBookingForSomeoneElse = false; // Track if booking for someone else
+  TextEditingController emailController =
+      TextEditingController(); // Email text field controller
 
   final List<String> timeSlots = [
     '09:00 AM',
@@ -216,6 +219,69 @@ class _BookForm extends State<BookForm> {
                 ),
               ),
               const SizedBox(height: 12),
+
+              const Text('Reason', style: TextStyle(fontSize: 16)),
+              const SizedBox(
+                height: 12,
+              ), // Add some spacing between the label and the text field
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'Enter reason', // Label for the text field
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+
+              // Book for Yourself or Someone Else
+              Row(
+                children: [
+                  Checkbox(
+                    value: !isBookingForSomeoneElse,
+                    onChanged: (value) {
+                      setState(() {
+                        isBookingForSomeoneElse = !value!;
+                      });
+                    },
+                  ),
+                  const Text(
+                    'Book for yourself',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Checkbox(
+                    value: isBookingForSomeoneElse,
+                    onChanged: (value) {
+                      setState(() {
+                        isBookingForSomeoneElse = value!;
+                      });
+                    },
+                  ),
+                  const Text(
+                    'Book for someone else',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+
+              // Show email field if booking for someone else
+              if (isBookingForSomeoneElse) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter patient\'s email address',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 24),
 
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(

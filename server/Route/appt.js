@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/therapists", async (req, res) => {
   try {
     const result = await sql`
-        SELECT * from users where type = 'doctor'`;
+        SELECT * from doctor`;
     if (result.length === 0) {
       return res.status(404).json({ error: "No therapists found" });
     }
