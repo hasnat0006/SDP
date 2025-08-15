@@ -74,7 +74,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
         journalEntries = loadedEntries;
       });
     } catch (e) {
-      debugPrint('Error loading journal entries: $e');
+      debugPrint('Error loading diary entries: $e');
     }
   }
 
@@ -157,7 +157,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
               child: sortedEntries.isEmpty
                   ? const Center(
                       child: Text(
-                        'No journal entries found',
+                        'No Diary entries found',
                         style: TextStyle(
                           color: Colors.black54,
                           fontSize: 16,
@@ -417,7 +417,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                 });
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Journal entry deleted')),
+                  const SnackBar(content: Text('Diary entry deleted')),
                 );
               } else {
                 Navigator.pop(context);

@@ -254,8 +254,8 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         _trackerTile(
           Icons.edit_note,
-          'Thought Journal',
-          '64 Day Streak',
+          'Thought Diary',
+          'Note down your thoughts',
           context,
           onTap: () {
             Navigator.push(

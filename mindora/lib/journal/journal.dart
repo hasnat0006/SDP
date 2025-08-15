@@ -99,7 +99,7 @@ class _JournalPageState extends State<JournalPage> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Journal saved with ${MoodDetector.getMoodDisplayName(moodToSave)} mood!'),
+          content: Text('Diary saved with ${MoodDetector.getMoodDisplayName(moodToSave)} mood!'),
           backgroundColor: MoodDetector.getMoodColor(moodToSave),
           duration: const Duration(seconds: 2),
         ),
@@ -108,7 +108,7 @@ class _JournalPageState extends State<JournalPage> {
       print('❌ Error in _handleSaveJournal: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to save journal.'),
+          content: Text('Failed to save entry.'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 2),
         ),
@@ -234,7 +234,7 @@ class _JournalPageState extends State<JournalPage> {
           },
         ),
         title: const Text(
-          "New Journal",
+          "New Entry",
           style: TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
@@ -277,7 +277,7 @@ class _JournalPageState extends State<JournalPage> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: 'Title your journal...',
+                hintText: 'Title your entry...',
                 hintStyle: const TextStyle(color: Colors.black54),
                 border: InputBorder.none,
                 focusedBorder: UnderlineInputBorder(
@@ -322,7 +322,7 @@ class _JournalPageState extends State<JournalPage> {
                 ),
                 onPressed: _handleSaveJournal,
                 child: Text(
-                  'Save Journal - ${MoodDetector.getMoodDisplayName(currentMood)}',
+                  'Save Entry - ${MoodDetector.getMoodDisplayName(currentMood)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
