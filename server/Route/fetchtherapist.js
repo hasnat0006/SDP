@@ -110,4 +110,60 @@ router.get('/confirmed-appointments/user/:userId', async (req, res) => {
   }
 });
 
+// Route to get user details by user ID
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(`🔍 Fetching user details for ID: ${userId}`);
+    
+    const user = await sql`
+      SELECT name 
+      FROM users 
+      WHERE id = ${userId}
+    `;
+    
+    if (user.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('✅ Found user:', user[0]);
+    res.json(user[0]);
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Route to get patient details by user ID
+router.get('/patient/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(`🔍 Fetching patient details for user ID: ${userId}`);
+    
+    // Fetch from both users and patient tables
+    // users table has: name, id
+    // patient table has: user_id, profession, gender, dob
+    const patientData = await sql`
+      SELECT 
+        u.name,
+        p.gender, 
+        p.dob, 
+        p.profession 
+      FROM users u
+      LEFT JOIN patient p ON u.id = p.user_id
+      WHERE u.id = ${userId}
+    `;
+    
+    if (patientData.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    
+    console.log('✅ Found patient data:', patientData[0]);
+    res.json(patientData[0]);
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
 module.exports = router;

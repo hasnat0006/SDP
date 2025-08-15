@@ -63,88 +63,197 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  'Appointment Details',
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                  style: const TextStyle(fontSize: 20),
+        return FutureBuilder<PatientDetails?>(
+          future: AppointmentService.fetchPatientDetails(appointments[index].userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: const Text('Loading Patient Details...'),
+                content: const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            final patientDetails = snapshot.data;
+            
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Flexible(
+                    child: Text(
+                      'Patient Information',
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                      style: TextStyle(fontSize: 20),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (patientDetails != null) ...[
+                      _buildPatientInfoSection(patientDetails),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 10),
+                      _buildAppointmentInfoSection(index),
+                    ] else ...[
+                      const Text(
+                        'Patient details not available',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildAppointmentInfoSection(index),
+                    ]
+                  ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          content: Table(
-            columnWidths: const {
-              0: IntrinsicColumnWidth(),
-              1: FlexColumnWidth(),
-            },
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              _buildTableRow("Appointment ID:", appointments[index].appId),
-              _buildTableRow("User ID:", appointments[index].userId),
-              _buildTableRow("Date:", appointments[index].date),
-              _buildTableRow("Time:", appointments[index].time),
-              _buildTableRow("Status:", appointments[index].status),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      title: const Text("Confirm Cancellation"),
-                      content: const Text("Are you sure you want to cancel this appointment?"),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Close confirmation dialog
-                          },
-                          child: const Text("No"),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              appointments.removeAt(index);
-                              reminders.removeAt(index);
-                            });
-                            Navigator.pop(context); // Close confirmation dialog
-                            Navigator.pop(context); // Close reschedule dialog
-                          },
-                          child: const Text("Yes"),
-                        ),
-                      ],
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          title: const Text("Confirm Cancellation"),
+                          content: const Text("Are you sure you want to cancel this appointment?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Close confirmation dialog
+                              },
+                              child: const Text("No"),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  appointments.removeAt(index);
+                                  reminders.removeAt(index);
+                                });
+                                Navigator.pop(context); // Close confirmation dialog
+                                Navigator.pop(context); // Close reschedule dialog
+                              },
+                              child: const Text("Yes"),
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
-                );
-              },
-              child: const Text('Cancel Appointment'),
-            ),
-          ],
+                  child: const Text('Cancel Appointment'),
+                ),
+              ],
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildPatientInfoSection(PatientDetails patient) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Patient Details',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildInfoRow('Name:', patient.name),
+        _buildInfoRow('Gender:', patient.gender),
+        if (patient.age.isNotEmpty) _buildInfoRow('Age:', patient.age),
+        _buildInfoRow('Profession:', patient.profession),
+      ],
+    );
+  }
+
+  Widget _buildAppointmentInfoSection(int index) {
+    final appt = appointments[index];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Appointment Details',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildInfoRow('Date:', appt.date),
+        _buildInfoRow('Time:', appt.time),
+        const SizedBox(height: 8),
+        Text(
+          'ID: ${appt.appId.substring(0, 8)}...',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -159,32 +268,30 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Date at the top
             Text(
-              "${appt.date} at ${appt.time}",
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+              appt.date,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            // Patient name in bold
+            Text(
+              appt.userName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    "Appointment #${appt.appId.substring(0, 8)}", // Show first 8 chars of UUID
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(appt.status, style: const TextStyle(fontSize: 12, color: Colors.green)),
-                ),
-              ],
+            // Time below name
+            Text(
+              appt.time,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+            // Appointment ID in small grey text
+            Text(
+              "ID: ${appt.appId.substring(0, 8)}",
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -292,31 +399,6 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
           ],
         ),
       ),
-    );
-  }
-  TableRow _buildTableRow(String label, String value) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

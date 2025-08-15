@@ -98,4 +98,27 @@ async function verifyPassword(plainPassword, hashedPassword) {
   return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
+// Get user by ID endpoint
+router.get("/user/:userId", async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    console.log("Fetching user details for ID:", userId);
+    
+    // Fetch user by ID
+    const user = await sql`SELECT id, email, name, type FROM users WHERE id = ${userId}`;
+    
+    if (user.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Return user details excluding password
+    res.status(200).json(user[0]);
+    
+  } catch (err) {
+    console.error("Fetch user error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
