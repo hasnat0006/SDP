@@ -16,7 +16,7 @@ class MoodDetector {
     'sad': Color(0xFF1976D2),   // Blue
     'angry': Color(0xFFD32F2F), // Red
     'stressed': Color(0xFFFF9800), // Orange
-    'excited': Color(0xFFFF6F00), // Bright Orange
+    'excited': Color.fromARGB(255, 159, 238, 63), // Bright Orange
     'neutral': Color(0xFFEEDCF9), // Default lavender
   };
 

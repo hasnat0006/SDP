@@ -30,12 +30,20 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   Future<void> _loadUserData() async {
     try {
       final userData = await UserService.getUserData();
-      setState(() {
-        _userId = userData['userId'] ?? '';
-        _userType = userData['userType'] ?? '';
-        _userName = userData['userName'] ?? 'Doctor';
-      });
+      if (mounted) {
+        setState(() {
+          _userId = userData['userId'] ?? '';
+          _userType = userData['userType'] ?? '';
+          _userName = userData['userName'] ?? 'Doctor';
+        });
+      }
       print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
+      
+      // Safety check - if this is not a doctor/therapist account, don't load appointments
+      if (_userType == 'patient') {
+        print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
+        return;
+      }
     } catch (e) {
       print('Error loading doctor data: $e');
     }
@@ -43,6 +51,17 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
   Future<void> _loadTodayAppointments() async {
     try {
+      // Safety check - only load appointments if user type is doctor/therapist
+      if (_userType == 'patient') {
+        print('⚠️ Skipping appointment loading for patient account');
+        if (mounted) {
+          setState(() {
+            isLoadingAppointments = false;
+          });
+        }
+        return;
+      }
+      
       // Import the appointment service
       final appointments = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
       
@@ -68,15 +87,19 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         }
       }
       
-      setState(() {
-        todayAppointments = todayAppts;
-        isLoadingAppointments = false;
-      });
+      if (mounted) {
+        setState(() {
+          todayAppointments = todayAppts;
+          isLoadingAppointments = false;
+        });
+      }
     } catch (e) {
       print('Error loading today appointments: $e');
-      setState(() {
-        isLoadingAppointments = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoadingAppointments = false;
+        });
+      }
     }
   }
 
