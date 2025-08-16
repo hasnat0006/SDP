@@ -12,16 +12,15 @@ router.get("/journal", async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    const result = await sql`
-      SELECT j_id, user_id, title, information, date, time 
-      FROM journal 
+    // Include mood and mood_color in the SELECT statement
+    const journals = await sql`
+      SELECT j_id, date, time, title, information, mood, mood_color FROM journal
       WHERE user_id = ${user_id}
       ORDER BY date DESC, time DESC
     `;
-    
-    console.log(`📚 Found ${result.length} journals for user ${user_id}`);
-    
-    res.json({ journals: result });
+
+    console.log("Fetched journals with mood data:", journals);
+    res.status(200).json({ journals });
   } catch (error) {
     console.error('❌ Error fetching journals:', error);
     res.status(500).json({ error: 'Database error' });
@@ -29,20 +28,29 @@ router.get("/journal", async (req, res) => {
 });
 
 router.post('/journal/update', async (req, res) => {
-  const { id, title, description } = req.body;
+  const { id, title, description, mood, mood_color } = req.body;
   console.log('Update request received:', req.body);
 
-  if (!id || !title || !description) {
+  if (!id || !title || !description || !mood) {
     return res.status(400).json({ error: 'Missing fields' });
   }
 
+  const finalMoodColor = mood_color || '#EEDCF9';
+
   try {
-    await sql`
+    const updatedJournal = await sql`
       UPDATE journal
-      SET title = ${title}, information = ${description}
+      SET title = ${title}, information = ${description}, mood = ${mood}, mood_color = ${finalMoodColor}
       WHERE j_id = ${id}
+      RETURNING *;
     `;
-    res.json({ success: true });
+    
+    if (updatedJournal.length === 0) {
+      return res.status(404).json({ error: 'Journal not found' });
+    }
+
+    console.log('Journal updated successfully:', updatedJournal[0]);
+    res.json({ success: true, journal: updatedJournal[0] });
   } catch (err) {
     console.error('Error updating journal:', err);
     res.status(500).json({ error: 'Database error' });

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'backend.dart'; // Make sure this has fetchJournalEntries()
+import 'backend.dart'; 
+import 'mood_detector.dart';
 
 class JournalHistoryPage extends StatefulWidget {
-  final String userId; // Add user ID parameter
+  final String userId;
   
   const JournalHistoryPage({super.key, required this.userId});
 
@@ -13,10 +14,8 @@ class JournalHistoryPage extends StatefulWidget {
 
 class _JournalHistoryPageState extends State<JournalHistoryPage> {
   String sortOrder = 'Newest';
-
   List<JournalEntry> journalEntries = [];
-
-  DateTime? selectedDate; // Add this state variable to track the selected date
+  DateTime? selectedDate;
 
   @override
   void initState() {
@@ -26,7 +25,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   Future<void> _loadJournalEntries() async {
     try {
-      final rawEntries = await fetchJournalEntries(widget.userId); // Use dynamic user ID
+      final rawEntries = await fetchJournalEntries(widget.userId);
 
       final List<JournalEntry> loadedEntries = rawEntries.map((json) {
         final j_id = json['j_id'] ?? '';
@@ -34,6 +33,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
         final title = json['title'] ?? 'No Title';
         final description = json['information'] ?? '';
         final dateStr = json['date'] ?? DateTime.now().toIso8601String();
+        final mood = json['mood'] ?? 'neutral';
 
         // Parse date string
         DateTime dateTime;
@@ -43,34 +43,38 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
           dateTime = DateTime.now();
         }
 
-        Color moodColor = Colors.grey;
-
+        // Parse mood color with better handling
+        Color moodColor = MoodDetector.getMoodColor(mood);
         if (json['mood_color'] != null) {
-          final mc = json['mood_color'];
-          if (mc is String) {
-            try {
-              final hexColor = mc.replaceAll('#', '');
-              moodColor = Color(int.parse('FF$hexColor', radix: 16));
-            } catch (_) {}
-          } else if (mc is int) {
-            moodColor = Color(mc);
+          try {
+            final colorStr = json['mood_color'].toString().replaceAll('#', '');
+            if (colorStr.isNotEmpty) {
+              moodColor = Color(int.parse('FF$colorStr', radix: 16));
+            }
+          } catch (e) {
+            print('Error parsing mood color: $e, using default color for mood: $mood');
+            moodColor = MoodDetector.getMoodColor(mood);
           }
         }
 
-       return JournalEntry(
-        id: j_id,
-        time: time,
-        title: title,
-        description: description,
-        dateTime: dateTime,
-);
+        print('Entry: $title, Mood: $mood, Color: $moodColor'); // Debug
+
+        return JournalEntry(
+          id: j_id,
+          time: time,
+          title: title,
+          description: description,
+          dateTime: dateTime,
+          mood: mood,
+          moodColor: moodColor,
+        );
       }).toList();
 
       setState(() {
         journalEntries = loadedEntries;
       });
     } catch (e) {
-      debugPrint('Error loading journal entries: $e');
+      debugPrint('Error loading diary entries: $e');
     }
   }
 
@@ -135,6 +139,10 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
           ),
         ),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -146,13 +154,23 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
             _buildSortDropdown(),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: sortedEntries.length,
-                itemBuilder: (context, index) {
-                  final entry = sortedEntries[index];
-                  return _buildJournalTile(entry);
-                },
-              ),
+              child: sortedEntries.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No Diary entries found',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: sortedEntries.length,
+                      itemBuilder: (context, index) {
+                        final entry = sortedEntries[index];
+                        return _buildJournalTile(entry);
+                      },
+                    ),
             ),
           ],
         ),
@@ -162,19 +180,18 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
 
   Widget _buildDateScroller() {
     final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday % 7)); // Start from Sunday
+    final startOfWeek = now.subtract(Duration(days: now.weekday % 7));
 
     return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 7, // Only show 7 days (Sunday to Saturday)
+        itemCount: 7,
         itemBuilder: (context, index) {
           final date = startOfWeek.add(Duration(days: index));
-          final weekday = DateFormat.E().format(date); // Day name (e.g., Sun, Mon)
-          final day = DateFormat.d().format(date); // Day number (e.g., 6, 7)
+          final weekday = DateFormat.E().format(date);
+          final day = DateFormat.d().format(date);
           
-          // Better date comparison - compare only year, month, and day
           final isSelected = selectedDate != null && 
               selectedDate!.year == date.year &&
               selectedDate!.month == date.month &&
@@ -184,9 +201,9 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
             onTap: () {
               setState(() {
                 if (isSelected) {
-                  selectedDate = null; // Untoggle if already selected
+                  selectedDate = null;
                 } else {
-                  selectedDate = DateTime(date.year, date.month, date.day); // Set selected date
+                  selectedDate = DateTime(date.year, date.month, date.day);
                 }
               });
             },
@@ -194,7 +211,7 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
               width: 60,
               margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF6A1B9A) : const Color(0xFFF3E9FF), // Much darker purple for selected
+                color: isSelected ? const Color(0xFF6A1B9A) : const Color(0xFFF3E9FF),
                 borderRadius: BorderRadius.circular(12),
                 border: isSelected 
                     ? Border.all(color: const Color(0xFF4A148C), width: 2)
@@ -260,8 +277,17 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F5F9),
+        // Enhanced mood color background
+        color: entry.moodColor.withOpacity(0.15),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: entry.moodColor.withOpacity(0.4), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: entry.moodColor.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,9 +297,10 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
             children: [
               Text(
                 entry.time,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  color: entry.moodColor.withOpacity(0.8),
                 ),
               ),
               const SizedBox(height: 4),
@@ -285,12 +312,34 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                 ),
               ),
               const SizedBox(height: 8),
+              // Enhanced mood indicator
               Container(
-                width: 8,
-                height: 8,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.grey,
+                  color: entry.moodColor,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: entry.moodColor.withOpacity(0.4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  MoodDetector.getMoodIcon(entry.mood),
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                MoodDetector.getMoodDisplayName(entry.mood),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: entry.moodColor,
                 ),
               ),
             ],
@@ -311,45 +360,19 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
                 Text(
                   entry.description,
                   style: const TextStyle(color: Colors.black87),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.grey),
+            icon: Icon(Icons.more_vert, color: entry.moodColor),
             onSelected: (value) {
               if (value == 'edit') {
                 _showEditDialog(entry);
               } else if (value == 'delete') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Entry'),
-                    content: const Text('Do you really want to delete this entry?'),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          final success = await deleteJournalEntry(entry.id);
-                          if (success) {
-                            setState(() {
-                              journalEntries.remove(entry);
-                            });
-                            Navigator.pop(context); // Close the dialog
-                          } else {
-                            // Optionally show an error message
-                            debugPrint("Failed to delete journal entry.");
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(),
-                        child: const Text('Yes'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('No'),
-                      ),
-                    ],
-                  ),
-                );
+                _showDeleteDialog(entry);
               }
             },
             itemBuilder: (context) => [
@@ -374,59 +397,209 @@ class _JournalHistoryPageState extends State<JournalHistoryPage> {
     );
   }
 
+  void _showDeleteDialog(JournalEntry entry) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Entry'),
+        content: const Text('Do you really want to delete this entry?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final success = await deleteJournalEntry(entry.id);
+              if (success) {
+                setState(() {
+                  journalEntries.remove(entry);
+                });
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Diary entry deleted')),
+                );
+              } else {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to delete entry'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditDialog(JournalEntry entry) {
     final titleController = TextEditingController(text: entry.title);
     final descController = TextEditingController(text: entry.description);
+    String selectedMood = entry.mood;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Journal Entry'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Journal Entry'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 16),
+                    // Mood selection section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: MoodDetector.getMoodColor(selectedMood).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: MoodDetector.getMoodColor(selectedMood).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                MoodDetector.getMoodIcon(selectedMood),
+                                color: MoodDetector.getMoodColor(selectedMood),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Mood',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: MoodDetector.moodColors.keys.map((mood) {
+                              final isSelected = selectedMood == mood;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedMood = mood;
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected 
+                                      ? MoodDetector.getMoodColor(mood)
+                                      : MoodDetector.getMoodColor(mood).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: isSelected 
+                                      ? Border.all(color: MoodDetector.getMoodColor(mood), width: 2)
+                                      : null,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        MoodDetector.getMoodIcon(mood),
+                                        size: 16,
+                                        color: isSelected ? Colors.white : MoodDetector.getMoodColor(mood),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        MoodDetector.getMoodDisplayName(mood).split(' ')[0], // Remove emoji
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected ? Colors.white : MoodDetector.getMoodColor(mood),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-           ElevatedButton(
-  onPressed: () async {
-    
-    final success = await updateJournalEntry(
-      id: entry.id, 
-      title: titleController.text,
-      description: descController.text,
-    );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (titleController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Title cannot be empty')),
+                      );
+                      return;
+                    }
 
-    if (success) {
-      setState(() {
-        entry.title = titleController.text;
-        entry.description = descController.text;
-      });
-      Navigator.pop(context);
-    } else {
-      // Optionally show error
-      debugPrint("Failed to update journal entry.");
-    }
-  },
-  child: const Text('Save'),
-),
+                    final success = await updateJournalEntry(
+                      id: entry.id, 
+                      title: titleController.text.trim(),
+                      description: descController.text.trim(),
+                      mood: selectedMood,
+                    );
 
-          ],
+                    if (success) {
+                      // Reload the entries to get updated data
+                      await _loadJournalEntries();
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Journal entry updated with ${MoodDetector.getMoodDisplayName(selectedMood)} mood!'),
+                          backgroundColor: MoodDetector.getMoodColor(selectedMood),
+                        ),
+                      );
+                    } else {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Failed to update entry'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: MoodDetector.getMoodColor(selectedMood),
+                  ),
+                  child: const Text('Save', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -439,6 +612,8 @@ class JournalEntry {
   String title;
   String description;
   final DateTime dateTime;
+  String mood;
+  Color moodColor;
 
   JournalEntry({
     required this.id,
@@ -446,6 +621,7 @@ class JournalEntry {
     required this.title,
     required this.description,
     required this.dateTime,
+    required this.mood,
+    required this.moodColor,
   });
-
 }

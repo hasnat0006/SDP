@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'pending_req.dart';  // Import your PendingRequestsPage here
+import 'backend.dart';
 
 class ManageAppointments extends StatefulWidget {
-  const ManageAppointments({super.key});
+  final String? doctorId;
+  final String? userType; // Add user type to determine doctor vs patient
+  
+  const ManageAppointments({Key? key, this.doctorId, this.userType}) : super(key: key);
 
   @override
   State<ManageAppointments> createState() => _ManageAppointmentsState();
@@ -10,158 +15,320 @@ class ManageAppointments extends StatefulWidget {
 
 class _ManageAppointmentsState extends State<ManageAppointments> {
   bool acceptingAppointments = true;
+  List<Appointment> appointments = [];
+  bool isLoading = true;
 
-  List<Map<String, String>> appointments = [
-    {
-      "name": "Zaima Ahmed",
-      "age": "23",
-      "gender": "Female",
-      "profession": "Student",
-      "date": "February 15, 2024",
-      "time": "10:00 AM",
-      "reason": "Individual Therapy",
-    },
-    {
-      "name": "Mehnaj Hridi",
-      "age": "29",
-      "gender": "Female",
-      "profession": "Teacher",
-      "date": "February 15, 2024",
-      "time": "11:00 AM",
-      "reason": "Individual Therapy",
-    },
-    {
-      "name": "Sarah Johnson",
-      "age": "29",
-      "gender": "Female",
-      "profession": "Therapist",
-      "date": "February 15, 2024",
-      "time": "10:00 AM",
-      "reason": "Individual Therapy",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppointments();
+  }
 
-  List<bool> reminders = [true, true, true];
+  Future<void> _fetchAppointments() async {
+    try {
+      print('🔄 Fetching appointments...');
+      
+      List<Appointment> fetched;
+      
+      // Check if user is doctor or patient
+      if (widget.userType == 'doctor') {
+        // For doctors, fetch appointments where they are the doctor
+        fetched = await AppointmentService.fetchConfirmedAppointmentsForDoctor(widget.doctorId);
+      } else {
+        // For patients, fetch appointments where they are the patient
+        fetched = await AppointmentService.fetchMyAppointments(widget.doctorId); // doctorId is actually userId in this case
+      }
+      
+      print('✅ Fetched ${fetched.length} appointments');
+      setState(() {
+        appointments = fetched;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error fetching appointments: $e');
+      setState(() {
+        isLoading = false;
+      });
+      // Show error dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to load appointments: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
-  TableRow _buildTableRow(String label, String value) {
-    return TableRow(
+
+
+
+  void _showRescheduleDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return FutureBuilder<PatientDetails?>(
+          future: AppointmentService.fetchPatientDetails(appointments[index].userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: const Text('Loading Patient Details...'),
+                content: const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            final patientDetails = snapshot.data;
+            
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Flexible(
+                    child: Text(
+                      'Patient Information',
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
+                      style: TextStyle(fontSize: 20),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (patientDetails != null) ...[
+                      _buildPatientInfoSection(patientDetails),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 10),
+                      _buildAppointmentInfoSection(index),
+                    ] else ...[
+                      const Text(
+                        'Patient details not available',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildAppointmentInfoSection(index),
+                    ]
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          title: const Text("Confirm Cancellation"),
+                          content: const Text("Are you sure you want to cancel this appointment?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Close confirmation dialog
+                              },
+                              child: const Text("No"),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () async {
+                                // Show loading
+                                Navigator.pop(context); // Close confirmation dialog
+                                Navigator.pop(context); // Close reschedule dialog
+                                
+                                // Show loading dialog
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => AlertDialog(
+                                    content: Row(
+                                      children: const [
+                                        CircularProgressIndicator(),
+                                        SizedBox(width: 20),
+                                        Text('Cancelling appointment...'),
+                                      ],
+                                    ),
+                                  ),
+                                );
+
+                                try {
+                                  // Call backend to cancel appointment
+                                  final success = await AppointmentService.cancelAppointment(appointments[index].appId);
+                                  
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  if (success) {
+                                    // Remove from local list
+                                    setState(() {
+                                      appointments.removeAt(index);
+                                    });
+                                    
+                                    // Show success message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Appointment cancelled successfully'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  } else {
+                                    // Show error message
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to cancel appointment'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  // Close loading dialog
+                                  Navigator.pop(context);
+                                  
+                                  // Show error message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text("Yes"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: const Text('Cancel Appointment'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPatientInfoSection(PatientDetails patient) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+        const Text(
+          'Patient Details',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black87,
-            ),
+        const SizedBox(height: 12),
+        _buildInfoRow('Name:', patient.name),
+        _buildInfoRow('Gender:', patient.gender),
+        if (patient.age.isNotEmpty) _buildInfoRow('Age:', patient.age),
+        _buildInfoRow('Profession:', patient.profession),
+      ],
+    );
+  }
+
+  Widget _buildAppointmentInfoSection(int index) {
+    final appt = appointments[index];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Appointment Details',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildInfoRow('Date:', appt.date),
+        _buildInfoRow('Time:', appt.time),
+        const SizedBox(height: 8),
+        Text(
+          'ID: ${appt.appId.substring(0, 8)}...',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
           ),
         ),
       ],
     );
   }
 
-  void _showRescheduleDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  'Appointment Details',
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                  style: const TextStyle(fontSize: 20),
-                ),
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
               ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              )
-            ],
-          ),
-          content: Table(
-            columnWidths: const {
-              0: IntrinsicColumnWidth(),
-              1: FlexColumnWidth(),
-            },
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              _buildTableRow("Patient Name:", appointments[index]["name"] ?? ""),
-              _buildTableRow("Age:", appointments[index]["age"] ?? ""),
-              _buildTableRow("Gender:", appointments[index]["gender"] ?? ""),
-              _buildTableRow("Profession:", appointments[index]["profession"] ?? ""),
-              _buildTableRow("Date:", appointments[index]["date"] ?? ""),
-              _buildTableRow("Time:", appointments[index]["time"] ?? ""),
-              _buildTableRow("Reason:", appointments[index]["reason"] ?? ""),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      title: const Text("Confirm Cancellation"),
-                      content: const Text("Are you sure you want to cancel this appointment?"),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context); // Close confirmation dialog
-                          },
-                          child: const Text("No"),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              appointments.removeAt(index);
-                              reminders.removeAt(index);
-                            });
-                            Navigator.pop(context); // Close confirmation dialog
-                            Navigator.pop(context); // Close reschedule dialog
-                          },
-                          child: const Text("Yes"),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: const Text('Cancel Appointment'),
             ),
-          ],
-        );
-      },
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildAppointmentCard(int index) {
     final appt = appointments[index];
+    
+    // Determine what name to show based on user type
+    String displayName = appt.userName;
+    
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -171,26 +338,30 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Date at the top
             Text(
-              "${appt["date"]} at ${appt["time"]}",
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+              appt.date,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            // Name in bold (Patient name for doctor, Doctor name for patient)
+            Text(
+              displayName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(appt["name"] ?? "", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text("Confirmed", style: TextStyle(fontSize: 12, color: Colors.green)),
-                ),
-              ],
+            // Time below name
+            Text(
+              appt.time,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+            // Appointment ID in small grey text
+            Text(
+              "ID: ${appt.appId.substring(0, 8)}",
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -201,16 +372,56 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                   onPressed: () => _showRescheduleDialog(context, index),
-                  child: const Text('Reschedule', style: TextStyle(color: Colors.brown)),
+                  child: const Text('View Details', style: TextStyle(color: Colors.brown)),
                 ),
                 Row(
                   children: [
                     const Text("Reminder"),
                     Switch(
-                      value: reminders[index],
+                      value: appointments[index].reminder == 'on',
                       activeColor: Colors.green,
-                      onChanged: (value) {
-                        setState(() => reminders[index] = value);
+                      onChanged: (value) async {
+                        final newReminderStatus = value ? 'on' : 'off';
+                        
+                        // Update the database
+                        final success = await AppointmentService.updateReminder(
+                          appointments[index].appId, 
+                          newReminderStatus
+                        );
+                        
+                        if (success) {
+                          // Update the local state
+                          setState(() {
+                            // Create a new appointment object with updated reminder
+                            appointments[index] = Appointment(
+                              appId: appointments[index].appId,
+                              userId: appointments[index].userId,
+                              userName: appointments[index].userName,
+                              date: appointments[index].date,
+                              time: appointments[index].time,
+                              status: appointments[index].status,
+                              reminder: newReminderStatus,
+                            );
+                          });
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Reminder ${value ? 'enabled' : 'disabled'}'),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        } else {
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to update reminder'),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
                       },
                     )
                   ],
@@ -270,7 +481,10 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),
+                      pageBuilder: (context, animation, secondaryAnimation) => PendingRequestsPage(
+                        doctorId: widget.doctorId,
+                        userType: widget.userType,
+                      ),
                       transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         const begin = Offset(1.0, 0.0);
                         const end = Offset.zero;
@@ -286,10 +500,14 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: appointments.length,
-                itemBuilder: (context, index) => _buildAppointmentCard(index),
-              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : appointments.isEmpty
+                      ? const Center(child: Text('No confirmed appointments found.'))
+                      : ListView.builder(
+                          itemCount: appointments.length,
+                          itemBuilder: (context, index) => _buildAppointmentCard(index),
+                        ),
             ),
           ],
         ),

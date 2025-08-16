@@ -1,32 +1,109 @@
 import 'package:client/forum/forum.dart';
+import 'package:client/services/user_service.dart';
+import 'package:client/therapist/backend.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import '../therapist/manage_app.dart';
 
-class DoctorDashboard extends StatelessWidget {
+class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
 
-  final List<Map<String, String>> appointments = const [
-    {
-      "date": "July 17, 2025",
-      "time": "10:30 AM",
-      "name": "Sarah Johnson",
-      "age": "28",
-      "gender": "Female",
-      "profession": "Software Engineer",
-      "reason": "Routine check-up"
-    },
-    {
-      "date": "July 17, 2025",
-      "time": "11:45 AM",
-      "name": "Michael Brown",
-      "age": "35",
-      "gender": "Male",
-      "profession": "Teacher",
-      "reason": "Follow-up for blood pressure"
-    },
-  ];
+  @override
+  State<DoctorDashboard> createState() => _DoctorDashboardState();
+}
+
+class _DoctorDashboardState extends State<DoctorDashboard> {
+  String _userId = '';
+  String _userType = '';
+  String _userName = '';
+  List<Map<String, String>> todayAppointments = [];
+  bool isLoadingAppointments = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _loadTodayAppointments();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await UserService.getUserData();
+      if (mounted) {
+        setState(() {
+          _userId = userData['userId'] ?? '';
+          _userType = userData['userType'] ?? '';
+          _userName = userData['userName'] ?? 'Doctor';
+        });
+      }
+      print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
+      
+      // Safety check - if this is not a doctor/therapist account, don't load appointments
+      if (_userType == 'patient') {
+        print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
+        return;
+      }
+    } catch (e) {
+      print('Error loading doctor data: $e');
+    }
+  }
+
+  Future<void> _loadTodayAppointments() async {
+    try {
+      // Safety check - only load appointments if user type is doctor/therapist
+      if (_userType == 'patient') {
+        print('⚠️ Skipping appointment loading for patient account');
+        if (mounted) {
+          setState(() {
+            isLoadingAppointments = false;
+          });
+        }
+        return;
+      }
+      
+      // Import the appointment service
+      final appointments = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
+      
+      // Filter for today's appointments
+      final today = DateTime.now();
+      final todayStr = '${today.day}/${today.month}/${today.year}';
+      
+      List<Map<String, String>> todayAppts = [];
+      for (var appt in appointments) {
+        if (appt.date == todayStr) {
+          // Fetch patient details for each appointment
+          final patientDetails = await AppointmentService.fetchPatientDetails(appt.userId);
+          
+          todayAppts.add({
+            'date': appt.date,
+            'time': appt.time,
+            'name': appt.userName,
+            'age': patientDetails?.age ?? '',
+            'gender': patientDetails?.gender ?? '',
+            'profession': patientDetails?.profession ?? '',
+            'reason': 'Consultation', // Default reason since not in DB
+          });
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          todayAppointments = todayAppts;
+          isLoadingAppointments = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading today appointments: $e');
+      if (mounted) {
+        setState(() {
+          isLoadingAppointments = false;
+        });
+      }
+    }
+  }
+
+  final List<Map<String, String>> appointments = const [];
 
   Widget _buildHeader() {
     final String formattedDate = DateFormat('EEE, dd MMM yyyy').format(DateTime.now());
@@ -60,9 +137,9 @@ class DoctorDashboard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const Text(
-                  "Dr. Nabiha!",
-                  style: TextStyle(
+                Text(
+                  "Dr. $_userName!",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -102,7 +179,12 @@ class DoctorDashboard extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ManageAppointments()),
+                    MaterialPageRoute(
+                      builder: (context) => ManageAppointments(
+                        doctorId: _userId,
+                        userType: _userType,
+                      ),
+                    ),
                   );
                 },
                 child: Column(
@@ -394,8 +476,33 @@ class DoctorDashboard extends StatelessWidget {
   }
 
   Widget _buildAppointmentsList(BuildContext context) {
+    if (isLoadingAppointments) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (todayAppointments.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32.0),
+        child: const Center(
+          child: Text(
+            'No appointments scheduled for today',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Column(
-      children: appointments
+      children: todayAppointments
           .map((appt) => _buildAppointmentCard(context, appt))
           .toList(),
     );

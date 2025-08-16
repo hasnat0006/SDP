@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import './manage_app.dart'; // Import your ManageAppointments widget file
+import './backend.dart';
 
 class PendingRequestsPage extends StatefulWidget {
-  const PendingRequestsPage({super.key});
+  final String? doctorId;
+  final String? userType; // Add user type for consistency
+  
+  const PendingRequestsPage({Key? key, this.doctorId, this.userType}) : super(key: key);
 
   @override
   State<PendingRequestsPage> createState() => _PendingRequestsPageState();
@@ -10,47 +13,185 @@ class PendingRequestsPage extends StatefulWidget {
 
 class _PendingRequestsPageState extends State<PendingRequestsPage> {
   bool acceptingAppointments = true;
+  List<Appointment> pendingRequests = [];
+  bool isLoading = true;
 
-  List<Map<String, String>> pendingRequests = [
-    {
-      "name": "Zaima Ahmed",
-      "date": "Monday, Dec 12, 2025",
-      "time": "10:30 AM",
-      "age": "23",
-      "gender": "Female",
-      "profession": "Student",
-      "reason": "Individual Therapy",
-    },
-    {
-      "name": "Michael Smith",
-      "date": "Monday, Dec 25, 2025",
-      "time": "2:15 PM",
-      "age": "30",
-      "gender": "Male",
-      "profession": "Engineer",
-      "reason": "Career Counseling",
-    },
-    {
-      "name": "Emma Davis",
-      "date": "Tuesday, Dec 25, 2025",
-      "time": "4:00 PM",
-      "age": "27",
-      "gender": "Female",
-      "profession": "Teacher",
-      "reason": "Stress Management",
-    },
-  ];
-
-  void _acceptRequest(int index) {
-    setState(() {
-      pendingRequests.removeAt(index);
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchPendingRequests();
   }
 
-  void _rejectRequest(int index) {
-    setState(() {
-      pendingRequests.removeAt(index);
-    });
+  Future<void> _fetchPendingRequests() async {
+    try {
+      print('🔄 Fetching pending appointments for doctor: ${widget.doctorId}');
+      
+      final fetched = await AppointmentService.fetchPendingAppointmentsForDoctor(widget.doctorId);
+      
+      print('✅ Fetched ${fetched.length} pending appointments');
+      setState(() {
+        pendingRequests = fetched;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error fetching pending appointments: $e');
+      setState(() {
+        isLoading = false;
+      });
+      _showErrorDialog('Failed to load pending appointments: $e');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _acceptRequest(int index) async {
+    final appointmentId = pendingRequests[index].appId;
+    
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: const [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Accepting appointment...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'confirmed');
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      if (success) {
+        setState(() {
+          pendingRequests.removeAt(index);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment accepted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to accept appointment'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _rejectRequest(int index) async {
+    final appointmentId = pendingRequests[index].appId;
+    
+    // Show confirmation dialog
+    final shouldReject = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reject Appointment'),
+        content: const Text('Are you sure you want to reject this appointment request?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reject', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldReject != true) return;
+    
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Row(
+          children: const [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Rejecting appointment...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'cancelled');
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      if (success) {
+        setState(() {
+          pendingRequests.removeAt(index);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment rejected successfully'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to reject appointment'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _goBackToManage() {
@@ -112,76 +253,90 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
 
             // List
             Expanded(
-              child: ListView.builder(
-                itemCount: pendingRequests.length,
-                itemBuilder: (context, index) {
-                  final req = pendingRequests[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.person),
-                              const SizedBox(width: 8),
-                              Text(req["name"]!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              const Spacer(),
-                              const Text("🟡Pending", style: TextStyle(color: Colors.orange)),
-                            ],
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : pendingRequests.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No pending appointment requests',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_today, size: 16),
-                              const SizedBox(width: 6),
-                              Text(req["date"]!),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.access_time, size: 16),
-                              const SizedBox(width: 6),
-                              Text(req["time"]!),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  onPressed: () => _acceptRequest(index),
-                                  icon: const Icon(Icons.check),
-                                  label: const Text("Accept"),
+                        )
+                      : ListView.builder(
+                          itemCount: pendingRequests.length,
+                          itemBuilder: (context, index) {
+                            final req = pendingRequests[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.person),
+                                        const SizedBox(width: 8),
+                                        Text(req.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const Spacer(),
+                                        const Text("🟡Pending", style: TextStyle(color: Colors.orange)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text(req.date),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.access_time, size: 16),
+                                        const SizedBox(width: 6),
+                                        Text(req.time),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "ID: ${req.appId.substring(0, 8)}...",
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            onPressed: () => _acceptRequest(index),
+                                            icon: const Icon(Icons.check),
+                                            label: const Text("Accept"),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFFD9CBA4),
+                                              foregroundColor: Colors.red,
+                                            ),
+                                            onPressed: () => _rejectRequest(index),
+                                            icon: const Icon(Icons.close),
+                                            label: const Text("Reject"),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFD9CBA4),
-                                    foregroundColor: Colors.red,
-                                  ),
-                                  onPressed: () => _rejectRequest(index),
-                                  icon: const Icon(Icons.close),
-                                  label: const Text("Reject"),
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),

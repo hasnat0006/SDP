@@ -254,15 +254,15 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         _trackerTile(
           Icons.edit_note,
-          'Thought Journal',
-          '64 Day Streak',
+          'Thought Diary',
+          'Note down your thoughts',
           context,
           onTap: () {
             Navigator.push(
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    JournalPage(userId: _userId), // Pass the user ID
+                    JournalPage(userId: _userId), // Pass the userId parameter here
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                       const begin = Offset(1.0, 0.0);

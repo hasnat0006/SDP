@@ -74,7 +74,7 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
     if (_userType == 'patient')
       NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
     if (_userType == 'doctor')
-      NavItem(icon: Icons.event, label: '', page: const ManageAppointments()),
+      NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
     NavItem(
       icon: Icons.person,
       label: '',
@@ -303,10 +303,26 @@ class DashboardPageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading until user type is determined
+    if (userType.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
     if (userType == 'patient') {
       return const DashboardPage(); // Using existing dashboard from p_dashboard.dart
-    } else {
+    } else if (userType == 'doctor' || userType == 'therapist') {
       return const DoctorDashboard();
+    } else {
+      // Fallback for unknown user types
+      return const Scaffold(
+        body: Center(
+          child: Text('Unknown user type. Please login again.'),
+        ),
+      );
     }
   }
 }
