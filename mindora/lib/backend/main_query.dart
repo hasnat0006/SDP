@@ -6,7 +6,7 @@ import 'dart:convert';
 String get apiUrl => dotenv.env['EMULATOR_URL'] ?? 'http://127.0.0.1:5000';
 
 
-Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
+Future<dynamic> getFromBackend(String endpoint) async {
   try {
     final url = '$apiUrl/$endpoint';
     debugPrint('🌐 API: $url');
@@ -41,7 +41,7 @@ Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
 }
 
 
-Future<List<dynamic>> postToBackend(
+Future<dynamic> postToBackend(
   String endpoint,
   Map<String, dynamic> data,
 ) async {
@@ -70,7 +70,7 @@ Future<List<dynamic>> postToBackend(
       final data = jsonDecode(response.body);
       debugPrint('✅ Successfully processed $endpoint');
       debugPrint('📊 Response data: $data');
-      return [data]; // Wrap in list for consistency
+      return data; // Return data directly
     } else {
       final errorData = jsonDecode(response.body);
       final errorMessage = errorData['error'] ?? 'Unknown error occurred';

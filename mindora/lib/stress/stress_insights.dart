@@ -1,6 +1,8 @@
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math';
+import 'dart:convert';
 import 'backend.dart';
 
 class StressInsightsPage extends StatefulWidget {
@@ -23,7 +25,7 @@ class StressInsightsPage extends StatefulWidget {
 
 class _StressInsightsPageState extends State<StressInsightsPage> {
   Map<String, dynamic>? _stressData;
-  Map<String, dynamic>? _weeklyData;
+  dynamic _weeklyData;
 
   @override
   void initState() {
@@ -32,19 +34,45 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
   }
 
   String _userId = '';
-  String _userType = '';
+
+  // Helper method to parse JSON arrays from database
+  List<String> _parseJsonArray(dynamic data) {
+    if (data == null) return <String>[];
+    
+    if (data is List) {
+      return List<String>.from(data);
+    }
+    
+    if (data is String) {
+      try {
+        // Try to parse as JSON first
+        final decoded = jsonDecode(data);
+        if (decoded is List) {
+          return List<String>.from(decoded);
+        } else {
+          return [data];
+        }
+      } catch (e) {
+        // If JSON parsing fails, treat as single string
+        return [data];
+      }
+    }
+    
+    return <String>[];
+  }
 
   Future<void> _loadUserData() async {
     try {
       final userData = await UserService.getUserData();
-      print(userData);
+      print('Full user data: $userData');
       setState(() {
         _userId = userData['userId'] ?? '';
-        _userType = userData['userType'] ?? '';
       });
+      print('Loaded user ID for stress: $_userId');
       // Load stress data after user data is loaded
       await _loadStressData();
     } catch (e) {
+      print('Error loading user data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading user data: ${e.toString()}'),
@@ -66,19 +94,34 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
     }
 
     try {
-      // Load stress data from backend
-      final stressResult = await StressTrackerBackend.getStressData(_userId);
-      // final weeklyResult = await StressTrackerBackend.getWeeklyStressData(
-      //   _userId,
-      // );
+      // Load today's stress data from backend instead of latest
+      final stressResult = await StressTrackerBackend.getTodayStressData(_userId);
+      print('Raw stress result: $stressResult');
       print('Stress data: ${stressResult['data']}');
-      // print('Weekly data: ${weeklyResult['data']}');
-      // Check if both API calls were successful
+      
+      // Try to load weekly data, but don't fail if it doesn't work
+      Map<String, dynamic> weeklyResult;
+      try {
+        weeklyResult = await StressTrackerBackend.getWeeklyStressData(_userId);
+        print('Weekly data: ${weeklyResult['data']}');
+        print('Weekly data type: ${weeklyResult['data'].runtimeType}');
+      } catch (e) {
+        print('Weekly data error: $e');
+        weeklyResult = {'success': false, 'data': [], 'message': 'No weekly data available'};
+      }
+      
+      // Check if stress data loaded successfully
       if (stressResult['success']) {
         setState(() {
           // Store the data for use in the UI
           _stressData = stressResult['data'];
-          // _weeklyData = weeklyResult['data'];
+          // Handle weekly data even if it fails
+          if (weeklyResult['success']) {
+            _weeklyData = weeklyResult['data'];
+          } else {
+            _weeklyData = []; // Set empty array if weekly data fails
+            print('Weekly data failed: ${weeklyResult['message']}');
+          }
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -114,8 +157,18 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
         ),
       );
     }
-    final stressLevel = _stressData?['stress_level'] ?? widget.stressLevel;
-    // Use the fetched data or fall back to widget properties
+    // Use the fetched data from backend instead of widget properties
+    final stressLevel = _stressData?['stress_level'] ?? 1;
+    final List<String> causes = _parseJsonArray(_stressData?['cause']);
+    final List<String> loggedSymptoms = _parseJsonArray(_stressData?['logged_symptoms']);
+    final List<String> notes = _parseJsonArray(_stressData?['notes']);
+
+    // Debug logging to see what we're getting from backend
+    print('Backend stress data: $_stressData');
+    print('Parsed stress level: $stressLevel');
+    print('Parsed causes: $causes');
+    print('Parsed symptoms: $loggedSymptoms');
+    print('Parsed notes: $notes');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FF),
@@ -217,7 +270,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Row(
-                            children: widget.cause.map((cause) {
+                            children: causes.map((cause) {
                               // Map causes to their respective icons
                               IconData icon = _getCauseIcon(cause);
                               return _buildCategoryButton(cause, icon);
@@ -238,8 +291,8 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                 // Reported Symptoms with white tab and icons
                 _buildSectionWithTabs(
                   title: 'Logged Symptoms',
-                  children: widget.loggedSymptoms.isNotEmpty
-                      ? widget.loggedSymptoms.map((symptom) {
+                  children: loggedSymptoms.isNotEmpty
+                      ? loggedSymptoms.map((symptom) {
                           return _buildSymptomTab(
                             symptom,
                             _getSymptomIcon(symptom),
@@ -258,40 +311,19 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
                 // Recommended Activities with white tab and small square tabs
                 _buildSectionWithTabs(
                   title: 'Recommended Activities',
-                  children: [
-                    _buildActivityTab(
-                      'Deep Breathing',
-                      Icons.accessibility,
-                      '5 mins',
-                    ),
-                    _buildActivityTab(
-                      'Nature Walk',
-                      Icons.directions_walk,
-                      '15 mins',
-                    ),
-                    _buildActivityTab(
-                      'Yoga',
-                      Icons.self_improvement,
-                      '10 mins',
-                    ),
-                    _buildActivityTab('Meditation', Icons.spa, '20 mins'),
-                    _buildActivityTab(
-                      'Stretching',
-                      Icons.accessibility_new,
-                      '7 mins',
-                    ),
-                    _buildActivityTab(
-                      'Jogging',
-                      Icons.directions_run,
-                      '30 mins',
-                    ),
-                  ],
+                  children: _getRecommendedActivitiesForSymptoms(loggedSymptoms).map((activity) {
+                    return _buildActivityTab(
+                      activity['name'],
+                      activity['icon'],
+                      activity['duration'],
+                    );
+                  }).toList(),
                 ),
 
                 const SizedBox(height: 16),
 
                 // Your Notes in a nice tab with custom size and border
-                _buildNotesSection(), // Add this to your widget tree
+                _buildNotesSection(notes), // Add this to your widget tree
               ],
             ),
           ),
@@ -301,7 +333,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
   }
 
   // Your Notes section widget (Moved outside of the build method)
-  Widget _buildNotesSection() {
+  Widget _buildNotesSection(List<String> notes) {
     return Container(
       width: double.infinity, // Ensure it spans the full width
       height:
@@ -338,7 +370,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              widget.Notes.isNotEmpty ? widget.Notes[0] : 'No notes added.',
+              notes.isNotEmpty ? notes[0] : 'No notes added.',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: const Color.fromARGB(255, 117, 100, 117),
@@ -350,8 +382,123 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
     );
   }
 
-  // Weekly Overview Graph widget moved outside the tab with rounded edges and shadow
+  // Weekly Overview Graph widget with dynamic bar chart
   Widget _buildWeeklyOverviewGraph() {
+    // If weekly data is not available, show loading or placeholder
+    if (_weeklyData == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Weekly Overview',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            height: 250,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFD39AD5),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      );
+    }
+
+    // Process weekly data for the bar chart
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Initialize data for 7 days with 0 values
+    final List<double> data = List.filled(7, 0.0);
+    print('Initial data array: $data');
+    print('Days mapping: Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6');
+    
+    // Handle different data structures that might be returned
+    List<dynamic>? weeklyList;
+    
+    if (_weeklyData is List) {
+      weeklyList = _weeklyData as List<dynamic>;
+    } else if (_weeklyData is Map<String, dynamic> && _weeklyData!['data'] is List) {
+      weeklyList = _weeklyData!['data'] as List<dynamic>;
+    } else if (_weeklyData is Map<String, dynamic>) {
+      // If it's a single map, convert to list
+      weeklyList = [_weeklyData];
+    }
+    
+    if (weeklyList != null) {
+      print('Processing ${weeklyList.length} day entries');
+      for (var dayData in weeklyList) {
+        if (dayData is Map<String, dynamic> && dayData['day'] != null) {
+          try {
+            final DateTime dayDate = DateTime.parse(dayData['day']);
+            final double stressLevel = double.tryParse(dayData['avg_stress_level']?.toString() ?? '0') ?? 0.0;
+            
+            // Correct day mapping: Monday=0, Tuesday=1, ..., Sunday=6
+            int dayOfWeek;
+            switch (dayDate.weekday) {
+              case DateTime.monday:
+                dayOfWeek = 0;
+                break;
+              case DateTime.tuesday:
+                dayOfWeek = 1;
+                break;
+              case DateTime.wednesday:
+                dayOfWeek = 2;
+                break;
+              case DateTime.thursday:
+                dayOfWeek = 3;
+                break;
+              case DateTime.friday:
+                dayOfWeek = 4;
+                break;
+              case DateTime.saturday:
+                dayOfWeek = 5;
+                break;
+              case DateTime.sunday:
+                dayOfWeek = 6;
+                break;
+              default:
+                dayOfWeek = -1;
+            }
+            
+            print('Date: ${dayData['day']}, Weekday: ${dayDate.weekday}, MappedIndex: $dayOfWeek, StressLevel: $stressLevel');
+            
+            if (dayOfWeek >= 0 && dayOfWeek < 7) {
+              data[dayOfWeek] = stressLevel;
+              print('Assigned stress level $stressLevel to ${days[dayOfWeek]}');
+            }
+          } catch (e) {
+            print('Error parsing day data: $e');
+            print('Day data structure: $dayData');
+          }
+        }
+      }
+      print('Final data array: $data');
+    }
+
+    // Find max value for scaling
+    final double maxVal = data.every((element) => element == 0.0) 
+        ? 5.0 
+        : data.reduce(max).clamp(1.0, 5.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -366,9 +513,11 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
         const SizedBox(height: 8),
         Container(
           width: double.infinity,
-          height: 350, // Adjust size as necessary
+          height: 240,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20), // Rounded edges
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -377,12 +526,111 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20), // Apply rounded corners
-            child: Image.asset(
-              'assets/graph.png', // Replace with your graph image
-              fit: BoxFit.cover, // Ensure the image fits nicely
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(7, (i) {
+                    // Show minimum height for 0 values, scale others properly
+                    final double barHeight = data[i] == 0 
+                        ? 20.0 // Small bar for 0 values
+                        : maxVal > 0 
+                            ? ((data[i] / maxVal) * 120) + 20 // Add 20px base height
+                            : 20.0;
+                    
+                    // Create beautiful gradient colors matching the page theme
+                    Color getBarColor(double stressValue) {
+                      if (stressValue == 0) return Colors.grey[300]!;
+                      
+                      // More vibrant green gradient
+                      final colors = [
+                        const Color(0xFF8BC34A), // Vibrant light green (level 1)
+                        const Color(0xFF66BB6A), // Fresh green (level 2)
+                        const Color(0xFF4CAF50), // Standard vibrant green (level 3)
+                        const Color(0xFF43A047), // Rich green (level 4)
+                        const Color(0xFF2E7D32), // Deep vibrant green (level 5)
+                      ];
+                      
+                      int colorIndex = ((stressValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
+                      return colors[colorIndex];
+                    }
+                    
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 800),
+                              curve: Curves.easeOutBack,
+                              height: barHeight,
+                              width: 40, // Much thicker bars
+                              decoration: BoxDecoration(
+                                gradient: data[i] > 0 
+                                    ? LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          getBarColor(data[i]),
+                                          getBarColor(data[i]).withOpacity(0.8),
+                                        ],
+                                      )
+                                    : null,
+                                color: data[i] == 0 ? getBarColor(0) : null,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: data[i] > 0 
+                                        ? getBarColor(data[i]).withOpacity(0.3)
+                                        : Colors.grey.withOpacity(0.2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: data[i] > 0
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(bottom: 6.0),
+                                        child: Text(
+                                          data[i].toStringAsFixed(1),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            shadows: [
+                                              Shadow(
+                                                offset: Offset(0, 1),
+                                                blurRadius: 3,
+                                                color: Colors.black54,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              days[i],
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: data[i] > 0 ? Colors.black87 : Colors.grey[400],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -542,7 +790,90 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
     );
   }
 
-  // Helper method to get icon for each cause
+  // Helper method to get recommended activities based on symptoms and stress level
+  List<Map<String, dynamic>> _getRecommendedActivitiesForSymptoms(List<String> symptoms) {
+    Set<Map<String, dynamic>> activities = {};
+    
+    // Default activities for general stress
+    final defaultActivities = [
+      {'name': 'Deep Breathing', 'icon': Icons.accessibility, 'duration': '5 mins'},
+      {'name': 'Meditation', 'icon': Icons.spa, 'duration': '10 mins'},
+    ];
+    
+    // If we have specific symptoms, provide targeted activities
+    if (symptoms.isNotEmpty) {
+      for (String symptom in symptoms) {
+        switch (symptom.toLowerCase()) {
+          case 'headache':
+            activities.addAll([
+              {'name': 'Head Massage', 'icon': Icons.healing, 'duration': '10 mins'},
+              {'name': 'Cold Compress', 'icon': Icons.ac_unit, 'duration': '15 mins'},
+              {'name': 'Dark Room Rest', 'icon': Icons.bedtime, 'duration': '20 mins'},
+              {'name': 'Hydrate', 'icon': Icons.local_drink, 'duration': '5 mins'},
+            ]);
+            break;
+          case 'tension':
+            activities.addAll([
+              {'name': 'Neck Stretches', 'icon': Icons.accessibility_new, 'duration': '8 mins'},
+              {'name': 'Shoulder Rolls', 'icon': Icons.rotate_right, 'duration': '5 mins'},
+              {'name': 'Progressive Relaxation', 'icon': Icons.self_improvement, 'duration': '15 mins'},
+              {'name': 'Warm Bath', 'icon': Icons.hot_tub, 'duration': '25 mins'},
+            ]);
+            break;
+          case 'fatigue':
+            activities.addAll([
+              {'name': 'Power Nap', 'icon': Icons.bedtime, 'duration': '20 mins'},
+              {'name': 'Light Exercise', 'icon': Icons.directions_walk, 'duration': '10 mins'},
+              {'name': 'Energy Snack', 'icon': Icons.apple, 'duration': '5 mins'},
+              {'name': 'Fresh Air', 'icon': Icons.air, 'duration': '15 mins'},
+            ]);
+            break;
+          case 'anxiety':
+            activities.addAll([
+              {'name': 'Grounding (5-4-3-2-1)', 'icon': Icons.psychology, 'duration': '10 mins'},
+              {'name': 'Calm Music', 'icon': Icons.music_note, 'duration': '15 mins'},
+              {'name': 'Breathing Exercise', 'icon': Icons.air, 'duration': '8 mins'},
+              {'name': 'Journaling', 'icon': Icons.edit_note, 'duration': '12 mins'},
+            ]);
+            break;
+        }
+      }
+      // Add some general activities alongside symptom-specific ones
+      activities.addAll(defaultActivities);
+    } else {
+      // No specific symptoms - provide general stress relief based on stress level
+      final stressLevel = _stressData?['stress_level'] ?? 1;
+      
+      activities.addAll(defaultActivities);
+      
+      if (stressLevel >= 4) {
+        // High stress - more intensive activities
+        activities.addAll([
+          {'name': 'Intense Workout', 'icon': Icons.fitness_center, 'duration': '30 mins'},
+          {'name': 'Cold Shower', 'icon': Icons.shower, 'duration': '5 mins'},
+          {'name': 'Scream Therapy', 'icon': Icons.campaign, 'duration': '3 mins'},
+        ]);
+      } else if (stressLevel >= 3) {
+        // Moderate stress - balanced activities
+        activities.addAll([
+          {'name': 'Yoga', 'icon': Icons.self_improvement, 'duration': '15 mins'},
+          {'name': 'Nature Walk', 'icon': Icons.directions_walk, 'duration': '20 mins'},
+          {'name': 'Tea Break', 'icon': Icons.local_cafe, 'duration': '10 mins'},
+        ]);
+      } else {
+        // Low stress - gentle activities
+        activities.addAll([
+          {'name': 'Light Stretching', 'icon': Icons.accessibility_new, 'duration': '10 mins'},
+          {'name': 'Read a Book', 'icon': Icons.menu_book, 'duration': '25 mins'},
+          {'name': 'Listen to Music', 'icon': Icons.music_note, 'duration': '15 mins'},
+        ]);
+      }
+    }
+    
+    // Convert to list and limit to 6 activities max
+    final activityList = activities.toList();
+    return activityList.take(6).toList();
+  }
   IconData _getCauseIcon(String cause) {
     switch (cause.toLowerCase()) {
       case 'work/study':

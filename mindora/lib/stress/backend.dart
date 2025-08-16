@@ -55,6 +55,26 @@ class StressTrackerBackend {
     }
   }
 
+  // Get stress data for today's date specifically
+  static Future<Map<String, dynamic>> getTodayStressData(String userId) async {
+    try {
+      final today = DateTime.now();
+      final dateString = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      final response = await getFromBackend('stress/data/$userId/$dateString');
+      return {
+        'success': true,
+        'message': 'Today\'s stress data retrieved successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'No stress data found for today',
+        'error': e.toString(),
+      };
+    }
+  }
+
   // Get weekly stress data for graph
   static Future<Map<String, dynamic>> getWeeklyStressData(String userId) async {  // Changed to String for UUID
     try {

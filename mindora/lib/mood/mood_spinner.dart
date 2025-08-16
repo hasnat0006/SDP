@@ -126,9 +126,9 @@ class _MoodSpinnerState extends State<MoodSpinner> {
           // Top section with selected segment display
           Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.start, // Adjusted to move text higher
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                const SizedBox(height: 20), // Spacing after AppBar
+                const SizedBox(height: 20), 
 
                 const SizedBox(height: 20),
                 Text(

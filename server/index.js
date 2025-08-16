@@ -8,6 +8,8 @@ app.use(cors());
 
 
 const stress = require("./Route/stress");
+const mood = require("./Route/mood");
+const sleep = require("./Route/sleep");
 const auth = require("./Route/auth/fetchusers");
 const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
@@ -24,6 +26,9 @@ app.use("/profile", patientProfile);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);
 app.use("/", therapistRoutes);
+app.use("/mood", mood);
+app.use("/sleep", sleep);
+
 
 app.get("/", (req, res) => {
   res.send("Welcome to the MindOra API");
@@ -35,6 +40,7 @@ app.use((req, res, next) => {
   });
   next();
 });
+
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

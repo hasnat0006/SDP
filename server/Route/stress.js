@@ -7,6 +7,7 @@ router.post("/track", async (req, res) => {
   try {
     const { user_id, stress_level, cause, logged_symptoms, Notes, date } = req.body;
     
+    // Store the date with explicit timezone handling for Dhaka
     const result = await sql`
       INSERT INTO stress_tracker (
         user_id, 
@@ -22,7 +23,7 @@ router.post("/track", async (req, res) => {
         ${cause}, 
         ${logged_symptoms}, 
         ${Notes}, 
-        ${date}
+        (${date}::timestamp AT TIME ZONE '+06:00')::timestamp with time zone
       )
       RETURNING *
     `;
@@ -57,6 +58,35 @@ router.get("/data/:userId", async (req, res) => {
   }
 });
 
+// Get stress data for a specific user and date
+router.get("/data/:userId/:date", async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+    console.log("User ID:", userId, "Date:", date);
+    
+    // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
+    const result = await sql`
+      SELECT * FROM stress_tracker 
+      WHERE user_id = ${userId} 
+      AND DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${date}
+      ORDER BY date DESC
+      LIMIT 1
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ 
+        message: "No stress data found for this date",
+        data: null 
+      });
+    }
+
+    res.json(result[0]);
+  } catch (err) {
+    console.error("Error retrieving stress data for date:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get weekly stress data for a user
 router.get("/weekly/:userId", async (req, res) => {
   try {
@@ -64,15 +94,16 @@ router.get("/weekly/:userId", async (req, res) => {
     
     const result = await sql`
       SELECT 
-        date_trunc('day', date) as day,
+        date_trunc('day', date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as day,
         AVG(stress_level)::numeric(10,2) as avg_stress_level,
         json_agg(DISTINCT cause) as causes,
         json_agg(DISTINCT logged_symptoms) as symptoms
       FROM stress_tracker 
       WHERE 
         user_id = ${userId}
-        AND date >= NOW() - INTERVAL '7 days'
-      GROUP BY date_trunc('day', date)
+        AND date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00' >= date_trunc('week', NOW() AT TIME ZONE '+06:00')
+        AND date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00' < date_trunc('week', NOW() AT TIME ZONE '+06:00') + INTERVAL '7 days'
+      GROUP BY date_trunc('day', date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00')
       ORDER BY day DESC
     `;
 

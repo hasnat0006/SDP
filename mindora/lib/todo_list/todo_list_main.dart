@@ -1,13 +1,6 @@
 import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'models/task_model.dart';
-import 'services/task_suggestion_service.dart';
-import 'services/task_notification_service.dart';
-import 'widgets/task_suggestion_popup.dart';
-import 'widgets/add_task_dialog.dart';
-import 'widgets/improved_task_tile.dart';
+// <-- Add this import
 
 class ToDoApp extends StatelessWidget {
   const ToDoApp({super.key});
