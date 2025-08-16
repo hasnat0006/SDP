@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../login/signup/login.dart';
+import '../services/user_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -109,14 +110,49 @@ class SettingsPage extends StatelessWidget {
                     icon: Icons.logout,
                     title: 'Logout',
                     subtitle: 'Sign out of your account',
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginPage(),
-                        ),
-                        (route) => false,
-                      );
+                    onTap: () async {
+                      // Show confirmation dialog
+                      bool shouldLogout =
+                          await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Logout'),
+                                content: const Text(
+                                  'Are you sure you want to logout?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    child: const Text('Logout'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ??
+                          false;
+
+                      if (shouldLogout) {
+                        // Clear user data
+                        await UserService.clearUserData();
+
+                        // Navigate to login page and clear all previous routes
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      }
                     },
                   ),
                 ],

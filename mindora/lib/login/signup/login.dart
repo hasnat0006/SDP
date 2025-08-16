@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureText = true;
   bool _isLoading = false;
+  bool _rememberMe = true; // Remember me checkbox state
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +53,9 @@ class _LoginPageState extends State<LoginPage> {
               isPassword: true,
               borderColor: const Color(0xFFF5F5F5),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
+            _buildRememberMeCheckbox(),
+            const SizedBox(height: 20),
             _buildSignInButton(),
             const SizedBox(height: 20),
             _buildFooterText(),
@@ -141,6 +144,32 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildRememberMeCheckbox() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Row(
+        children: [
+          Checkbox(
+            value: _rememberMe,
+            onChanged: (value) {
+              setState(() {
+                _rememberMe = value ?? false;
+              });
+            },
+            activeColor: const Color(0xFF4A148C),
+          ),
+          const Text(
+            'Keep me logged in',
+            style: TextStyle(
+              color: Color(0xFF432818),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSignInButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -191,6 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   await UserService.storeUserData(
                     userId: userId,
                     userType: userType,
+                    rememberMe: _rememberMe,
                   );
 
                   print('User data stored - ID: $userId, Type: $userType');
