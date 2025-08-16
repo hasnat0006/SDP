@@ -162,16 +162,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _userType,
           profileData,
         );
-        dynamic response2;
+        String s = "";
+        Map<String, dynamic>? response2;
         if (profileImageUrl != null) {
           response2 = await ProfileBackend().updateUserProfileWithImage(
             _userId,
             _userType,
             profileImageUrl,
           );
+          if (response2['success'] == true) {
+            s += "Profile Image";
+          }
         }
 
-        if (response1['success'] && response2['success']) {
+        if (response1['success'] == true) {
           // Update the local userData with the new values
           widget.userData['name'] = _nameController.text;
           widget.userData['email'] = _emailController.text;
@@ -186,13 +190,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
             widget.userData['profileImage'] = profileImageUrl;
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Profile updated successfully!')),
-          );
-        } else {
+          s += ", data";
+
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Failed to update profile.')));
+          ).showSnackBar(SnackBar(content: Text('$s updated successfully!')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to update profile. ${response1['message'] ?? 'Unknown error'}',
+              ),
+            ),
+          );
         }
       } catch (e) {
         print('Error updating profile: $e');

@@ -23,16 +23,25 @@ class ProfileBackend {
   ) async {
     print("I am here");
     print(data);
-    final response = await postToBackend('profile/update-info', {
-      'user_id': userId,
-      'user_type': userType,
-      ...data,
-    });
-    return {
-      'success': true,
-      'message': 'Profile updated successfully!',
-      'data': response,
-    };
+    try {
+      final response = await postToBackend('profile/update-info', {
+        'user_id': userId,
+        'user_type': userType,
+        ...data,
+      });
+      return {
+        'success': true,
+        'message': 'Profile updated successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      print('Error updating profile: $e');
+      return {
+        'success': false,
+        'message': 'Failed to update profile: $e',
+        'data': null,
+      };
+    }
   }
 
   /// Update profile with image URL
@@ -43,7 +52,7 @@ class ProfileBackend {
   ) async {
     print("Updating profile with image URL: $profileImageUrl");
 
-    final profileData = {'user_id': userId, 'user_type': userType, 'profileImage': profileImageUrl};
+    final profileData = {'user_id': userId, 'user_type': userType};
 
     // Add profile image URL if provided
     if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
@@ -52,11 +61,23 @@ class ProfileBackend {
 
     print("Profile data being sent: $profileData");
 
-    final response = await postToBackend('profile/update-profile-image', profileData);
-    return {
-      'success': true,
-      'message': 'Profile updated successfully!',
-      'data': response,
-    };
+    try {
+      final response = await postToBackend(
+        'profile/update-profile-image',
+        profileData,
+      );
+      return {
+        'success': true,
+        'message': 'Profile image updated successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      print('Error updating profile image: $e');
+      return {
+        'success': false,
+        'message': 'Failed to update profile image: $e',
+        'data': null,
+      };
+    }
   }
 }
