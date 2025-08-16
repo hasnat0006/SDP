@@ -75,48 +75,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<void> _debugSupabaseConnection() async {
-    print('🧪 Debug: Testing Supabase connection...');
-
-    if (!SupabaseService.isInitialized) {
-      print('❌ Debug: Supabase not initialized');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Supabase not initialized. Check configuration.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    try {
-      final client = SupabaseService.client;
-      final buckets = await client.storage.listBuckets();
-      print('✅ Debug: Found ${buckets.length} buckets');
-
-      final hasProfileBucket = buckets.any((b) => b.name == 'profile-images');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            hasProfileBucket
-                ? 'Supabase connected! profile-images bucket found.'
-                : 'Supabase connected but profile-images bucket missing!',
-          ),
-          backgroundColor: hasProfileBucket ? Colors.green : Colors.orange,
-        ),
-      );
-    } catch (e) {
-      print('❌ Debug: Supabase error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Supabase error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> updateUserProfileInformation() async {
     print("updateUserProfileInformation called");
     if (_formKey.currentState?.validate() ?? false) {
@@ -532,12 +490,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // Debug button - remove in production
-          IconButton(
-            onPressed: _debugSupabaseConnection,
-            icon: Icon(Icons.bug_report),
-            tooltip: 'Debug Supabase',
-          ),
           TextButton(
             onPressed: _isLoading
                 ? null
