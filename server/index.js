@@ -13,16 +13,25 @@ const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
 const journalRoutes = require("./Route/fetch_journal");
 const forumRoutes = require("./Route/forum/forum");
+const patientProfile = require("./Route/profile/patient_profile");
 
 app.use("/", auth);
 app.use("/reset-pass", resetPassword);
 app.use("/stress", stress);
 app.use("/forum", forumRoutes);
+app.use("/profile", patientProfile);
 app.use("/", saveJournal);
 app.use("/", journalRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the MindOra API");
+});
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log('----------------------------------------');
+  });
+  next();
 });
 
 const PORT = process.env.PORT;
