@@ -680,7 +680,8 @@ const SizedBox(height: 20),
 
 const SizedBox(height: 10),
 
-// Title: Mood History + current week range
+// Title: Mood History + current week range - COMMENTED OUT
+/*
 Text(
   "Mood History (${getCurrentWeekRange()})",
   style: GoogleFonts.poppins(
@@ -689,14 +690,15 @@ Text(
     color: Colors.brown,
   ),
 ),
+*/
 
 const SizedBox(height: 8),
 
 
               const SizedBox(height: 12),
 
-              //Mood History Icons
-
+              //Mood History Icons - COMMENTED OUT
+              /*
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: List.generate(7, (index) {
@@ -835,6 +837,7 @@ Row(
     );
   }),
 ),
+*/
 
 
 
