@@ -2,6 +2,12 @@ const express = require("express");
 const sql = require("../DB/connection");
 const router = express.Router();
 
+// Test route
+router.get("/test", (req, res) => {
+  console.log("Sleep test route hit!");
+  res.json({ message: "Sleep route is working" });
+});
+
 // Store sleep tracking data
 router.post("/track", async (req, res) => {
   try {
@@ -66,23 +72,28 @@ router.get("/data/:userId/:date", async (req, res) => {
     const { userId, date } = req.params;
     console.log("User ID:", userId, "Date:", date);
     
-    // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
+    // First try to get data without timezone conversion to debug
+    console.log("Searching for sleep data - User:", userId, "Date:", date);
     const result = await sql`
-      SELECT * FROM sleep_tracker 
-      WHERE user_id = ${userId} 
-      AND DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${date}
+      SELECT *, DATE(date) as date_only FROM sleep_tracker 
+      WHERE user_id = ${userId}
       ORDER BY date DESC
-      LIMIT 1
     `;
+    
+    console.log("All sleep data for user:", result.map(r => ({id: r.id, date: r.date, date_only: r.date_only, hours: r.sleep_hours})));
+    
+    // Filter for the specific date
+    const filteredResult = result.filter(r => r.date_only === date);
+    console.log("Filtered result for date", date, ":", filteredResult);
 
-    if (result.length === 0) {
+    if (filteredResult.length === 0) {
       return res.status(404).json({ 
         message: "No sleep data found for this date",
         data: null 
       });
     }
 
-    res.json(result[0]);
+    res.json(filteredResult[0]);
   } catch (err) {
     console.error("Error retrieving sleep data for date:", err);
     res.status(500).json({ error: err.message });
