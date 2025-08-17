@@ -2,21 +2,15 @@ const express = require("express");
 const sql = require("../DB/connection");
 const router = express.Router();
 
-// Test route
-router.get("/test", (req, res) => {
-  console.log("Sleep test route hit!");
-  res.json({ message: "Sleep route is working" });
-});
-
 // Store sleep tracking data
 router.post("/track", async (req, res) => {
   try {
-    const { user_id, hours_slept, sleep_quality, bedtime, wake_time, date } = req.body;
+    const { user_id, sleep_hours, sleep_quality, bedtime, wake_time, date } = req.body;
     
     const result = await sql`
       INSERT INTO sleep_tracker (
         user_id, 
-        hours_slept, 
+        sleep_hours, 
         sleep_quality, 
         bedtime, 
         wake_time, 
@@ -24,7 +18,7 @@ router.post("/track", async (req, res) => {
       ) 
       VALUES (
         ${user_id}, 
-        ${hours_slept}, 
+        ${sleep_hours}, 
         ${sleep_quality}, 
         ${bedtime}, 
         ${wake_time}, 
@@ -70,30 +64,28 @@ router.get("/data/:userId", async (req, res) => {
 router.get("/data/:userId/:date", async (req, res) => {
   try {
     const { userId, date } = req.params;
-    console.log("User ID:", userId, "Date:", date);
+    console.log("Sleep API - User ID:", userId, "Date:", date);
     
-    // First try to get data without timezone conversion to debug
-    console.log("Searching for sleep data - User:", userId, "Date:", date);
     const result = await sql`
-      SELECT *, DATE(date) as date_only FROM sleep_tracker 
-      WHERE user_id = ${userId}
+      SELECT * FROM sleep_tracker 
+      WHERE user_id = ${userId} 
+      AND DATE(date) = ${date}
       ORDER BY date DESC
+      LIMIT 1
     `;
     
-    console.log("All sleep data for user:", result.map(r => ({id: r.id, date: r.date, date_only: r.date_only, hours: r.sleep_hours})));
-    
-    // Filter for the specific date
-    const filteredResult = result.filter(r => r.date_only === date);
-    console.log("Filtered result for date", date, ":", filteredResult);
+    console.log("Sleep data query result:", result);
 
-    if (filteredResult.length === 0) {
+    if (result.length === 0) {
+      console.log("No sleep data found for date:", date);
       return res.status(404).json({ 
         message: "No sleep data found for this date",
         data: null 
       });
     }
 
-    res.json(filteredResult[0]);
+    console.log("Returning sleep data:", result[0]);
+    res.json(result[0]);
   } catch (err) {
     console.error("Error retrieving sleep data for date:", err);
     res.status(500).json({ error: err.message });

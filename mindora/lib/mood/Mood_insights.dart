@@ -39,6 +39,17 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
     _loadData();
   }
 
+  // Helper method to safely parse double values
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
   Future<void> _loadChartData() async {
     String? userId = await UserService.getUserId();
     userId ??= 'test_user_123';
@@ -475,13 +486,13 @@ Divider(
                           children: [
                             Text(
                               sleepData != null 
-                                  ? "${sleepData!['hours_slept']} hours of sleep"
+                                  ? "${sleepData!['sleep_hours'] ?? 'N/A'} hours of sleep"
                                   : "Sleep data not available",
                               style: GoogleFonts.poppins(fontSize: 14)
                             ),
                             Text(
                               sleepData != null
-                                  ? MoodTrackerBackend.getSleepHoursDescription(sleepData!['hours_slept'].toDouble())
+                                  ? MoodTrackerBackend.getSleepHoursDescription(_parseDouble(sleepData!['sleep_hours']))
                                   : "You haven't given today's sleep update yet",
                               style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)
                             )

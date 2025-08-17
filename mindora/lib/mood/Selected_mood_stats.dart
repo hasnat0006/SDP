@@ -26,6 +26,17 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
     _loadData();
   }
 
+  // Helper method to safely parse double values
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
   Future<void> _loadData() async {
     setState(() {
       isLoading = true;
@@ -499,10 +510,10 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
                   _InfoCard(
                     title: "Sleep",
                     value: sleepData != null 
-                        ? "${sleepData!['hours_slept']} hours"
+                        ? "${sleepData!['sleep_hours'] ?? 'N/A'} hours"
                         : "No input found",
                     description: sleepData != null 
-                        ? MoodTrackerBackend.getSleepHoursDescriptionForHistory(sleepData!['hours_slept'].toDouble())
+                        ? MoodTrackerBackend.getSleepHoursDescriptionForHistory(_parseDouble(sleepData!['sleep_hours']))
                         : null,
                     icon: Icons.nightlight_round,
                     color: sleepData != null ? Colors.deepPurple : Colors.grey,
@@ -674,10 +685,13 @@ class _InfoCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     description!,
+                    maxLines: 2,
+                    softWrap: true,
                     style: GoogleFonts.poppins(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Colors.grey.shade600,
                       fontStyle: FontStyle.italic,
+                      height: 1.2,
                     ),
                   ),
                 ],
