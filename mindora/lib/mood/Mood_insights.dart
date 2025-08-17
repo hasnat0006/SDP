@@ -478,25 +478,44 @@ Divider(
 ),
                     const SizedBox(height: 20),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Icon(Icons.bedtime_rounded, color: Colors.deepPurple),
-                        const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              sleepData != null 
-                                  ? "${sleepData!['sleep_hours'] ?? 'N/A'} hours of sleep"
-                                  : "Sleep data not available",
-                              style: GoogleFonts.poppins(fontSize: 14)
-                            ),
-                            Text(
-                              sleepData != null
-                                  ? MoodTrackerBackend.getSleepHoursDescription(_parseDouble(sleepData!['sleep_hours']))
-                                  : "You haven't given today's sleep update yet",
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)
-                            )
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.bedtime_rounded, color: Colors.deepPurple),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    sleepData != null 
+                                        ? "${sleepData!['sleep_hours'] ?? 'N/A'} hours of sleep"
+                                        : "Sleep data not available",
+                                    style: GoogleFonts.poppins(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                sleepData != null
+                                    ? MoodTrackerBackend.getSleepHoursDescription(_parseDouble(sleepData!['sleep_hours']))
+                                    : "You haven't given today's sleep update yet",
+                                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFEEE6FA),
+                          radius: 18,
+                          child: Icon(
+                            Icons.bedtime,
+                            color: Colors.deepPurple,
+                            size: 20,
+                          ),
                         )
                       ],
                     )
