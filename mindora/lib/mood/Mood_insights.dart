@@ -672,10 +672,9 @@ const SizedBox(height: 20),
 
 _buildMoodChart(),
 
-const SizedBox(height: 20),
+const SizedBox(height: 10),
 
-
-              const SizedBox(height: 20),
+const SizedBox(height: 10),
               // Right-aligned: History: [calendar icon] [date]
 
 const SizedBox(height: 10),
@@ -980,7 +979,7 @@ Row(
                 final double barHeight = data[i] == 0 
                     ? 20.0 
                     : maxVal > 0 
-                        ? ((data[i] / maxVal) * 180) + 20 
+                        ? ((data[i] / maxVal) * 140) + 20 
                         : 20.0;
                 
                 Color getBarColor(double moodValue) {
@@ -1121,7 +1120,7 @@ Row(
                 final double barHeight = data[i] == 0 
                     ? 20.0 
                     : maxVal > 0 
-                        ? ((data[i] / maxVal) * 180) + 20 
+                        ? ((data[i] / maxVal) * 140) + 20 
                         : 20.0;
                 
                 Color getBarColor(double moodValue) {
@@ -1254,7 +1253,7 @@ Row(
                   final double barHeight = data[i] == 0 
                       ? 20.0 
                       : maxVal > 0 
-                          ? ((data[i] / maxVal) * 180) + 20 
+                          ? ((data[i] / maxVal) * 140) + 20 
                           : 20.0;
                   
                   Color getBarColor(double moodValue) {
@@ -1389,7 +1388,7 @@ Row(
                   final double barHeight = data[i] == 0 
                       ? 20.0 
                       : maxVal > 0 
-                          ? ((data[i] / maxVal) * 180) + 20 
+                          ? ((data[i] / maxVal) * 140) + 20 
                           : 20.0;
                   
                   Color getBarColor(double moodValue) {
