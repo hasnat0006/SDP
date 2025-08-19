@@ -3,8 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
-String get apiUrl => dotenv.env['PRODUCTION_URL'] ?? 'http://127.0.0.1:5000';
-
+String get apiUrl => dotenv.env['EMULATOR_URL'] ?? 'http://127.0.0.1:5000';
 
 Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
   try {
@@ -12,7 +11,7 @@ Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
     debugPrint('🌐 API: $url');
 
     final response = await http.get(Uri.parse(url));
- 
+
     debugPrint('📡 Status: ${response.statusCode}');
     debugPrint('📄 Response: ${response.body}');
     // Pretty print JSON response in terminal
@@ -39,7 +38,6 @@ Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
     throw Exception('Network error: $e');
   }
 }
-
 
 Future<List<dynamic>> postToBackend(
   String endpoint,
