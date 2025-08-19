@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:client/appointment/backend.dart';
 import 'package:client/appointment/bookform.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'therapistcard.dart'; // Import the TherapistCard widget
 
 class Therapist {
@@ -70,30 +68,31 @@ class _BookAppt extends State<BookAppt> {
 
       print("Therapist");
       print(data);
-      // Check if the data is a list of therapists
-      if (data is List) {
-        List<Therapist> therapists = data.map((item) {
-          return Therapist(
-            docId:
-                item['doc_id'] ?? 'nothing', // Ensure no null value for doc_id
-            name: item['name'] ?? 'Unknown',
-            institution: item['institute'] ?? 'Unknown Institution',
-            imagepath: item['image_path'] ?? 'assets/default_image.png',
-            shortbio: item['shortbio'] ?? 'No bio available',
-            education: item['education'] ?? 'No education details',
-            description: item['description'] ?? 'No description available',
-            special: item['special'] ?? 'No specialties listed',
-            exp: item['exp'] ?? 'No experience listed',
-          );
-        }).toList();
+      // Process the therapist data from the backend
+      List<Therapist> therapists = data.map((item) {
+        return Therapist(
+          docId: item['doc_id'] ?? '', // doc_id is already a string (UUID)
+          name:
+              item['bdn'] ??
+              'Unknown', // Using bdn as name since name field doesn't exist
+          institution: item['institute'] ?? 'Unknown Institution',
+          imagepath: item['image_path'] ?? 'assets/default_image.png',
+          shortbio: item['shortbio'] ?? 'No bio available',
+          education: item['education'] ?? 'No education details',
+          description: item['description'] ?? 'No description available',
+          special: item['special'] != null
+              ? (item['special'] is List
+                    ? (item['special'] as List).join(', ')
+                    : item['special'].toString())
+              : 'No specialties listed',
+          exp: item['exp'] ?? 'No experience listed',
+        );
+      }).toList();
 
-        setState(() {
-          therapistinfo = therapists; // Set the list of therapists
-          isLoading = false; // Stop the loading spinner once data is fetched
-        });
-      } else {
-        throw Exception('Expected data to be a list');
-      }
+      setState(() {
+        therapistinfo = therapists; // Set the list of therapists
+        isLoading = false; // Stop the loading spinner once data is fetched
+      });
     } catch (e) {
       setState(() {
         isLoading = false; // Stop the loading spinner on error

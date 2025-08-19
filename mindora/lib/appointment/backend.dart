@@ -43,10 +43,15 @@ Future<List<dynamic>> GetTherapist() async {
     // Call the existing function to fetch therapist data
     final data = await postToBackend('therapists', {});
 
-    // Ensure that the response is a list, otherwise wrap it into a lis
-    // If it's a single map (single therapist), wrap it into a list
-    print('✅ Single therapist data fetched');
-    return data; // Return the map wrapped in a list
+    // The postToBackend wraps the response in an array, but therapists endpoint already returns an array
+    // So we need to extract the actual array from the wrapped array
+    if (data.isNotEmpty && data[0] is List) {
+      print('✅ Therapist data fetched and unwrapped');
+      return data[0]; // Return the actual therapist array
+    } else {
+      print('✅ Single therapist data fetched');
+      return data; // Return as is if it's not wrapped
+    }
   } catch (e) {
     print('❌ Error: $e');
     rethrow; // Rethrow the error to be handled elsewhere
