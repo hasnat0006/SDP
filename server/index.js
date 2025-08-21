@@ -6,7 +6,6 @@ require("dotenv").config();
 const cors = require("cors");
 app.use(cors());
 
-
 const stress = require("./Route/stress");
 const mood = require("./Route/mood");
 const sleep = require("./Route/sleep");
@@ -17,6 +16,7 @@ const journalRoutes = require("./Route/fetch_journal");
 const forumRoutes = require("./Route/forum/forum");
 const therapistRoutes = require("./Route/fetchtherapist");
 const patientProfile = require("./Route/profile/patient_profile");
+const therapists = require("./Route/appt");
 
 app.use("/", auth);
 app.use("/reset-pass", resetPassword);
@@ -29,6 +29,7 @@ app.use("/", therapistRoutes);
 app.use("/mood", mood);
 app.use("/sleep", sleep);
 
+app.use("/", therapists);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the MindOra API");

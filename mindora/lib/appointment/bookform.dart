@@ -1,7 +1,8 @@
-import 'package:client/dashboard/p_dashboard.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'backend.dart';
 
 class BookForm extends StatefulWidget {
   final String name;
@@ -12,6 +13,8 @@ class BookForm extends StatefulWidget {
   final String description;
   final String special;
   final String exp;
+  final String userId;
+  final String docId;
 
   const BookForm({
     super.key,
@@ -23,6 +26,8 @@ class BookForm extends StatefulWidget {
     required this.description,
     required this.special,
     required this.exp,
+    required this.userId,
+    required this.docId,
   });
 
   @override
@@ -35,6 +40,8 @@ class _BookForm extends State<BookForm> {
   bool isBookingForSomeoneElse = false; // Track if booking for someone else
   TextEditingController emailController =
       TextEditingController(); // Email text field controller
+  TextEditingController reasonController =
+      TextEditingController(); // Reason text field controller
 
   final List<String> timeSlots = [
     '09:00 AM',
@@ -53,56 +60,73 @@ class _BookForm extends State<BookForm> {
         ? widget.name
         : 'Dr ${widget.name}';
   }
+ Future<void> _submitForm() async {
+    if (selectedDate != null &&
+        selectedTime != null &&
+        reasonController.text.isNotEmpty) {
+      final String reason = reasonController.text.trim();
+      final String email = emailController.text.trim();
 
-  Future<void> _showSuccessAndGoToDashboard() async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            'Appointment booked',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-          content: Text(
-            'Your appointment with $_doctorDisplayName has been booked successfully.',
-            style: GoogleFonts.poppins(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => DashboardPage()),
-                ),
-              },
-              child: Text(
-                'Close',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.purple[700],
-                ),
-              ),
-            ),
-          ],
+      // Prepare the data to send
+      final appointmentData = {
+        'docId': widget.docId,
+        'userId': widget.userId,
+        'name': widget.name,
+        'institution': widget.institution,
+        'date': selectedDate?.toIso8601String(),
+        'time': selectedTime,
+        'reason': reason,
+        'email': email.isEmpty ? '' : email,
+      };
+
+      // Call the backend function to book the appointment
+      try {
+        await bookAppointment(
+          docId: widget.docId,
+          userId: widget.userId,
+          name: widget.name,
+          institution: widget.institution,
+          date: selectedDate?.toIso8601String() ?? '',
+          time: selectedTime ?? '',
+          reason: reason,
+          email: email,
         );
-      },
-    );
 
-    if (!mounted) return;
-
-    // Option A: Navigate by named route (set this in your MaterialApp routes)
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-
-    // Option B: Navigate by widget
-    // Navigator.pushAndRemoveUntil(
-    //   context,
-    //   MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    //   (route) => false,
-    // );
+        // Show a confirmation message
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Success"),
+              content: const Text("Your appointment has been booked successfully!"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      } catch (error) {
+        // Show an error message if something goes wrong
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Error"),
+              content: const Text("There was an issue booking your appointment. Please try again."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
   }
 
   @override
@@ -139,93 +163,27 @@ class _BookForm extends State<BookForm> {
               const SizedBox(height: 16),
               Text(
                 '${widget.name}, Psychiatrist',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(
                 widget.institution,
-                style: GoogleFonts.poppins(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                   color: Colors.grey[700],
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                'Uttara, Dhaka, Bangladesh',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey[600],
-                ),
-              ),
               const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.purple[50],
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'About ${widget.name}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.purple[900],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      widget.shortbio,
-                      style: GoogleFonts.poppins(fontSize: 14, height: 1.5),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Book your appointment today and take the first step toward a healthier mind.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.purple[700],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
 
-              const SizedBox(height: 24),
-              Text(
-                'Book Your Appointment',
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.purple[900],
-                ),
-              ),
-              const SizedBox(height: 12),
-
+              // Reason Input Field
               const Text('Reason', style: TextStyle(fontSize: 16)),
-              const SizedBox(
-                height: 12,
-              ), // Add some spacing between the label and the text field
+              const SizedBox(height: 12),
               TextField(
+                controller: reasonController,
                 decoration: InputDecoration(
-                  labelText: 'Enter reason', // Label for the text field
+                  labelText: 'Enter reason',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -282,13 +240,8 @@ class _BookForm extends State<BookForm> {
               ],
               const SizedBox(height: 24),
 
+              // Date and Time Picker
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple[200],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 onPressed: () async {
                   final selected = await showDatePicker(
                     context: context,
@@ -307,11 +260,12 @@ class _BookForm extends State<BookForm> {
                   selectedDate == null
                       ? 'Select Date'
                       : DateFormat('MMMM d, yyyy').format(selectedDate!),
-                  style: GoogleFonts.poppins(fontSize: 16),
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
               const SizedBox(height: 16),
 
+              // Time Slots
               Wrap(
                 spacing: 12,
                 runSpacing: 12,
@@ -336,7 +290,7 @@ class _BookForm extends State<BookForm> {
                       ),
                       child: Text(
                         time,
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 14,
                           color: isSelected ? Colors.white : Colors.black,
                         ),
@@ -347,22 +301,19 @@ class _BookForm extends State<BookForm> {
               ),
               const SizedBox(height: 20),
 
+              // Selected Date and Time
               if (selectedDate != null && selectedTime != null)
                 Text(
                   'You\'ve selected ${DateFormat('MMMM d, yyyy').format(selectedDate!)} at $selectedTime',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    color: Colors.grey[800],
-                  ),
+                  style: TextStyle(fontSize: 15, color: Colors.grey[800]),
                 ),
 
               const SizedBox(height: 20),
+
+              // Submit Button
               ElevatedButton(
                 onPressed: (selectedDate != null && selectedTime != null)
-                    ? () async {
-                        // Place any booking API call here if needed.
-                        await _showSuccessAndGoToDashboard();
-                      }
+                    ? _submitForm // Call the function when the button is pressed
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.purple[600],
@@ -376,7 +327,7 @@ class _BookForm extends State<BookForm> {
                 ),
                 child: Text(
                   'Confirm Appointment',
-                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
             ],

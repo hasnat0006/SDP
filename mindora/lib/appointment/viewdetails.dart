@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'bookform.dart';
 
 class Viewdetails extends StatefulWidget {
+  final String docId;
   final String name;
   final String institution;
   final String imagepath;
@@ -10,7 +11,8 @@ class Viewdetails extends StatefulWidget {
   final String education;
   final String description;
   final String special;
-  final String exp; // <-- Add this
+  final String exp;
+  final String userId; // <-- Add this
 
   const Viewdetails({
     super.key,
@@ -21,7 +23,9 @@ class Viewdetails extends StatefulWidget {
     required this.education,
     required this.description,
     required this.special,
-    required this.exp, // <-- Add this
+    required this.exp,
+    required this.userId, // <-- Add this
+    required this.docId,
   });
 
   @override
@@ -246,6 +250,7 @@ class _Viewdetails extends State<Viewdetails> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => BookForm(
+                        docId: widget.docId,
                         name: widget.name,
                         institution: widget.institution,
                         imagepath: widget.imagepath,
@@ -254,6 +259,7 @@ class _Viewdetails extends State<Viewdetails> {
                         education: widget.education,
                         special: widget.special,
                         exp: widget.exp,
+                        userId: widget.userId,
                       ),
                     ),
                   );

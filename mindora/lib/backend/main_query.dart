@@ -12,6 +12,7 @@ Future<dynamic> getFromBackend(String endpoint) async {
 
     final response = await http.get(Uri.parse(url));
 
+
     debugPrint('📡 Status: ${response.statusCode}');
     debugPrint('📄 Response: ${response.body}');
     // Pretty print JSON response in terminal
