@@ -6,9 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'sleepinput.dart';
+import '../dashboard/p_dashboard.dart';
 
 class Sleeptracker extends StatefulWidget {
-  const Sleeptracker({super.key});
+  final String userId;
+  const Sleeptracker({super.key, required this.userId});
 
   @override
   State<Sleeptracker> createState() => _SleeptrackerState();
@@ -28,6 +30,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
     super.initState();
     _inferSleepStart();
     _initUnlockListener();
+    print(widget.userId);
   }
 
   void _inferSleepStart() {
@@ -148,9 +151,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => MainNavBar(),
-                          ),
+                          MaterialPageRoute(builder: (context) => MainNavBar()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -175,7 +176,7 @@ class _SleeptrackerState extends State<Sleeptracker> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => Sleepinput()),
+                          MaterialPageRoute(builder: (context) => Sleepinput(userId: widget.userId)),
                         );
                       }, // Optional “No” action
                       style: ElevatedButton.styleFrom(

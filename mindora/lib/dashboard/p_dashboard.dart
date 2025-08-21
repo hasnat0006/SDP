@@ -233,7 +233,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    const Sleeptracker(),
+                    Sleeptracker(userId: _userId),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                       const begin = Offset(1.0, 0.0);

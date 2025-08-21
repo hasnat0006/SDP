@@ -3,9 +3,12 @@ import 'package:client/navbar/navbar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:client/dashboard/p_dashboard.dart';
+import 'package:intl/intl.dart';
+import 'backend.dart';
 
 class Sleepinput extends StatefulWidget {
-  const Sleepinput({super.key});
+  final String userId;
+  const Sleepinput({super.key, required this.userId});
 
   @override
   State<Sleepinput> createState() => _SleepinputState();
@@ -13,6 +16,28 @@ class Sleepinput extends StatefulWidget {
 
 class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
   int _sleepHours = 0;
+
+  Future<void> sleepConfirm({required int hours}) async {
+    try {
+      // 1. Capture now
+      final now = DateTime.now();
+
+      // 2a. If you just want ISO 8601:
+
+      // 2b. Or use intl for a 'yyyy-MM-dd' string:
+      final formattedDate = DateFormat('yyyy-MM-dd').format(now);
+
+      // 3. Build your payload
+
+      // 4. Send to backend
+      await sleepInput(hours: hours, date: now, userId: widget.userId);
+      await _showSuccessPopup();
+    } catch (error) {
+      // surfacing errors to console or UI
+      print('Error recording sleep: $error');
+      rethrow;
+    }
+  }
 
   Future<void> _showSuccessPopup() async {
     await showDialog<void>(
@@ -224,7 +249,7 @@ class _SleepinputState extends State<Sleepinput> with TickerProviderStateMixin {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    _showSuccessPopup(); // Show success pop-up
+                    sleepConfirm(hours: _sleepHours); // Show success pop-up
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 211, 154, 213),
