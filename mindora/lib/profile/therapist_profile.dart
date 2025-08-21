@@ -2,8 +2,6 @@ import 'package:client/profile/backend.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'edit_therapist_profile.dart';
 
@@ -20,40 +18,10 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
-  final ImagePicker _picker = ImagePicker();
   File? _selectedImage;
 
   // Therapist data - in a real app, this would come from a backend
   Map<String, dynamic> therapistData = {};
-
-  //  = {
-  //   'name': 'Dr. Samira Rahman',
-  //   'username': '@dr_samira',
-  //   'email': 'dr.samira@therapyhub.com',
-  //   'dob': DateTime(1985, 8, 22),
-  //   'gender': 'Female',
-  //   'profession': 'Clinical Psychologist',
-  //   'bio':
-  //       'Dedicated to helping individuals overcome mental health challenges through evidence-based therapy. Specialized in cognitive behavioral therapy and trauma recovery.',
-  //   'profileImage': 'assets/therapist.png',
-  //   'bmdcNumber': 'BMDC-45789',
-  //   'phone_no': '+880 1712-345678',
-  //   'clinicName': 'MindWell Psychology Center',
-  //   'experience': 8,
-  //   'specializations': [
-  //     'Anxiety Disorders',
-  //     'Depression',
-  //     'Trauma Therapy',
-  //     'CBT',
-  //     'PTSD',
-  //     'Stress Management',
-  //   ],
-  //   'isVerified': true,
-  //   'isAcceptingPatients': true,
-  //   'rating': 4.8,
-  //   'totalPatients': 156,
-  // };
 
   @override
   void initState() {
@@ -82,13 +50,8 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
   }
 
   String _userId = '', _userType = '';
-  bool _isLoading = false;
 
   Future<void> _loadUserData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final userData = await UserService.getUserData();
       setState(() {
@@ -99,18 +62,11 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
       await loadProfileData();
       print('Loaded user data - ID: $_userId, Type: $_userType');
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
       print('Error loading user data: $e');
     }
   }
 
   Future<void> loadProfileData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final profileData = await ProfileBackend().getUserProfile(
         _userId,
@@ -125,10 +81,6 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
       print('Loaded profile data: $profileData');
     } catch (e) {
       print('Error loading profile data: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -150,12 +102,25 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
   }
 
   void _editProfile() {
+    // Convert string dates to DateTime objects for the edit page
+    Map<String, dynamic> editData = Map<String, dynamic>.from(therapistData);
+
+    // Convert dob string to DateTime if it exists
+    if (editData['dob'] != null && editData['dob'] is String) {
+      try {
+        editData['dob'] = DateTime.parse(editData['dob']);
+      } catch (e) {
+        print('Error parsing date: $e');
+        editData['dob'] = null;
+      }
+    }
+
     // Navigate to edit profile page
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditTherapistProfilePage(
-          therapistData: therapistData,
+          therapistData: editData,
           currentImage: _selectedImage,
         ),
       ),
@@ -309,10 +274,16 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                   radius: 55,
                   backgroundImage: _selectedImage != null
                       ? FileImage(_selectedImage!) as ImageProvider
-                      : AssetImage(therapistData['profileImage']),
+                      : therapistData['profileImage'] != null
+                      ? (therapistData['profileImage'].toString().startsWith(
+                              'http',
+                            )
+                            ? NetworkImage(therapistData['profileImage'])
+                            : AssetImage(therapistData['profileImage']))
+                      : const AssetImage('assets/therapist.png'),
                 ),
               ),
-             ],
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -321,7 +292,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                therapistData['name'],
+                therapistData['name'] ?? 'Unknown',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -337,21 +308,9 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
           ),
           const SizedBox(height: 4),
 
-          // Username
-          Text(
-            therapistData['username'],
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFFBA68C8),
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 8),
-
           // Profession
           Text(
-            therapistData['profession'],
+            therapistData['profession'] ?? 'Healthcare Professional',
             style: TextStyle(
               fontSize: 18,
               color: Colors.white.withOpacity(0.9),
@@ -391,16 +350,16 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: therapistData['isAcceptingPatients']
+                    color: (therapistData['accept_patient'] ?? false)
                         ? const Color(0xFF4CAF50).withOpacity(0.2)
                         : const Color(0xFFF44336).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    therapistData['isAcceptingPatients']
+                    (therapistData['accept_patient'] ?? false)
                         ? Icons.check_circle
                         : Icons.cancel,
-                    color: therapistData['isAcceptingPatients']
+                    color: (therapistData['accept_patient'] ?? false)
                         ? const Color(0xFF4CAF50)
                         : const Color(0xFFF44336),
                     size: 24,
@@ -408,7 +367,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  therapistData['isAcceptingPatients']
+                  (therapistData['accept_patient'] ?? false)
                       ? 'Accepting Patients'
                       : 'Not Available',
                   style: const TextStyle(
@@ -440,7 +399,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${therapistData['rating']} Rating',
+                  '${therapistData['rating'] ?? 'N/A'} Rating',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -470,7 +429,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${therapistData['totalPatients']} Patients',
+                  '${therapistData['patient_count'] ?? '0'} Patients',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -525,24 +484,34 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
               ],
             ),
           ),
-          _buildInfoTile(Icons.email_outlined, 'Email', therapistData['email']),
+          _buildInfoTile(
+            Icons.email_outlined,
+            'Email',
+            therapistData['email'] ?? 'Not provided',
+          ),
           _buildDivider(),
           _buildInfoTile(
             Icons.cake_outlined,
             'Date of Birth',
-            DateFormat('MMMM dd, yyyy').format(therapistData['dob']),
+            therapistData['dob'] != null
+                ? DateFormat(
+                    'MMMM dd, yyyy',
+                  ).format(DateTime.parse(therapistData['dob']))
+                : 'Not provided',
           ),
           _buildDivider(),
           _buildInfoTile(
             Icons.calendar_today_outlined,
             'Age',
-            '${_calculateAge(therapistData['dob'])} years old',
+            therapistData['dob'] != null
+                ? '${_calculateAge(DateTime.parse(therapistData['dob']))} years old'
+                : 'Not provided',
           ),
           _buildDivider(),
           _buildInfoTile(
             Icons.person_outline,
             'Gender',
-            therapistData['gender'],
+            therapistData['gender'] ?? 'Not specified',
           ),
         ],
       ),
@@ -590,25 +559,25 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
           _buildInfoTile(
             Icons.badge_outlined,
             'BMDC Number',
-            therapistData['bmdcNumber'],
+            therapistData['bdn'] ?? 'Not provided',
           ),
           _buildDivider(),
           _buildInfoTile(
             Icons.phone_outlined,
             'Contact Number',
-            therapistData['contactNumber'],
+            therapistData['phone_no'] ?? 'Not provided',
           ),
           _buildDivider(),
           _buildInfoTile(
             Icons.business_outlined,
             'Clinic/Workplace',
-            therapistData['clinicName'],
+            therapistData['institute'] ?? 'Not provided',
           ),
           _buildDivider(),
           _buildInfoTile(
             Icons.timeline_outlined,
-            'Years of Experience',
-            '${therapistData['experience']} years',
+            'Experience',
+            therapistData['exp'] ?? 'Not provided',
           ),
         ],
       ),
@@ -655,7 +624,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: therapistData['specializations']
+            children: (therapistData['special'] as List<dynamic>? ?? [])
                 .map<Widget>(
                   (specialization) => Container(
                     padding: const EdgeInsets.symmetric(
@@ -675,7 +644,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                       ),
                     ),
                     child: Text(
-                      specialization,
+                      specialization.toString(),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -730,7 +699,9 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
           ),
           const SizedBox(height: 16),
           Text(
-            therapistData['bio'],
+            therapistData['description'] ??
+                therapistData['shortbio'] ??
+                'No bio available',
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
