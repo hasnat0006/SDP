@@ -73,7 +73,7 @@ class _BookAppt extends State<BookAppt> {
         return Therapist(
           docId: item['doc_id'] ?? '', // doc_id is already a string (UUID)
           name:
-              item['bdn'] ??
+              item['name'] ??
               'Unknown', // Using bdn as name since name field doesn't exist
           institution: item['institute'] ?? 'Unknown Institution',
           imagepath: item['image_path'] ?? 'assets/default_image.png',
