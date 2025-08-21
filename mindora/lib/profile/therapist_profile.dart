@@ -1,3 +1,5 @@
+import 'package:client/profile/backend.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,37 +25,40 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
   File? _selectedImage;
 
   // Therapist data - in a real app, this would come from a backend
-  Map<String, dynamic> therapistData = {
-    'name': 'Dr. Samira Rahman',
-    'username': '@dr_samira',
-    'email': 'dr.samira@therapyhub.com',
-    'dob': DateTime(1985, 8, 22),
-    'gender': 'Female',
-    'profession': 'Clinical Psychologist',
-    'bio':
-        'Dedicated to helping individuals overcome mental health challenges through evidence-based therapy. Specialized in cognitive behavioral therapy and trauma recovery.',
-    'profileImage': 'assets/therapist.png',
-    'bmdcNumber': 'BMDC-45789',
-    'contactNumber': '+880 1712-345678',
-    'clinicName': 'MindWell Psychology Center',
-    'experience': 8,
-    'specializations': [
-      'Anxiety Disorders',
-      'Depression',
-      'Trauma Therapy',
-      'CBT',
-      'PTSD',
-      'Stress Management',
-    ],
-    'isVerified': true,
-    'isAcceptingPatients': true,
-    'rating': 4.8,
-    'totalPatients': 156,
-  };
+  Map<String, dynamic> therapistData = {};
+
+  //  = {
+  //   'name': 'Dr. Samira Rahman',
+  //   'username': '@dr_samira',
+  //   'email': 'dr.samira@therapyhub.com',
+  //   'dob': DateTime(1985, 8, 22),
+  //   'gender': 'Female',
+  //   'profession': 'Clinical Psychologist',
+  //   'bio':
+  //       'Dedicated to helping individuals overcome mental health challenges through evidence-based therapy. Specialized in cognitive behavioral therapy and trauma recovery.',
+  //   'profileImage': 'assets/therapist.png',
+  //   'bmdcNumber': 'BMDC-45789',
+  //   'phone_no': '+880 1712-345678',
+  //   'clinicName': 'MindWell Psychology Center',
+  //   'experience': 8,
+  //   'specializations': [
+  //     'Anxiety Disorders',
+  //     'Depression',
+  //     'Trauma Therapy',
+  //     'CBT',
+  //     'PTSD',
+  //     'Stress Management',
+  //   ],
+  //   'isVerified': true,
+  //   'isAcceptingPatients': true,
+  //   'rating': 4.8,
+  //   'totalPatients': 156,
+  // };
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -74,6 +79,57 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
 
     _fadeController.forward();
     _slideController.forward();
+  }
+
+  String _userId = '', _userType = '';
+  bool _isLoading = false;
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+
+      await loadProfileData();
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> loadProfileData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final profileData = await ProfileBackend().getUserProfile(
+        _userId,
+        _userType,
+      );
+
+      print("Profile data loaded: $profileData");
+
+      setState(() {
+        therapistData = profileData;
+      });
+      print('Loaded profile data: $profileData');
+    } catch (e) {
+      print('Error loading profile data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -114,148 +170,6 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
         });
       }
     });
-  }
-
-  Future<void> _pickImage() async {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          child: Wrap(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Change Profile Picture',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildImageSourceOption(
-                          Icons.camera_alt,
-                          'Camera',
-                          () => _selectImage(ImageSource.camera),
-                        ),
-                        _buildImageSourceOption(
-                          Icons.photo_library,
-                          'Gallery',
-                          () => _selectImage(ImageSource.gallery),
-                        ),
-                        _buildImageSourceOption(
-                          Icons.folder,
-                          'Files',
-                          _selectImageFromFiles,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _selectImage(ImageSource source) async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: source,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        setState(() {
-          _selectedImage = File(image.path);
-        });
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      Navigator.pop(context);
-    }
-  }
-
-  Future<void> _selectImageFromFiles() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-      );
-
-      if (result != null && result.files.single.path != null) {
-        setState(() {
-          _selectedImage = File(result.files.single.path!);
-        });
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      Navigator.pop(context);
-    }
-  }
-
-  Widget _buildImageSourceOption(
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF4A148C).withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF4A148C).withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: const Color(0xFFBA68C8), size: 32),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -398,51 +312,7 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                       : AssetImage(therapistData['profileImage']),
                 ),
               ),
-              // Verified Badge
-              if (therapistData['isVerified'])
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: const Icon(
-                      Icons.verified,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              // Edit Button
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4A148C),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: IconButton(
-                    onPressed: _pickImage,
-                    icon: const Icon(
-                      Icons.camera_alt,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    iconSize: 18,
-                    constraints: const BoxConstraints(
-                      minWidth: 24,
-                      minHeight: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+             ],
           ),
           const SizedBox(height: 16),
 
@@ -459,10 +329,10 @@ class _TherapistProfilePageState extends State<TherapistProfilePage>
                   fontFamily: 'Poppins',
                 ),
               ),
-              if (therapistData['isVerified']) ...[
-                const SizedBox(width: 8),
-                const Icon(Icons.verified, color: Color(0xFF4CAF50), size: 20),
-              ],
+              // if (therapistData['isVerified']) ...[
+              //   const SizedBox(width: 8),
+              //   const Icon(Icons.verified, color: Color(0xFF4CAF50), size: 20),
+              // ],
             ],
           ),
           const SizedBox(height: 4),

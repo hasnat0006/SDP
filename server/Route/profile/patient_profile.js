@@ -19,9 +19,19 @@ router.get("/get-info", async (req, res) => {
     `
         : await sql`
       SELECT * FROM users, doctor
-      WHERE users.id = doctor.user_id
+      WHERE users.id = doctor.doc_id
       AND users.id = ${user_id}
     `;
+
+
+    if(user_type === "doctor") {
+        const countPatient = await sql`
+          SELECT COUNT(*) FROM appointment
+          WHERE doc_id = ${user_id}
+        `;
+        result[0].patient_count = countPatient[0].count;
+    }
+
     console.log("Profile information retrieved:", result);
     if (result.length === 0) {
       return res.status(404).json({ error: "Profile not found" });
@@ -84,7 +94,9 @@ router.post("/update-profile-image", async (req, res) => {
     console.log("Updating profile image for:", user_id, user_type);
     console.log("New profile image:", profileImage);
     if (!user_id || !user_type || !profileImage) {
-      return res.status(400).json({ error: "Missing user_id, user_type, or profileImage" });
+      return res
+        .status(400)
+        .json({ error: "Missing user_id, user_type, or profileImage" });
     }
 
     let result = await sql`
