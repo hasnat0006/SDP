@@ -334,10 +334,10 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
   String _getSingleMoodSummary(String mood, double intensity) {
     String intensityWord = _getDetailedIntensity(intensity);
     List<String> variations = [
-      "$intensityWord $mood day",
-      "Feeling $intensityWord $mood",
-      "$intensityWord $mood throughout",
-      "A $intensityWord $mood experience"
+      "$intensityWord $mood week",
+      "Week of $intensityWord $mood feelings",
+      "$intensityWord $mood throughout the week",
+      "A $intensityWord $mood week overall"
     ];
     return variations[(mood.hashCode % variations.length).abs()];
   }
@@ -345,10 +345,10 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
   String _getConsistentMoodSummary(String mood, double intensity) {
     String intensityWord = _getDetailedIntensity(intensity);
     List<String> variations = [
-      "Consistently $intensityWord $mood",
-      "Stable $intensityWord $mood pattern",
-      "Maintaining $intensityWord $mood state",
-      "Steadily $intensityWord $mood"
+      "Consistently $intensityWord $mood week",
+      "Stable $intensityWord $mood weekly pattern",
+      "Maintaining $intensityWord $mood all week",
+      "Steadily $intensityWord $mood throughout"
     ];
     return variations[(mood.hashCode % variations.length).abs()];
   }
@@ -382,9 +382,9 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
     String intensityWord = _getDetailedIntensity(intensity);
     List<String> variations = [
       "Predominantly $intensityWord $mood week",
-      "Strong $intensityWord $mood pattern ($entries days)",
-      "Mainly experiencing $intensityWord $mood",
-      "Sustained $intensityWord $mood throughout"
+      "Strong $intensityWord $mood pattern this week",
+      "Mainly experiencing $intensityWord $mood weekly",
+      "Sustained $intensityWord $mood throughout week"
     ];
     return variations[(mood.hashCode % variations.length).abs()];
   }
