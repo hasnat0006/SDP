@@ -170,95 +170,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          title: const Text("Confirm Cancellation"),
-                          content: const Text("Are you sure you want to cancel this appointment?"),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context); // Close confirmation dialog
-                              },
-                              child: const Text("No"),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: () async {
-                                // Show loading
-                                Navigator.pop(context); // Close confirmation dialog
-                                Navigator.pop(context); // Close reschedule dialog
-                                
-                                // Show loading dialog
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) => AlertDialog(
-                                    content: Row(
-                                      children: const [
-                                        CircularProgressIndicator(),
-                                        SizedBox(width: 20),
-                                        Text('Cancelling appointment...'),
-                                      ],
-                                    ),
-                                  ),
-                                );
-
-                                try {
-                                  // Call backend to cancel appointment
-                                  final success = await AppointmentService.cancelAppointment(appointments[index].appId);
-                                  
-                                  // Close loading dialog
-                                  Navigator.pop(context);
-                                  
-                                  if (success) {
-                                    // Remove from local list
-                                    setState(() {
-                                      appointments.removeAt(index);
-                                    });
-                                    
-                                    // Show success message
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Appointment cancelled successfully'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                  } else {
-                                    // Show error message
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Failed to cancel appointment'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  // Close loading dialog
-                                  Navigator.pop(context);
-                                  
-                                  // Show error message
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              },
-                              child: const Text("Yes"),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
+                  onPressed: () => _cancelAppointmentSimple(context, index),
                   child: const Text('Cancel Appointment'),
                 ),
               ],
@@ -424,6 +336,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                               userId: appointments[index].userId,
                               userName: appointments[index].userName,
                               date: appointments[index].date,
+                              originalDate: appointments[index].originalDate, // Add this line
                               time: appointments[index].time,
                               status: appointments[index].status,
                               reminder: newReminderStatus,
@@ -458,6 +371,122 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
         ),
       ),
     );
+  }
+
+  Future<void> _cancelAppointmentSimple(BuildContext dialogContext, int index) async {
+    // Close the patient details dialog first
+    Navigator.of(dialogContext).pop();
+    
+    // Show confirmation dialog with the main context
+    final confirmed = await showDialog<bool>(
+      context: context, // Use the main widget context, not dialog context
+      barrierDismissible: false,
+      builder: (confirmContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text("Confirm Cancellation"),
+        content: const Text("Are you sure you want to cancel this appointment?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(confirmContext).pop(false),
+            child: const Text("No"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(confirmContext).pop(true),
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    // If user confirmed cancellation
+    if (confirmed == true) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (loadingContext) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Cancelling appointment...'),
+            ],
+          ),
+        ),
+      );
+
+      try {
+        print('🔍 Starting cancel appointment for: ${appointments[index].appId}');
+        
+        // Call backend to cancel appointment
+        final success = await AppointmentService.cancelAppointment(appointments[index].appId);
+        print('✅ Cancel appointment result: $success');
+        
+        // Close loading dialog
+        Navigator.of(context).pop();
+        
+        if (success && mounted) {
+          // Parse the appointment date to get the month for decrementing stats
+          try {
+            print('🔍 Parsing date for stats: ${appointments[index].originalDate}');
+            DateTime appointmentDate = DateTime.parse(appointments[index].originalDate);
+            int month = appointmentDate.month;
+            
+            print('🔍 Calling decrement for month: $month');
+            await AppointmentService.decrementMonthlyAppointments(_userId, month);
+            print('✅ Decremented monthly stats for month: $month');
+          } catch (e) {
+            print('❌ Error parsing appointment date for stats: $e');
+          }
+          
+          // Remove from local list
+          setState(() {
+            appointments.removeAt(index);
+          });
+          
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment cancelled successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          // Show error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Failed to cancel appointment'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('❌ Error in cancel appointment: $e');
+        
+        // Close loading dialog
+        Navigator.of(context).pop();
+        
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -503,8 +532,9 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  // Navigate to pending requests page and wait for result
+                  final result = await Navigator.push(
                     context,
                     PageRouteBuilder(
                       pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),
@@ -517,6 +547,10 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                       },
                     ),
                   );
+                  
+                  // Refresh appointments when returning from pending requests
+                  print('🔄 Returned from pending requests, refreshing appointments...');
+                  await _fetchAppointments();
                 },
                 child: const Text("Appointment Requests"),
               ),

@@ -312,4 +312,210 @@ router.put('/update-appointment-status/:appId', async (req, res) => {
   }
 });
 
-module.exports = router;
+// Route to get monthly appointments for a doctor
+router.get('/doctor/monthly-stats/:docId', async (req, res) => {
+  try {
+    const { docId } = req.params;
+    console.log(`🔍 Fetching monthly stats for doctor: ${docId}`);
+    
+    const doctor = await sql`
+      SELECT monthly_appointments 
+      FROM doctor 
+      WHERE doc_id = ${docId}
+    `;
+    
+    if (doctor.length === 0) {
+      // If doctor not found, return default array
+      console.log('⚠️ Doctor not found, returning default array');
+      return res.json(Array(12).fill(0));
+    }
+    
+    const monthlyStats = doctor[0].monthly_appointments || Array(12).fill(0);
+    console.log('✅ Found monthly stats:', monthlyStats);
+    res.json(monthlyStats);
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Route to increment monthly appointment count - FIXED VERSION
+router.post('/doctor/increment-monthly/:docId', async (req, res) => {
+  try {
+    const { docId } = req.params;
+    const { month } = req.body; // month should be 1-12
+    
+    console.log(`🔍 Incrementing appointment count for doctor: ${docId}, month: ${month}`);
+    
+    if (!month || month < 1 || month > 12) {
+      return res.status(400).json({ error: 'Invalid month. Must be between 1-12' });
+    }
+    
+    // First, get current array and check if doctor exists
+    const doctor = await sql`
+      SELECT monthly_appointments, doc_id 
+      FROM doctor 
+      WHERE doc_id = ${docId}
+    `;
+    
+    console.log('🔍 Doctor query result:', doctor);
+    
+    if (doctor.length === 0) {
+      console.log('❌ Doctor not found in database');
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+    
+    let currentStats = Array(12).fill(0);
+    if (doctor[0].monthly_appointments) {
+      currentStats = doctor[0].monthly_appointments;
+    }
+    
+    // Increment the specific month
+    currentStats[month - 1] += 1;
+    
+    console.log('🔄 Updated monthly stats:', currentStats);
+    
+    // Update the database
+    const result = await sql`
+      UPDATE doctor 
+      SET monthly_appointments = ${currentStats}::integer[]
+      WHERE doc_id = ${docId}
+    `;
+    
+    console.log('✅ Database update result:', result);
+    
+    res.json({ 
+      success: true, 
+      message: 'Monthly appointment count updated successfully',
+      docId,
+      month,
+      newCount: currentStats[month - 1]
+    });
+  } catch (error) {
+    console.error('❌ Server error:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Route to decrement monthly appointment count - FIXED VERSION
+router.post('/doctor/decrement-monthly/:docId', async (req, res) => {
+  try {
+    const { docId } = req.params;
+    const { month } = req.body; // month should be 1-12
+    
+    console.log(`🔍 Decrementing appointment count for doctor: ${docId}, month: ${month}`);
+    
+    if (!month || month < 1 || month > 12) {
+      return res.status(400).json({ error: 'Invalid month. Must be between 1-12' });
+    }
+    
+    // First, get current array and check if doctor exists
+    const doctor = await sql`
+      SELECT monthly_appointments, doc_id 
+      FROM doctor 
+      WHERE doc_id = ${docId}
+    `;
+    
+    console.log('🔍 Doctor query result:', doctor);
+    
+    if (doctor.length === 0) {
+      console.log('❌ Doctor not found in database');
+      return res.status(404).json({ error: 'Doctor not found' });
+    }
+    
+    let currentStats = Array(12).fill(0);
+    if (doctor[0].monthly_appointments) {
+      currentStats = [...doctor[0].monthly_appointments]; // Create a copy
+      console.log('📊 Current stats before decrement:', currentStats);
+    } else {
+      console.log('📊 No existing stats, using default array');
+    }
+    
+    // Decrement the specific month (month-1 because array is 0-indexed), but don't go below 0
+    const oldValue = currentStats[month - 1];
+    currentStats[month - 1] = Math.max(0, currentStats[month - 1] - 1);
+    console.log(`📉 Decrementing month ${month}: ${oldValue} -> ${currentStats[month - 1]}`);
+    console.log('📊 New stats array:', currentStats);
+    
+    // Update the database with explicit array casting
+    const result = await sql`
+      UPDATE doctor 
+      SET monthly_appointments = ${currentStats}::integer[]
+      WHERE doc_id = ${docId}
+    `;
+    
+    console.log('✅ Update result - rows affected:', result.count);
+    
+    if (result.count === 0) {
+      console.log('❌ No rows were updated');
+      return res.status(500).json({ error: 'Failed to update doctor record' });
+    }
+    
+    // Verify the update by querying again
+    const verifyUpdate = await sql`
+      SELECT monthly_appointments 
+      FROM doctor 
+      WHERE doc_id = ${docId}
+    `;
+    console.log('🔍 Verification - updated stats in DB:', verifyUpdate[0]?.monthly_appointments);
+    
+    console.log('✅ Monthly stats decremented successfully');
+    res.json({ 
+      success: true, 
+      monthlyStats: currentStats,
+      updatedMonth: month,
+      newCount: currentStats[month - 1],
+      rowsUpdated: result.count,
+      verifiedStats: verifyUpdate[0]?.monthly_appointments
+    });
+  } catch (error) {
+    console.error('❌ Server error in decrement:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
+  }
+});
+
+// Add this debug route to manually test array updates
+router.post('/debug/test-array-update/:docId', async (req, res) => {
+  try {
+    const { docId } = req.params;
+    
+    console.log(`🔍 Testing array update for doctor: ${docId}`);
+    
+    // Get current data
+    const before = await sql`
+      SELECT * FROM doctor WHERE doc_id = ${docId}
+    `;
+    console.log('📊 Before update:', before);
+    
+    // Try a simple array update
+    const testArray = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    
+    const result = await sql`
+      UPDATE doctor 
+      SET monthly_appointments = ${testArray}::integer[]
+      WHERE doc_id = ${docId}
+    `;
+    
+    console.log('✅ Update result:', result);
+    
+    // Get data after update
+    const after = await sql`
+      SELECT * FROM doctor WHERE doc_id = ${docId}
+    `;
+    console.log('📊 After update:', after);
+    
+    res.json({
+      before: before[0],
+      after: after[0],
+      updateResult: result,
+      testArray
+    });
+  } catch (error) {
+    console.error('❌ Test error:', error);
+    res.status(500).json({ error: 'Test error', details: error.message });
+  }
+});
+
+
+
+module.exports = router;module.exports = router;

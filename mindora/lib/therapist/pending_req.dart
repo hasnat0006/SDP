@@ -88,6 +88,11 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
 
   void _acceptRequest(int index) async {
     final appointmentId = pendingRequests[index].appId;
+    final appointment = pendingRequests[index];
+    
+    print('🔍 Starting accept request for appointment: $appointmentId');
+    print('🔍 Appointment original date: ${appointment.originalDate}');
+    print('🔍 Doctor ID: $_userId');
     
     // Show loading dialog
     showDialog(
@@ -105,40 +110,91 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
     );
 
     try {
+      // Update appointment status to confirmed
+      print('🔍 Calling updateAppointmentStatus...');
       final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'confirmed');
-      
-      // Close loading dialog
-      Navigator.pop(context);
+      print('✅ Update appointment status result: $success');
       
       if (success) {
-        setState(() {
-          pendingRequests.removeAt(index);
-        });
+        // Parse the appointment date to get the month
+        try {
+          print('🔍 Parsing appointment original date: ${appointment.originalDate}');
+          
+          // Parse the original ISO date
+          DateTime appointmentDate = DateTime.parse(appointment.originalDate);
+          int month = appointmentDate.month; // Get month (1-12)
+          
+          print('🔍 Parsed appointment date: ${appointment.originalDate} -> Month: $month');
+          print('🔍 About to call incrementMonthlyAppointments with doctorId: $_userId, month: $month');
+          
+          // Increment monthly stats
+          final incrementSuccess = await AppointmentService.incrementMonthlyAppointments(_userId, month);
+          print('✅ Increment result: $incrementSuccess for month: $month');
+          
+          if (!incrementSuccess) {
+            print('❌ Failed to increment monthly stats');
+          }
+          
+        } catch (e, stackTrace) {
+          print('❌ Error parsing appointment date for stats: $e');
+          print('❌ Stack trace: $stackTrace');
+          print('❌ Original appointment date was: ${appointment.originalDate}');
+          print('❌ Formatted appointment date was: ${appointment.date}');
+        }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment accepted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Close loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        
+        // Remove from pending list
+        if (mounted) {
+          setState(() {
+            pendingRequests.removeAt(index);
+          });
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment accepted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
+        print('❌ Failed to update appointment status');
+        // Close loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to accept appointment'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error in _acceptRequest: $e');
+      print('❌ Stack trace: $stackTrace');
+      
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to accept appointment'),
+          SnackBar(
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.pop(context);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
