@@ -78,16 +78,18 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
         posts = post;
         _isLoading = false;
       });
-      for (var post in posts) {
-        print(
-          'Post ID: ${post.id}, Content: ${post.content}, Mood: ${post.mood.displayName}, Likes: ${post.likes}',
-        );
-      }
+      savedPosts.clear();
+      setState(() {
+        for (var post in posts) {
+          if (post.isSaved) {
+            savedPosts.add(post);
+          }
+        }
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      print('Error loading posts: $e');
     }
   }
 

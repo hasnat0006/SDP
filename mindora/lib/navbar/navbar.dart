@@ -20,8 +20,13 @@ class MainNavBar extends StatefulWidget {
 
 class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   int _currentIndex = 0;
-  late PageController _pageController;
   late AnimationController _animationController;
+
+  // Store instantiated pages to avoid recreating them
+  final Map<int, Widget> _instantiatedPages = {};
+
+  // Cache navigation items to avoid recreating them repeatedly
+  List<NavItem>? _cachedNavItems;
 
   // Define the light purple theme colors
   static const Color primaryPurple = Color(0xFF4A148C);
@@ -36,7 +41,6 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _loadUserData();
-    _pageController = PageController(initialPage: _currentIndex);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -49,6 +53,9 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
       setState(() {
         _userId = userData['userId'] ?? '';
         _userType = userData['userType'] ?? '';
+        // Clear caches when user data changes
+        _cachedNavItems = null;
+        _instantiatedPages.clear();
       });
       print('Loaded user data - ID: $_userId, Type: $_userType');
     } catch (e) {
@@ -58,43 +65,54 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _pageController.dispose();
     _animationController.dispose();
     super.dispose();
   }
 
   // Navigation items configuration
-  List<NavItem> get _navItems => [
-    NavItem(
-      icon: Icons.dashboard,
-      label: '',
-      page: DashboardPageWrapper(userType: _userType),
-    ),
-    NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
-    if (_userType == 'patient')
-      NavItem(icon: Icons.checklist, label: '', page: const TodoPageWrapper()),
-    if (_userType == 'doctor')
-      NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
-    NavItem(
-      icon: Icons.person,
-      label: '',
-      page: ProfilePageWrapper(userType: _userType),
-    ),
-    NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
-  ];
+  List<NavItem> get _navItems {
+    if (_cachedNavItems == null) {
+      _cachedNavItems = [
+        NavItem(
+          icon: Icons.dashboard,
+          label: '',
+          page: DashboardPageWrapper(userType: _userType, userId: _userId),
+        ),
+        NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
+        if (_userType == 'patient')
+          NavItem(
+            icon: Icons.checklist,
+            label: '',
+            page: const TodoPageWrapper(),
+          ),
+        if (_userType == 'doctor')
+          NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
+        NavItem(
+          icon: Icons.person,
+          label: '',
+          page: ProfilePageWrapper(userType: _userType),
+        ),
+        NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
+      ];
+    }
+    return _cachedNavItems!;
+  }
 
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
     _animationController.forward().then((_) {
       _animationController.reverse();
     });
+  }
+
+  // Lazy load pages - only instantiate when needed
+  Widget _getPageForIndex(int index) {
+    if (!_instantiatedPages.containsKey(index)) {
+      _instantiatedPages[index] = _navItems[index].page;
+    }
+    return _instantiatedPages[index]!;
   }
 
   @override
@@ -114,18 +132,7 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
             ],
           ),
         ),
-        child: PageView.builder(
-          controller: _pageController,
-          onPageChanged: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          itemCount: _navItems.length,
-          itemBuilder: (context, index) {
-            return _navItems[index].page;
-          },
-        ),
+        child: _getPageForIndex(_currentIndex),
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(5, 0, 5, 3),
@@ -299,7 +306,12 @@ class NavItem {
 // Placeholder page widgets
 class DashboardPageWrapper extends StatelessWidget {
   final String userType;
-  const DashboardPageWrapper({super.key, required this.userType});
+  final String userId;
+  const DashboardPageWrapper({
+    super.key,
+    required this.userType,
+    this.userId = '',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -307,11 +319,18 @@ class DashboardPageWrapper extends StatelessWidget {
     if (userType.isEmpty) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading dashboard...'),
+            ],
+          ),
         ),
       );
     }
-    
+
     if (userType == 'patient') {
       return const DashboardPage(); // Using existing dashboard from p_dashboard.dart
     } else if (userType == 'doctor' || userType == 'therapist') {
@@ -319,9 +338,7 @@ class DashboardPageWrapper extends StatelessWidget {
     } else {
       // Fallback for unknown user types
       return const Scaffold(
-        body: Center(
-          child: Text('Unknown user type. Please login again.'),
-        ),
+        body: Center(child: Text('Unknown user type. Please login again.')),
       );
     }
   }
