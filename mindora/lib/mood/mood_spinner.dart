@@ -52,12 +52,12 @@ class _MoodSpinnerState extends State<MoodSpinner> {
 
       print('🔍 Data check - Sleep: ${sleepResult['success']}, Stress: ${stressResult['success']}');
 
-      // Only show popup if both data exist
-      if (sleepResult['success'] == true && stressResult['success'] == true) {
-        print('✅ Both data available, showing popup');
+      // Show popup if at least one data exists
+      if (sleepResult['success'] == true || stressResult['success'] == true) {
+        print('✅ At least one data available, showing popup');
         _showPredictiveMoodPopup();
       } else {
-        print('ℹ️ Missing data, popup will not be shown automatically');
+        print('ℹ️ No data available, popup will not be shown automatically');
       }
     } catch (e) {
       print('❌ Error checking data availability: $e');
@@ -408,8 +408,8 @@ class _MoodSpinnerState extends State<MoodSpinner> {
       final sleepResult = results[0];
       final stressResult = results[1];
 
-      // Show popup if both data exist, otherwise show no data dialog
-      if (sleepResult['success'] == true && stressResult['success'] == true) {
+      // Show popup if at least one data exists, otherwise show no data dialog
+      if (sleepResult['success'] == true || stressResult['success'] == true) {
         _showPredictiveMoodPopup();
       } else {
         _showNoDataDialog();

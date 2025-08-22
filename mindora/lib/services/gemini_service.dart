@@ -14,17 +14,32 @@ class GeminiService {
   static Future<String> predictMood({
     required double sleepHours,
     required int stressLevel,
+    bool hasSleepData = true,
+    bool hasStressData = true,
   }) async {
     try {
       // Create a detailed prompt for mood prediction
+      String dataInfo = "";
+      String predictionContext = "";
+      
+      if (hasSleepData && hasStressData) {
+        dataInfo = "Sleep Hours: ${sleepHours.toStringAsFixed(1)} hours\nStress Level: $stressLevel (on a scale of 1-5)";
+        predictionContext = "Based on both sleep and stress data";
+      } else if (hasSleepData && !hasStressData) {
+        dataInfo = "Sleep Hours: ${sleepHours.toStringAsFixed(1)} hours\nStress Level: No data available";
+        predictionContext = "Based on sleep data only";
+      } else if (!hasSleepData && hasStressData) {
+        dataInfo = "Sleep Hours: No data available\nStress Level: $stressLevel (on a scale of 1-5)";
+        predictionContext = "Based on stress data only";
+      }
+      
       final prompt = '''
-You are an AI assistant that predicts mood based on sleep and stress data. 
+You are an AI assistant that predicts mood based on available sleep and stress data. 
 Given the following information:
 
-Sleep Hours: ${sleepHours.toStringAsFixed(1)} hours
-Stress Level: $stressLevel (on a scale of 1-5, where 1 is very low stress and 5 is extreme stress)
+$dataInfo
 
-Based on this data, predict the most likely mood from the following options:
+$predictionContext, predict the most likely mood from the following options:
 - Happy
 - Sad  
 - Angry
@@ -32,11 +47,25 @@ Based on this data, predict the most likely mood from the following options:
 - Stressed
 
 Consider these patterns:
+${hasSleepData && hasStressData ? '''
 - Happy: Good sleep (7-8h) + low stress (1-2)
 - Excited: Excellent sleep (8-9h) + very low stress (1) OR slightly less sleep (6-7h) + low stress (1-2) 
 - Sad: Poor sleep (<6h OR >10h) + moderate to high stress (3-5)
 - Angry: Any sleep + high stress (4-5), especially if sleep is also poor
 - Stressed: Poor sleep (<6h) + high stress (4-5) OR good sleep but very high stress (5)
+''' : hasSleepData ? '''
+- Happy: Good sleep (7-9h)
+- Excited: Excellent sleep (8-9h)
+- Sad: Poor sleep (<6h OR >10h)
+- Stressed: Very poor sleep (<5h)
+- Angry: Moderately poor sleep (5-6h)
+''' : '''
+- Happy: Low stress (1-2)
+- Excited: Very low stress (1)
+- Stressed: High stress (4-5)
+- Angry: High stress (4-5)
+- Sad: Moderate to high stress (3-5)
+'''}
 
 Be diverse in your predictions. Don't always choose the same moods. Consider the full range of possibilities.
 
@@ -44,8 +73,10 @@ Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No ex
 ''';
 
       print('🤖 Gemini Request Data:');
-      print('Sleep Hours: ${sleepHours.toStringAsFixed(1)}');
-      print('Stress Level: $stressLevel');
+      print('Sleep Hours: ${hasSleepData ? sleepHours.toStringAsFixed(1) : "No data"}');
+      print('Stress Level: ${hasStressData ? stressLevel.toString() : "No data"}');
+      print('Has Sleep Data: $hasSleepData');
+      print('Has Stress Data: $hasStressData');
       print('Prompt: $prompt');
       print('---');
 
@@ -66,36 +97,50 @@ Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No ex
       } else {
         // Fallback logic if Gemini returns invalid mood
         print('⚠️ Invalid mood returned by Gemini: $predictedMood');
-        return _fallbackMoodPrediction(sleepHours, stressLevel);
+        return _fallbackMoodPrediction(sleepHours, stressLevel, hasSleepData, hasStressData);
       }
     } catch (e) {
       print('❌ Error calling Gemini API: $e');
       // Fallback to rule-based prediction
-      return _fallbackMoodPrediction(sleepHours, stressLevel);
+      return _fallbackMoodPrediction(sleepHours, stressLevel, hasSleepData, hasStressData);
     }
   }
 
-  static String _fallbackMoodPrediction(double sleepHours, int stressLevel) {
+  static String _fallbackMoodPrediction(double sleepHours, int stressLevel, bool hasSleepData, bool hasStressData) {
     print('🔄 Using fallback mood prediction logic');
     
-    // More diverse fallback logic
+    // Handle partial data cases
+    if (hasSleepData && !hasStressData) {
+      // Only sleep data available
+      if (sleepHours < 5) return 'Sad';
+      if (sleepHours >= 8 && sleepHours <= 9) return 'Excited';
+      if (sleepHours >= 6 && sleepHours <= 8) return 'Happy';
+      if (sleepHours > 10) return 'Sad';
+      return 'Happy';
+    } else if (!hasSleepData && hasStressData) {
+      // Only stress data available
+      if (stressLevel == 5) return 'Stressed';
+      if (stressLevel == 4) return 'Angry';
+      if (stressLevel == 3) return 'Sad';
+      if (stressLevel <= 2) return 'Happy';
+      if (stressLevel == 1) return 'Excited';
+      return 'Happy';
+    }
+    
+    // Both data available - original logic
     if (stressLevel == 5) {
-      // Extreme stress - could be angry or stressed
       return sleepHours < 6 ? 'Stressed' : 'Angry';
     } else if (stressLevel == 4) {
-      // High stress - likely angry or stressed  
       return sleepHours >= 7 ? 'Angry' : 'Stressed';
     } else if (stressLevel == 3) {
-      // Moderate stress - depends more on sleep
       if (sleepHours < 6) return 'Sad';
       if (sleepHours > 9) return 'Excited';
       return 'Happy';
     } else if (stressLevel <= 2) {
-      // Low stress - mood depends on sleep quality
       if (sleepHours < 5) return 'Sad';
       if (sleepHours >= 8 && sleepHours <= 9) return 'Excited';
       if (sleepHours >= 6 && sleepHours <= 8) return 'Happy';
-      if (sleepHours > 10) return 'Sad'; // Too much sleep
+      if (sleepHours > 10) return 'Sad';
       return 'Happy';
     }
     

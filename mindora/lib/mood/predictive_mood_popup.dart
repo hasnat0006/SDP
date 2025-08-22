@@ -25,6 +25,8 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
   int stressLevel = 1;
   String predictedMood = '';
   String userId = '';
+  bool hasSleepData = false;
+  bool hasStressData = false;
   bool isManualButtonHovering = false;
   bool isLogButtonHovering = false;
   late AnimationController _animationController;
@@ -97,13 +99,16 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
           print('🔍 Raw sleep_hours value: $sleepData (${sleepData.runtimeType})');
           if (sleepData != null) {
             sleepHours = double.tryParse(sleepData.toString()) ?? 7.0;
+            hasSleepData = true;
           } else {
             sleepHours = 7.0;
+            hasSleepData = false;
           }
-          print('ℹ️ Found sleep data: $sleepHours hours');
+          print('ℹ️ ${hasSleepData ? "Found" : "No"} sleep data: $sleepHours hours');
         } else {
           // Default to 7 hours if no data
           sleepHours = 7.0;
+          hasSleepData = false;
           print('ℹ️ No sleep data found for today, using default: $sleepHours hours');
         }
 
@@ -114,13 +119,16 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
           print('🔍 Raw stress_level value: $stressData (${stressData.runtimeType})');
           if (stressData != null) {
             stressLevel = int.tryParse(stressData.toString()) ?? 2;
+            hasStressData = true;
           } else {
             stressLevel = 2;
+            hasStressData = false;
           }
-          print('ℹ️ Found stress data: level $stressLevel');
+          print('ℹ️ ${hasStressData ? "Found" : "No"} stress data: level $stressLevel');
         } else {
           // Default to level 2 if no data
           stressLevel = 2;
+          hasStressData = false;
           print('ℹ️ No stress data found for today, using default: level $stressLevel');
         }
       } catch (dataProcessingError) {
@@ -135,6 +143,8 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
       predictedMood = await GeminiService.predictMood(
         sleepHours: sleepHours,
         stressLevel: stressLevel,
+        hasSleepData: hasSleepData,
+        hasStressData: hasStressData,
       );
 
       setState(() {
@@ -302,11 +312,18 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                               ),
                             ),
                             Text(
-                              '${sleepHours.toStringAsFixed(1)} hours',
+                              hasSleepData 
+                                  ? '${sleepHours.toStringAsFixed(1)} hours'
+                                  : 'No data found',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF6D3670),
+                                color: hasSleepData 
+                                    ? const Color(0xFF6D3670)
+                                    : Colors.grey[500],
+                                fontStyle: hasSleepData 
+                                    ? FontStyle.normal 
+                                    : FontStyle.italic,
                               ),
                             ),
                           ],
@@ -323,11 +340,18 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                               ),
                             ),
                             Text(
-                              'Level $stressLevel (${_getStressLevelText(stressLevel)})',
+                              hasStressData
+                                  ? 'Level $stressLevel (${_getStressLevelText(stressLevel)})'
+                                  : 'No data found',
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF6D3670),
+                                color: hasStressData 
+                                    ? const Color(0xFF6D3670)
+                                    : Colors.grey[500],
+                                fontStyle: hasStressData 
+                                    ? FontStyle.normal 
+                                    : FontStyle.italic,
                               ),
                             ),
                           ],
@@ -377,31 +401,58 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue[50],
+                      color: _getInfoBackgroundColor(),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.blue[200]!,
+                        color: _getInfoBorderColor(),
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue[600],
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Prediction is based on your logged data in Sleep and Stress trackers',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.blue[700],
-                              fontStyle: FontStyle.italic,
+                        Row(
+                          children: [
+                            Icon(
+                              _getInfoIcon(),
+                              color: _getInfoIconColor(),
+                              size: 16,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _getInfoText(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: _getInfoTextColor(),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        if (!hasSleepData || !hasStressData) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_outlined,
+                                color: Colors.orange[600],
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Since only one data source was found, prediction is based on that limited information.',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: Colors.orange[700],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -527,5 +578,58 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
           ],
       ),
     );
+  }
+
+  // Helper methods for info section styling based on data availability
+  Color _getInfoBackgroundColor() {
+    if (hasSleepData && hasStressData) {
+      return Colors.blue[50]!;
+    } else {
+      return Colors.orange[50]!;
+    }
+  }
+
+  Color _getInfoBorderColor() {
+    if (hasSleepData && hasStressData) {
+      return Colors.blue[200]!;
+    } else {
+      return Colors.orange[200]!;
+    }
+  }
+
+  IconData _getInfoIcon() {
+    if (hasSleepData && hasStressData) {
+      return Icons.info_outline;
+    } else {
+      return Icons.warning_amber_outlined;
+    }
+  }
+
+  Color _getInfoIconColor() {
+    if (hasSleepData && hasStressData) {
+      return Colors.blue[600]!;
+    } else {
+      return Colors.orange[600]!;
+    }
+  }
+
+  String _getInfoText() {
+    if (hasSleepData && hasStressData) {
+      return 'Prediction is based on your logged data in Sleep and Stress trackers';
+    } else if (hasSleepData && !hasStressData) {
+      return 'Prediction is based on your Sleep tracker data only';
+    } else if (!hasSleepData && hasStressData) {
+      return 'Prediction is based on your Stress tracker data only';
+    } else {
+      return 'No data available for prediction';
+    }
+  }
+
+  Color _getInfoTextColor() {
+    if (hasSleepData && hasStressData) {
+      return Colors.blue[700]!;
+    } else {
+      return Colors.orange[700]!;
+    }
   }
 }
