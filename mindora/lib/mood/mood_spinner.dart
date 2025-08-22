@@ -1,5 +1,7 @@
 import 'package:client/mood/Mood_intensity.dart';
 import 'package:client/mood/predictive_mood_popup.dart';
+import 'package:client/mood/backend.dart';
+import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/arc_gauge.dart';
@@ -20,10 +22,46 @@ class _MoodSpinnerState extends State<MoodSpinner> {
   @override
   void initState() {
     super.initState();
-    // Show predictive mood popup when page loads
+    // Check if data exists before showing predictive mood popup
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showPredictiveMoodPopup();
+      _checkDataAndShowPopup();
     });
+  }
+
+  Future<void> _checkDataAndShowPopup() async {
+    try {
+      // Get user data first
+      final userData = await UserService.getUserData();
+      final userId = userData['userId'] ?? '';
+      
+      if (userId.isEmpty) {
+        print('❌ No user ID found, skipping popup');
+        return;
+      }
+
+      final today = DateTime.now();
+      
+      // Check if both sleep and stress data exist for today
+      final results = await Future.wait([
+        MoodTrackerBackend.getSleepDataForDate(userId, today),
+        MoodTrackerBackend.getStressDataForDate(userId, today),
+      ]);
+
+      final sleepResult = results[0];
+      final stressResult = results[1];
+
+      print('🔍 Data check - Sleep: ${sleepResult['success']}, Stress: ${stressResult['success']}');
+
+      // Only show popup if both data exist
+      if (sleepResult['success'] == true && stressResult['success'] == true) {
+        print('✅ Both data available, showing popup');
+        _showPredictiveMoodPopup();
+      } else {
+        print('ℹ️ Missing data, popup will not be shown automatically');
+      }
+    } catch (e) {
+      print('❌ Error checking data availability: $e');
+    }
   }
 
   void _showPredictiveMoodPopup() {
@@ -179,9 +217,7 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                   onEnter: (_) => setState(() => isPredictiveButtonHovering = true),
                   onExit: (_) => setState(() => isPredictiveButtonHovering = false),
                   child: GestureDetector(
-                    onTap: () {
-                      _showPredictiveMoodPopup();
-                    },
+                    onTap: _handlePredictiveButtonTap,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
                       padding: const EdgeInsets.symmetric(
@@ -347,6 +383,137 @@ class _MoodSpinnerState extends State<MoodSpinner> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handlePredictiveButtonTap() async {
+    try {
+      // Get user data first
+      final userData = await UserService.getUserData();
+      final userId = userData['userId'] ?? '';
+      
+      if (userId.isEmpty) {
+        _showNoDataDialog();
+        return;
+      }
+
+      final today = DateTime.now();
+      
+      // Check if both sleep and stress data exist for today
+      final results = await Future.wait([
+        MoodTrackerBackend.getSleepDataForDate(userId, today),
+        MoodTrackerBackend.getStressDataForDate(userId, today),
+      ]);
+
+      final sleepResult = results[0];
+      final stressResult = results[1];
+
+      // Show popup if both data exist, otherwise show no data dialog
+      if (sleepResult['success'] == true && stressResult['success'] == true) {
+        _showPredictiveMoodPopup();
+      } else {
+        _showNoDataDialog();
+      }
+    } catch (e) {
+      print('❌ Error checking data for predictive button: $e');
+      _showNoDataDialog();
+    }
+  }
+
+  void _showNoDataDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFFF9F4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '😔 ',
+                style: TextStyle(fontSize: 24),
+              ),
+              Text(
+                'No Data Available',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF6D3670),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Sorry, you haven\'t logged your data yet in Stress Tracker and Sleep Tracker! :(',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange[200]!,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: Colors.orange[600],
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Log your sleep and stress data first to get AI mood predictions!',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.orange[700],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD39AD5),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'OK',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -26,17 +26,19 @@ Stress Level: $stressLevel (on a scale of 1-5, where 1 is very low stress and 5 
 
 Based on this data, predict the most likely mood from the following options:
 - Happy
-- Sad
+- Sad  
 - Angry
 - Excited
 - Stressed
 
-Consider the following guidelines:
-- If sleep hours are 7-9 and stress level is 1-2: likely Happy or Excited
-- If sleep hours are <6 or >10: likely Tired or Stressed
-- If stress level is 4-5: likely Stressed or Angry
-- If sleep hours are adequate (6-9) but stress is moderate (3): likely neutral to Happy
-- If sleep hours are poor (<6) and stress is high (4-5): likely Stressed or Sad
+Consider these patterns:
+- Happy: Good sleep (7-8h) + low stress (1-2)
+- Excited: Excellent sleep (8-9h) + very low stress (1) OR slightly less sleep (6-7h) + low stress (1-2) 
+- Sad: Poor sleep (<6h OR >10h) + moderate to high stress (3-5)
+- Angry: Any sleep + high stress (4-5), especially if sleep is also poor
+- Stressed: Poor sleep (<6h) + high stress (4-5) OR good sleep but very high stress (5)
+
+Be diverse in your predictions. Don't always choose the same moods. Consider the full range of possibilities.
 
 Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No explanation or additional text.
 ''';
@@ -76,16 +78,27 @@ Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No ex
   static String _fallbackMoodPrediction(double sleepHours, int stressLevel) {
     print('🔄 Using fallback mood prediction logic');
     
-    if (stressLevel >= 4) {
-      return 'Stressed';
-    } else if (sleepHours < 6) {
-      return stressLevel >= 3 ? 'Stressed' : 'Sad';
-    } else if (sleepHours >= 7 && sleepHours <= 9 && stressLevel <= 2) {
+    // More diverse fallback logic
+    if (stressLevel == 5) {
+      // Extreme stress - could be angry or stressed
+      return sleepHours < 6 ? 'Stressed' : 'Angry';
+    } else if (stressLevel == 4) {
+      // High stress - likely angry or stressed  
+      return sleepHours >= 7 ? 'Angry' : 'Stressed';
+    } else if (stressLevel == 3) {
+      // Moderate stress - depends more on sleep
+      if (sleepHours < 6) return 'Sad';
+      if (sleepHours > 9) return 'Excited';
       return 'Happy';
-    } else if (sleepHours > 9) {
-      return 'Excited';
-    } else {
+    } else if (stressLevel <= 2) {
+      // Low stress - mood depends on sleep quality
+      if (sleepHours < 5) return 'Sad';
+      if (sleepHours >= 8 && sleepHours <= 9) return 'Excited';
+      if (sleepHours >= 6 && sleepHours <= 8) return 'Happy';
+      if (sleepHours > 10) return 'Sad'; // Too much sleep
       return 'Happy';
     }
+    
+    return 'Happy'; // Default fallback
   }
 }
