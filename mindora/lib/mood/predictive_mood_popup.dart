@@ -234,11 +234,11 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '🤖 ',
+            '💭 ',
             style: TextStyle(fontSize: 24),
           ),
           Text(
-            'Mood Prediction',
+            'Predictive Mood',
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
