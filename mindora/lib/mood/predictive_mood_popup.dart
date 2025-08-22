@@ -238,7 +238,7 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
             style: TextStyle(fontSize: 24),
           ),
           Text(
-            'AI Mood Prediction',
+            'Mood Prediction',
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
             ),
           ),
           Text(
-            ' 🧠',
+            ' 💭',
             style: TextStyle(fontSize: 24),
           ),
         ],
