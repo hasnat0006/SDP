@@ -258,11 +258,11 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            '🤖',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          const SizedBox(width: 8),
+                          // Text(
+                          //   '🤖',
+                          //   style: TextStyle(fontSize: 18),
+                          // ),
+                          // const SizedBox(width: 8),
                           Text(
                             'Predictive Mood',
                             style: GoogleFonts.poppins(
