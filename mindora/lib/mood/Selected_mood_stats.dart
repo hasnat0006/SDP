@@ -216,15 +216,17 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
       
       // Calculate basic statistics
       Map<String, int> moodCounts = {};
+      Map<String, List<int>> moodLevels = {};
       int totalEntries = moodEntries.length;
       double totalMoodScore = 0;
       
-      // Analyze each mood entry
+      // Analyze each mood entry with detailed tracking
       for (var entry in moodEntries) {
-        String mood = entry['status'];
-        int level = entry['level'];
+        String mood = entry['status'].toString().toLowerCase();
+        int level = entry['level'] ?? 3;
         
         moodCounts[mood] = (moodCounts[mood] ?? 0) + 1;
+        moodLevels[mood] = (moodLevels[mood] ?? [])..add(level);
         totalMoodScore += level;
       }
       
@@ -233,72 +235,95 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
       // Calculate average mood intensity
       double averageIntensity = totalMoodScore / totalEntries;
       
-      // Find dominant mood (most frequent)
-      String dominantMood = moodCounts.entries
-          .reduce((a, b) => a.value > b.value ? a : b)
-          .key;
+      // Find dominant mood and secondary mood
+      List<MapEntry<String, int>> sortedMoods = moodCounts.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      
+      String dominantMood = sortedMoods.first.key;
+      int dominantCount = sortedMoods.first.value;
+      String? secondaryMood = sortedMoods.length > 1 ? sortedMoods[1].key : null;
+      int secondaryCount = sortedMoods.length > 1 ? sortedMoods[1].value : 0;
       
       // Count unique moods
       int uniqueMoods = moodCounts.keys.length;
       
-      // Categorize moods by positivity
-      List<String> positiveMoods = ['happy', 'excited', 'grateful', 'calm'];
-      List<String> negativeMoods = ['sad', 'angry', 'anxious', 'stressed', 'confused'];
+      // Enhanced mood categorization
+      Map<String, List<String>> moodCategories = {
+        'very_positive': ['excited', 'grateful', 'euphoric', 'elated'],
+        'positive': ['happy', 'calm', 'content', 'peaceful', 'relaxed'],
+        'neutral': ['neutral', 'okay', 'fine', 'normal'],
+        'negative': ['sad', 'tired', 'bored', 'disappointed', 'lonely'],
+        'very_negative': ['angry', 'anxious', 'stressed', 'depressed', 'furious'],
+        'complex': ['confused', 'overwhelmed', 'conflicted', 'uncertain']
+      };
       
-      int positiveCount = 0;
-      int negativeCount = 0;
+      // Categorize each mood entry
+      Map<String, int> categoryCounts = {
+        'very_positive': 0, 'positive': 0, 'neutral': 0, 
+        'negative': 0, 'very_negative': 0, 'complex': 0
+      };
       
       for (var entry in moodCounts.entries) {
         String mood = entry.key.toLowerCase();
         int count = entry.value;
         
-        if (positiveMoods.contains(mood)) {
-          positiveCount += count;
-        } else if (negativeMoods.contains(mood)) {
-          negativeCount += count;
+        for (var category in moodCategories.entries) {
+          if (category.value.contains(mood)) {
+            categoryCounts[category.key] = (categoryCounts[category.key] ?? 0) + count;
+            break;
+          }
         }
       }
       
-      // Generate simple, one-line summaries
+      // Calculate mood trends and patterns
+      int positiveTotal = (categoryCounts['very_positive'] ?? 0) + (categoryCounts['positive'] ?? 0);
+      int negativeTotal = (categoryCounts['negative'] ?? 0) + (categoryCounts['very_negative'] ?? 0);
+      int neutralTotal = categoryCounts['neutral'] ?? 0;
+      int complexTotal = categoryCounts['complex'] ?? 0;
+      
+      // Get intensity of dominant mood
+      double dominantIntensity = moodLevels[dominantMood]?.isNotEmpty == true 
+          ? moodLevels[dominantMood]!.reduce((a, b) => a + b) / moodLevels[dominantMood]!.length
+          : 3.0;
+      
+      // Generate varied and specific summaries based on detailed analysis
+      
+      // Single mood entry
       if (totalEntries == 1) {
-        String intensityWord = _getSimpleIntensity(averageIntensity);
-        return "$intensityWord ${dominantMood.toLowerCase()}";
+        return _getSingleMoodSummary(dominantMood, dominantIntensity);
       }
       
+      // Two mood entries
       if (totalEntries == 2) {
         if (uniqueMoods == 1) {
-          String intensityWord = _getSimpleIntensity(averageIntensity);
-          return "Consistently $intensityWord ${dominantMood.toLowerCase()}";
+          return _getConsistentMoodSummary(dominantMood, dominantIntensity);
         } else {
-          // Two different moods
-          String trend = positiveCount > negativeCount ? "positive" : 
-                        negativeCount > positiveCount ? "challenging" : "mixed";
-          return "Mixed emotions, leaning $trend";
+          return _getTwoMoodSummary(dominantMood, secondaryMood!, positiveTotal, negativeTotal);
         }
       }
       
-      if (uniqueMoods == 1) {
-        // All same mood
-        String intensityWord = _getSimpleIntensity(averageIntensity);
-        return "Consistently $intensityWord ${dominantMood.toLowerCase()}";
+      // Single dominant mood (>80% of entries)
+      if (dominantCount >= (totalEntries * 0.8)) {
+        return _getDominantMoodSummary(dominantMood, dominantIntensity, totalEntries);
       }
       
+      // High emotional variability (4+ different moods)
       if (uniqueMoods >= 4) {
-        // High variety
-        String trend = positiveCount > negativeCount ? "positive" : 
-                      negativeCount > positiveCount ? "challenging" : "balanced";
-        return "Variable emotions, mostly $trend";
+        return _getVariableMoodSummary(categoryCounts, totalEntries, dominantMood);
       }
       
-      // 2-3 different moods
-      if (positiveCount >= negativeCount * 2) {
-        return "Mostly positive emotions";
-      } else if (negativeCount >= positiveCount * 2) {
-        return "Mostly challenging emotions";
-      } else {
-        String dominantIntensity = _getSimpleIntensity(averageIntensity);
-        return "Mixed emotions, $dominantIntensity ${dominantMood.toLowerCase()} dominant";
+      // Bi-modal pattern (two main moods)
+      if (uniqueMoods == 2 && dominantCount > 0 && secondaryCount > 0) {
+        return _getBimodalMoodSummary(dominantMood, secondaryMood!, dominantCount, secondaryCount, dominantIntensity);
       }
+      
+      // 3 different moods - analyze the pattern
+      if (uniqueMoods == 3) {
+        return _getTrimodalMoodSummary(sortedMoods, categoryCounts, averageIntensity);
+      }
+      
+      // Fallback with more specific analysis
+      return _getGeneralMoodSummary(categoryCounts, dominantMood, averageIntensity, totalEntries);
       
     } catch (e) {
       print('Error in _getAdvancedMoodSummary: $e');
@@ -306,9 +331,171 @@ class _MoodStatsPageState extends State<MoodStatsPage> {
     }
   }
   
-  String _getSimpleIntensity(double avgLevel) {
-    if (avgLevel >= 4.0) return "intensely";
+  String _getSingleMoodSummary(String mood, double intensity) {
+    String intensityWord = _getDetailedIntensity(intensity);
+    List<String> variations = [
+      "$intensityWord $mood day",
+      "Feeling $intensityWord $mood",
+      "$intensityWord $mood throughout",
+      "A $intensityWord $mood experience"
+    ];
+    return variations[(mood.hashCode % variations.length).abs()];
+  }
+  
+  String _getConsistentMoodSummary(String mood, double intensity) {
+    String intensityWord = _getDetailedIntensity(intensity);
+    List<String> variations = [
+      "Consistently $intensityWord $mood",
+      "Stable $intensityWord $mood pattern",
+      "Maintaining $intensityWord $mood state",
+      "Steadily $intensityWord $mood"
+    ];
+    return variations[(mood.hashCode % variations.length).abs()];
+  }
+  
+  String _getTwoMoodSummary(String mood1, String mood2, int positive, int negative) {
+    if (positive > negative) {
+      List<String> variations = [
+        "Shifting between $mood1 and $mood2, mostly uplifting",
+        "Alternating $mood1-$mood2 with positive lean",
+        "Dynamic $mood1 to $mood2 emotional flow"
+      ];
+      return variations[((mood1 + mood2).hashCode % variations.length).abs()];
+    } else if (negative > positive) {
+      List<String> variations = [
+        "Fluctuating $mood1-$mood2 with challenging moments",
+        "Transitioning between $mood1 and $mood2 states",
+        "Processing through $mood1 and $mood2 emotions"
+      ];
+      return variations[((mood1 + mood2).hashCode % variations.length).abs()];
+    } else {
+      List<String> variations = [
+        "Balanced $mood1 and $mood2 experiences",
+        "Even split between $mood1 and $mood2",
+        "Contrasting $mood1-$mood2 emotional journey"
+      ];
+      return variations[((mood1 + mood2).hashCode % variations.length).abs()];
+    }
+  }
+  
+  String _getDominantMoodSummary(String mood, double intensity, int entries) {
+    String intensityWord = _getDetailedIntensity(intensity);
+    List<String> variations = [
+      "Predominantly $intensityWord $mood week",
+      "Strong $intensityWord $mood pattern ($entries days)",
+      "Mainly experiencing $intensityWord $mood",
+      "Sustained $intensityWord $mood throughout"
+    ];
+    return variations[(mood.hashCode % variations.length).abs()];
+  }
+  
+  String _getVariableMoodSummary(Map<String, int> categories, int total, String dominant) {
+    int positiveTotal = (categories['very_positive'] ?? 0) + (categories['positive'] ?? 0);
+    int negativeTotal = (categories['negative'] ?? 0) + (categories['very_negative'] ?? 0);
+    
+    if (positiveTotal > negativeTotal * 1.5) {
+      List<String> variations = [
+        "Rich emotional week with positive highlights",
+        "Diverse moods trending upward",
+        "Varied emotions with uplifting moments",
+        "Complex week leaning toward wellness"
+      ];
+      return variations[(total % variations.length).abs()];
+    } else if (negativeTotal > positiveTotal * 1.5) {
+      List<String> variations = [
+        "Emotionally challenging week with varied experiences",
+        "Complex emotional processing period",
+        "Diverse feelings during difficult time",
+        "Working through multiple emotional states"
+      ];
+      return variations[(total % variations.length).abs()];
+    } else {
+      List<String> variations = [
+        "Emotionally rich and varied week",
+        "Complex emotional landscape with $dominant peaks",
+        "Diverse mood patterns throughout",
+        "Full spectrum emotional experience"
+      ];
+      return variations[(total % variations.length).abs()];
+    }
+  }
+  
+  String _getBimodalMoodSummary(String mood1, String mood2, int count1, int count2, double intensity) {
+    String primary = count1 > count2 ? mood1 : mood2;
+    String secondary = count1 > count2 ? mood2 : mood1;
+    String intensityWord = _getDetailedIntensity(intensity);
+    
+    List<String> variations = [
+      "Primary $intensityWord $primary with $secondary moments",
+      "Alternating between $intensityWord $primary and $secondary",
+      "Dual pattern: $primary-$secondary emotional rhythm",
+      "$intensityWord $primary dominant, occasional $secondary"
+    ];
+    return variations[((mood1 + mood2).hashCode % variations.length).abs()];
+  }
+  
+  String _getTrimodalMoodSummary(List<MapEntry<String, int>> moods, Map<String, int> categories, double avgIntensity) {
+    String top1 = moods[0].key;
+    String top2 = moods[1].key;
+    String top3 = moods[2].key;
+    
+    int positiveTotal = (categories['very_positive'] ?? 0) + (categories['positive'] ?? 0);
+    int negativeTotal = (categories['negative'] ?? 0) + (categories['very_negative'] ?? 0);
+    
+    if (positiveTotal > negativeTotal) {
+      List<String> variations = [
+        "Triple pattern: $top1, $top2, $top3 with positive flow",
+        "Triangular mood cycle leaning positive",
+        "Three-way emotional balance trending up"
+      ];
+      return variations[((top1 + top2 + top3).hashCode % variations.length).abs()];
+    } else {
+      List<String> variations = [
+        "Complex $top1-$top2-$top3 emotional cycle",
+        "Three-dimensional mood experience",
+        "Multifaceted $top1, $top2, and $top3 journey"
+      ];
+      return variations[((top1 + top2 + top3).hashCode % variations.length).abs()];
+    }
+  }
+  
+  String _getGeneralMoodSummary(Map<String, int> categories, String dominant, double avgIntensity, int total) {
+    int positiveTotal = (categories['very_positive'] ?? 0) + (categories['positive'] ?? 0);
+    int negativeTotal = (categories['negative'] ?? 0) + (categories['very_negative'] ?? 0);
+    
+    String intensityWord = _getDetailedIntensity(avgIntensity);
+    
+    if (positiveTotal >= negativeTotal * 2) {
+      List<String> variations = [
+        "Generally positive with $intensityWord $dominant highlights",
+        "Upward trending week with $dominant focus",
+        "Positive emotional trajectory"
+      ];
+      return variations[(dominant.hashCode % variations.length).abs()];
+    } else if (negativeTotal >= positiveTotal * 2) {
+      List<String> variations = [
+        "Challenging period with $intensityWord $dominant experiences",
+        "Processing difficult emotions, $dominant prominent",
+        "Working through tough times with $dominant feelings"
+      ];
+      return variations[(dominant.hashCode % variations.length).abs()];
+    } else {
+      List<String> variations = [
+        "Balanced emotional week with $intensityWord $dominant",
+        "Moderate emotional range, $dominant centered",
+        "Steady emotional pace with $dominant undertones",
+        "Well-rounded emotional experience"
+      ];
+      return variations[(total % variations.length).abs()];
+    }
+  }
+  
+  String _getDetailedIntensity(double avgLevel) {
+    if (avgLevel >= 4.5) return "intensely";
+    if (avgLevel >= 4.0) return "strongly";
+    if (avgLevel >= 3.5) return "notably";
     if (avgLevel >= 3.0) return "moderately";
+    if (avgLevel >= 2.5) return "somewhat";
     return "mildly";
   }
 
