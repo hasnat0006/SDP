@@ -3,6 +3,8 @@ import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
 import 'package:client/demo_notification_page.dart';
 import 'package:client/mood/mood_spinner.dart';
+import 'package:client/mood/Mood_insights.dart';
+import 'package:client/mood/backend.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -25,6 +27,8 @@ class _DashboardPageState extends State<DashboardPage> {
   String _userType = '';
   Map<String, dynamic>? _todayStressData;
   String _stressButtonText = 'Log your details for today';
+  Map<String, dynamic>? _todayMoodData;
+  String _moodButtonText = 'Sad → Happy → Neutral';
 
   @override
   void initState() {
@@ -44,6 +48,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load today's stress data after user data is loaded
       if (_userId.isNotEmpty) {
         await _loadTodayStressData();
+        await _loadTodayMoodData();
       }
     } catch (e) {
       print('Error loading user data: $e');
@@ -102,6 +107,101 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     
     return 'Level $stressLevel | $levelText';
+  }
+
+  Future<void> _loadTodayMoodData() async {
+    try {
+      final result = await MoodTrackerBackend.getMoodDataForDate(_userId, DateTime.now());
+      if (result['success']) {
+        setState(() {
+          _todayMoodData = result['data'];
+          _moodButtonText = _getMoodButtonText();
+        });
+      } else {
+        setState(() {
+          _todayMoodData = null;
+          _moodButtonText = 'Sad → Happy → Neutral';
+        });
+      }
+    } catch (e) {
+      print('Error loading today\'s mood data: $e');
+      setState(() {
+        _todayMoodData = null;
+        _moodButtonText = 'Sad → Happy → Neutral';
+      });
+    }
+  }
+
+  String _getMoodButtonText() {
+    if (_todayMoodData == null) {
+      return 'Sad → Happy → Neutral';
+    }
+    
+    final moodStatus = _todayMoodData!['mood_status'] ?? 'Unknown';
+    final moodLevel = _todayMoodData!['mood_level'] ?? 1;
+    
+    return '$moodStatus | Level $moodLevel';
+  }
+
+  void _handleMoodTrackerTap() {
+    if (_todayMoodData != null) {
+      // Data exists for today, navigate to mood insights
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MoodInsightsPage(
+            moodLabel: _todayMoodData!['mood_status'] ?? 'Unknown',
+            moodEmoji: _getMoodEmoji(_todayMoodData!['mood_status'] ?? 'Unknown'),
+            moodIntensity: _todayMoodData!['mood_level'] ?? 1,
+            selectedCauses: (_todayMoodData!['reason'] as List<dynamic>?)
+                ?.map((e) => e.toString()).toList() ?? [],
+          ),
+        ),
+      );
+    } else {
+      // No data for today, navigate to mood spinner for input
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const MoodSpinner(),
+          transitionsBuilder:
+              (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                final tween = Tween(
+                  begin: begin,
+                  end: end,
+                ).chain(CurveTween(curve: curve));
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+        ),
+      ).then((_) {
+        // Refresh data when returning from mood tracker
+        _loadTodayMoodData();
+      });
+    }
+  }
+
+  String _getMoodEmoji(String moodStatus) {
+    switch (moodStatus.toLowerCase()) {
+      case 'happy':
+        return '😊';
+      case 'sad':
+        return '😢';
+      case 'angry':
+        return '😠';
+      case 'excited':
+        return '😃';
+      case 'stressed':
+        return '😟';
+      default:
+        return '😊';
+    }
   }
 
   void _handleStressTrackerTap() {
@@ -287,31 +387,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.mood,
           'Mood Tracker',
-          'Sad → Happy → Neutral',
+          _moodButtonText,
           context,
-          onTap: () {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const MoodSpinner(),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                      const begin = Offset(1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.ease;
-                      final tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-              ),
-            );
-          },
+          onTap: _handleMoodTrackerTap,
         ),
         _trackerTile(
           Icons.bedtime,
