@@ -8,7 +8,6 @@ app.use(cors());
 
 const stress = require("./Route/stress");
 const mood = require("./Route/mood");
-const sleep = require("./Route/sleep");
 const auth = require("./Route/auth/fetchusers");
 const resetPassword = require("./Route/auth/resetpass");
 const saveJournal = require("./Route/save_journal");
@@ -28,7 +27,7 @@ app.use("/", saveJournal);
 app.use("/", journalRoutes);
 app.use("/", therapistRoutes);
 app.use("/mood", mood);
-app.use("/sleep", sleep);
+app.use("/", sleep);
 
 app.use("/", therapists);
 app.use("/", sleep);
@@ -38,12 +37,11 @@ app.get("/", (req, res) => {
 });
 
 app.use((req, res, next) => {
-  res.on('finish', () => {
-    console.log('----------------------------------------');
+  res.on("finish", () => {
+    console.log("----------------------------------------");
   });
   next();
 });
-
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
