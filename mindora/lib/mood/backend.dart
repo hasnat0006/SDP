@@ -4,10 +4,10 @@ import '../../backend/main_query.dart';
 class MoodTrackerBackend {
   // Store mood tracking data
   static Future<Map<String, dynamic>> saveMoodData({
-    required String userId,  // Changed to String for UUID
+    required String userId, // Changed to String for UUID
     required String moodStatus,
     required int moodLevel,
-    required List<String> reason,  // Changed to match DB column name
+    required List<String> reason, // Changed to match DB column name
     required DateTime date,
   }) async {
     try {
@@ -15,69 +15,79 @@ class MoodTrackerBackend {
         'user_id': userId,
         'mood_status': moodStatus,
         'mood_level': moodLevel,
-        'reason': reason.isNotEmpty ? reason : <String>[], // Ensure it's List<String>
+        'reason': reason.isNotEmpty
+            ? reason
+            : <String>[], // Ensure it's List<String>
         'date': date.toIso8601String(),
       });
 
       return {
         'success': true,
         'data': response,
-        'message': 'Mood data saved successfully'
+        'message': 'Mood data saved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to save mood data'
+        'message': 'Failed to save mood data',
       };
     }
   }
 
   // Get mood tracking data for insights
-  static Future<Map<String, dynamic>> getMoodData(String userId) async {  // Changed to String for UUID
+  static Future<Map<String, dynamic>> getMoodData(String userId) async {
+    // Changed to String for UUID
     try {
       final response = await getFromBackend('mood/data/$userId');
-      
+
       // Cast the reason field to List<String> if it exists
       if (response.containsKey('reason') && response['reason'] != null) {
         final reasonData = response['reason'];
         if (reasonData is List) {
-          response['reason'] = reasonData.map((item) => item.toString()).toList();
+          response['reason'] = reasonData
+              .map((item) => item.toString())
+              .toList();
         } else {
           response['reason'] = <String>[];
         }
       } else {
         response['reason'] = <String>[];
       }
-      
+
       // The response will include all fields as per the database schema
       // id, user_id, mood_status, mood_level, date, reason
       return {
         'success': true,
         'data': response,
-        'message': 'Mood data retrieved successfully'
+        'message': 'Mood data retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve mood data'
+        'message': 'Failed to retrieve mood data',
       };
     }
   }
 
   // Get weekly mood data for graph
-  static Future<Map<String, dynamic>> getWeeklyMoodData(String userId) async {  // Changed to String for UUID
+  static Future<Map<String, dynamic>> getWeeklyMoodData(String userId) async {
+    // Changed to String for UUID
     try {
       final response = await getFromBackend('mood/weekly/$userId');
-      
+
       // Cast the reason field to List<String> for each entry if it exists
       if (response is List) {
-        for (var entry in response) {
-          if (entry is Map && entry.containsKey('reason') && entry['reason'] != null) {
+        for (var entry in response[0]) {
+          if (entry is Map &&
+              entry.containsKey('reason') &&
+              entry['reason'] != null) {
             final reasonData = entry['reason'];
             if (reasonData is List) {
-              entry['reason'] = reasonData.map((item) => item.toString()).toList();
+              entry['reason'] = reasonData
+                  .map((item) => item.toString())
+                  .toList();
             } else {
               entry['reason'] = <String>[];
             }
@@ -86,36 +96,45 @@ class MoodTrackerBackend {
           }
         }
       }
-      
+
       // The response will include weekly aggregated data from the mood_tracker table
       return {
         'success': true,
         'data': response,
-        'message': 'Weekly mood data retrieved successfully'
+        'message': 'Weekly mood data retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve weekly mood data'
+        'message': 'Failed to retrieve weekly mood data',
       };
     }
   }
 
   // Get mood data for a specific date
-  static Future<Map<String, dynamic>> getMoodDataForDate(String userId, DateTime date) async {
+  static Future<Map<String, dynamic>> getMoodDataForDate(
+    String userId,
+    DateTime date,
+  ) async {
     try {
-      final response = await getFromBackend('mood/data/$userId/${date.toIso8601String().split('T')[0]}');
-      
+      final response = await getFromBackend(
+        'mood/data/$userId/${date.toIso8601String().split('T')[0]}',
+      );
+
       print('🔍 Backend Debug - Raw response: $response');
-      
+
       // Cast the reason field to List<String> if it exists
       if (response.containsKey('reason') && response['reason'] != null) {
         final reasonData = response['reason'];
         print('🔍 Backend Debug - reasonData: $reasonData');
         if (reasonData is List) {
-          response['reason'] = reasonData.map((item) => item.toString()).toList();
-          print('✅ Backend Debug - Processed reason as List: ${response['reason']}');
+          response['reason'] = reasonData
+              .map((item) => item.toString())
+              .toList();
+          print(
+            '✅ Backend Debug - Processed reason as List: ${response['reason']}',
+          );
         } else {
           response['reason'] = <String>[];
           print('⚠️ Backend Debug - reasonData is not a List, set to empty');
@@ -124,11 +143,11 @@ class MoodTrackerBackend {
         response['reason'] = <String>[];
         print('⚠️ Backend Debug - No reason field found, set to empty');
       }
-      
+
       return {
         'success': true,
         'data': response,
-        'message': 'Mood data for date retrieved successfully'
+        'message': 'Mood data for date retrieved successfully',
       };
     } catch (e) {
       print('❌ Backend Debug - Exception caught: $e');
@@ -138,67 +157,86 @@ class MoodTrackerBackend {
         return {
           'success': true,
           'data': null,
-          'message': 'No mood data found for this date'
+          'message': 'No mood data found for this date',
         };
       }
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve mood data for date'
+        'message': 'Failed to retrieve mood data for date',
       };
     }
   }
 
   // Get stress data for current date
-  static Future<Map<String, dynamic>> getStressDataForDate(String userId, DateTime date) async {
+  static Future<Map<String, dynamic>> getStressDataForDate(
+    String userId,
+    DateTime date,
+  ) async {
     try {
-      final response = await getFromBackend('stress/data/$userId/${date.toIso8601String().split('T')[0]}');
+      final response = await getFromBackend(
+        'stress/data/$userId/${date.toIso8601String().split('T')[0]}',
+      );
       return {
         'success': true,
         'data': response,
-        'message': 'Stress data for date retrieved successfully'
+        'message': 'Stress data for date retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve stress data for date'
+        'message': 'Failed to retrieve stress data for date',
       };
     }
   }
 
   // Get sleep data for current date
-  static Future<Map<String, dynamic>> getSleepDataForDate(String userId, DateTime date) async {
+  static Future<Map<String, dynamic>> getSleepDataForDate(
+    String userId,
+    DateTime date,
+  ) async {
     try {
-      final response = await getFromBackend('sleep/data/$userId/${date.toIso8601String().split('T')[0]}');
+      final response = await getFromBackend(
+        'sleep/data/$userId/${date.toIso8601String().split('T')[0]}',
+      );
       return {
         'success': true,
         'data': response,
-        'message': 'Sleep data for date retrieved successfully'
+        'message': 'Sleep data for date retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve sleep data for date'
+        'message': 'Failed to retrieve sleep data for date',
       };
     }
   }
 
   // Get monthly mood data for weekly overview
-  static Future<Map<String, dynamic>> getMonthlyMoodData(String userId, DateTime date) async {
+  static Future<Map<String, dynamic>> getMonthlyMoodData(
+    String userId,
+    DateTime date,
+  ) async {
     try {
-      final response = await getFromBackend('mood/monthly/$userId/${date.year}/${date.month}');
-      
+      final response = await getFromBackend(
+        'mood/monthly/$userId/${date.year}/${date.month}',
+      );
+
       // Process the response to ensure all reason fields are List<String>
       if (response is Map<String, dynamic>) {
         response.forEach((week, weekData) {
           if (weekData is List) {
             for (var entry in weekData) {
-              if (entry is Map && entry.containsKey('reason') && entry['reason'] != null) {
+              if (entry is Map &&
+                  entry.containsKey('reason') &&
+                  entry['reason'] != null) {
                 final reasonData = entry['reason'];
                 if (reasonData is List) {
-                  entry['reason'] = reasonData.map((item) => item.toString()).toList();
+                  entry['reason'] = reasonData
+                      .map((item) => item.toString())
+                      .toList();
                 } else {
                   entry['reason'] = <String>[];
                 }
@@ -209,36 +247,39 @@ class MoodTrackerBackend {
           }
         });
       }
-      
+
       return {
         'success': true,
         'data': response,
-        'message': 'Monthly mood data retrieved successfully'
+        'message': 'Monthly mood data retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve monthly mood data'
+        'message': 'Failed to retrieve monthly mood data',
       };
     }
   }
 
   // Get yearly mood data (12 months)
-  static Future<Map<String, dynamic>> getYearlyMoodData(String userId, DateTime date) async {
+  static Future<Map<String, dynamic>> getYearlyMoodData(
+    String userId,
+    DateTime date,
+  ) async {
     try {
       final response = await getFromBackend('mood/yearly/$userId/${date.year}');
-      
+
       return {
         'success': true,
         'data': response,
-        'message': 'Yearly mood data retrieved successfully'
+        'message': 'Yearly mood data retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve yearly mood data'
+        'message': 'Failed to retrieve yearly mood data',
       };
     }
   }
@@ -247,17 +288,17 @@ class MoodTrackerBackend {
   static Future<Map<String, dynamic>> getAllTimeMoodData(String userId) async {
     try {
       final response = await getFromBackend('mood/all-time/$userId');
-      
+
       return {
         'success': true,
         'data': response,
-        'message': 'All-time mood data retrieved successfully'
+        'message': 'All-time mood data retrieved successfully',
       };
     } catch (e) {
       return {
         'success': false,
         'error': e.toString(),
-        'message': 'Failed to retrieve all-time mood data'
+        'message': 'Failed to retrieve all-time mood data',
       };
     }
   }
@@ -336,7 +377,10 @@ class MoodTrackerBackend {
   }
 
   // Get mood intensity description for historical viewing
-  static String getMoodIntensityDescriptionForHistory(String moodStatus, int moodLevel) {
+  static String getMoodIntensityDescriptionForHistory(
+    String moodStatus,
+    int moodLevel,
+  ) {
     final lowerCaseMood = moodStatus.toLowerCase();
     switch (moodLevel) {
       case 1:
@@ -438,7 +482,7 @@ class MoodTrackerBackend {
   // Get dynamic mood-based notes
   static String getMoodBasedNote(String moodStatus, int moodLevel) {
     final lowerCaseMood = moodStatus.toLowerCase();
-    
+
     switch (lowerCaseMood) {
       case 'happy':
         if (moodLevel >= 4) {
@@ -446,62 +490,62 @@ class MoodTrackerBackend {
         } else {
           return "It's wonderful that you're feeling good.\nTake time to appreciate these moments.";
         }
-      
+
       case 'sad':
         if (moodLevel >= 4) {
           return "It's okay to feel deeply sad sometimes.\nConsider reaching out to someone you trust.";
         } else {
           return "Remember that these feelings will pass.\nBe gentle with yourself today.";
         }
-      
+
       case 'angry':
         if (moodLevel >= 4) {
           return "Strong anger can be overwhelming.\nTry some deep breathing or physical exercise.";
         } else {
           return "It's normal to feel frustrated sometimes.\nTake a moment to identify what's bothering you.";
         }
-      
+
       case 'anxious':
         if (moodLevel >= 4) {
           return "High anxiety can feel intense.\nGrounding techniques or talking to someone might help.";
         } else {
           return "Mild anxiety is manageable.\nTry some calming activities or mindfulness.";
         }
-      
+
       case 'excited':
         if (moodLevel >= 4) {
           return "It's great to feel enthusiastic.\nEnjoy this uplifting feeling";
         } else {
           return "It's great to feel enthusiastic.\nEnjoy this uplifting feeling.";
         }
-      
+
       case 'calm':
         return "Peace of mind is precious.\nTake advantage of this tranquil state.";
-      
+
       case 'confused':
         if (moodLevel >= 4) {
           return "Feeling very confused can be stressful.\nBreak things down into smaller, manageable pieces.";
         } else {
           return "It's okay to feel uncertain sometimes.\nTrust that clarity will come with time.";
         }
-      
+
       case 'tired':
         if (moodLevel >= 4) {
           return "Deep fatigue needs attention.\nMake sure you're getting enough rest and nutrition.";
         } else {
           return "A little tiredness is normal.\nConsider what your body might need right now.";
         }
-      
+
       case 'grateful':
         return "Gratitude is a beautiful feeling.\nTake a moment to appreciate what you're thankful for.";
-      
+
       case 'stressed':
         if (moodLevel >= 4) {
           return "High stress levels need attention.\nConsider stress-reduction techniques or seeking support.";
         } else {
           return "Some stress is manageable.\nTry to identify what's causing it and how to address it.";
         }
-      
+
       default:
         return "It's perfectly normal to feel this way.\nTake care of yourself today.";
     }
