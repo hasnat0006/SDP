@@ -42,7 +42,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       }
       print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
       
-      // Safety check - if this is not a doctor/therapist account, don't load appointments
+      
       if (_userType == 'patient') {
         print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
         return;
@@ -54,7 +54,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
   Future<void> _loadTodayAppointments() async {
     try {
-      // Safety check - only load appointments if user type is doctor/therapist
+      
       if (_userType == 'patient') {
         print('⚠️ Skipping appointment loading for patient account');
         if (mounted) {
@@ -65,10 +65,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         return;
       }
       
-      // Import the appointment service
+      
       final appointments = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
       
-      // Filter for today's appointments
+     
       final today = DateTime.now();
       final todayStr = '${today.day}/${today.month}/${today.year}';
       
@@ -85,7 +85,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             'age': patientDetails?.age ?? '',
             'gender': patientDetails?.gender ?? '',
             'profession': patientDetails?.profession ?? '',
-            'reason': 'Consultation', // Default reason since not in DB
+            'reason': 'Consultation', 
           });
         }
       }
@@ -109,7 +109,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   Future<void> _loadMonthlyStats() async {
     try {
       if (_userId.isEmpty) {
-        // Wait for user data to load first
+        
         await _loadUserData();
       }
       
@@ -216,7 +216,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   padding: EdgeInsets.zero,
                 ),
                 onPressed: () async {
-                  // Navigate to manage appointments and wait for result
+                  
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -224,16 +224,16 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                     ),
                   );
                   
-                  // Refresh dashboard data when returning
+                  
                   print('🔄 Returned from manage appointments, refreshing dashboard...');
                   if (mounted) {
-                    // Refresh monthly stats (the graph)
+                   
                     setState(() {
                       isLoadingStats = true;
                     });
                     await _loadMonthlyStats();
                     
-                    // Also refresh today's appointments
+                   
                     setState(() {
                       isLoadingAppointments = true;
                     });
@@ -339,10 +339,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       );
     }
 
-    // Use real monthly stats data
+    
     final List<int> data = monthlyStats;
     final int maxVal = data.isEmpty ? 1 : data.reduce((a, b) => a > b ? a : b);
-    final int displayMaxVal = maxVal == 0 ? 1 : maxVal; // Prevent division by zero
+    final int displayMaxVal = maxVal == 0 ? 1 : maxVal;
 
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 20),
