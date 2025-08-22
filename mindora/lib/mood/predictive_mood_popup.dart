@@ -234,7 +234,7 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            '💭 ',
+            '✨ ',
             style: TextStyle(fontSize: 24),
           ),
           Text(
