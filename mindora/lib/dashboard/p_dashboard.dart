@@ -28,7 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? _todayStressData;
   String _stressButtonText = 'Log your details for today';
   Map<String, dynamic>? _todayMoodData;
-  String _moodButtonText = 'Sad → Happy → Neutral';
+  String _moodButtonText = 'Log your details for today';
 
   @override
   void initState() {
@@ -120,21 +120,21 @@ class _DashboardPageState extends State<DashboardPage> {
       } else {
         setState(() {
           _todayMoodData = null;
-          _moodButtonText = 'Sad → Happy → Neutral';
+          _moodButtonText = 'Log your details for today';
         });
       }
     } catch (e) {
       print('Error loading today\'s mood data: $e');
       setState(() {
         _todayMoodData = null;
-        _moodButtonText = 'Sad → Happy → Neutral';
+        _moodButtonText = 'Log your details for today';
       });
     }
   }
 
   String _getMoodButtonText() {
     if (_todayMoodData == null) {
-      return 'Sad → Happy → Neutral';
+      return 'Log your details for today';
     }
     
     final moodStatus = _todayMoodData!['mood_status'] ?? 'Unknown';
