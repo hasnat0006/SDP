@@ -5,8 +5,9 @@ const router = express.Router();
 // Store sleep tracking data
 router.post("/track", async (req, res) => {
   try {
-    const { user_id, hours_slept, sleep_quality, bedtime, wake_time, date } = req.body;
-    
+    const { user_id, hours_slept, sleep_quality, bedtime, wake_time, date } =
+      req.body;
+
     const result = await sql`
       INSERT INTO sleep_tracker (
         user_id, 
@@ -47,9 +48,9 @@ router.get("/data/:userId", async (req, res) => {
     `;
 
     if (result.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         message: "No sleep data found for this user",
-        data: null 
+        data: null,
       });
     }
 
@@ -65,7 +66,7 @@ router.get("/data/:userId/:date", async (req, res) => {
   try {
     const { userId, date } = req.params;
     console.log("User ID:", userId, "Date:", date);
-    
+
     // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
     const result = await sql`
       SELECT * FROM sleep_tracker 
@@ -76,9 +77,9 @@ router.get("/data/:userId/:date", async (req, res) => {
     `;
 
     if (result.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         message: "No sleep data found for this date",
-        data: null 
+        data: null,
       });
     }
 
@@ -88,15 +89,6 @@ router.get("/data/:userId/:date", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-module.exports = router;
-const express = require("express");
-const sql = require("../DB/connection");
-const router = express.Router();
-
-// Middleware to parse JSON bodies
-router.use(express.json()); // This is critical for parsing JSON request bodies// parses JSON
-router.use(express.urlencoded({ extended: true })); // parses form-data
 
 router.post("/sleepinput", async (req, res) => {
   try {
