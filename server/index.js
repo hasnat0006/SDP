@@ -6,30 +6,32 @@ require("dotenv").config();
 const cors = require("cors");
 app.use(cors());
 
-const stress = require("./Route/stress");
 const mood = require("./Route/mood");
 const sleep = require("./Route/sleep");
+const stress = require("./Route/stress");
+const todo = require("./Route/Todo/todo");
+const therapists = require("./Route/appt");
 const auth = require("./Route/auth/fetchusers");
-const resetPassword = require("./Route/auth/resetpass");
+const forumRoutes = require("./Route/forum/forum");
 const saveJournal = require("./Route/save_journal");
 const journalRoutes = require("./Route/fetch_journal");
-const forumRoutes = require("./Route/forum/forum");
+const resetPassword = require("./Route/auth/resetpass");
 const therapistRoutes = require("./Route/fetchtherapist");
 const patientProfile = require("./Route/profile/patient_profile");
-const therapists = require("./Route/appt");
 
 app.use("/", auth);
-app.use("/reset-pass", resetPassword);
-app.use("/stress", stress);
-app.use("/forum", forumRoutes);
-app.use("/profile", patientProfile);
+app.use("/mood", mood);
+app.use("/tasks", todo);
+app.use("/", therapists);
+app.use("/sleep", sleep);
 app.use("/", saveJournal);
+app.use("/stress", stress);
 app.use("/", journalRoutes);
 app.use("/", therapistRoutes);
-app.use("/mood", mood);
-app.use("/sleep", sleep);
+app.use("/forum", forumRoutes);
+app.use("/profile", patientProfile);
+app.use("/reset-pass", resetPassword);
 
-app.use("/", therapists);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the MindOra API");

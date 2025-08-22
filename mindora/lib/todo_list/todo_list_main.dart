@@ -8,6 +8,8 @@ import 'services/task_notification_service.dart';
 import 'widgets/task_suggestion_popup.dart';
 import 'widgets/add_task_dialog.dart';
 import 'widgets/improved_task_tile.dart';
+import 'backend.dart';
+import '../services/user_service.dart';
 
 class ToDoApp extends StatelessWidget {
   const ToDoApp({super.key});
@@ -34,6 +36,9 @@ class _ToDoPageState extends State<ToDoPage> {
   List<Task> tasks = [];
   List<Task> completedTasks = [];
   bool hasShownSuggestions = false;
+
+  // Backend integration
+  final TaskBackend _taskBackend = TaskBackend();
 
   @override
   void initState() {
@@ -109,6 +114,34 @@ class _ToDoPageState extends State<ToDoPage> {
   }
 
   Future<void> _loadTasks() async {
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        print('User not logged in');
+        return;
+      }
+
+      // Fetch tasks from backend
+      final allTasks = await _taskBackend.fetchTasks(userId);
+
+      setState(() {
+        // Separate completed and pending tasks
+        tasks = allTasks.where((task) => !task.isCompleted).toList();
+        completedTasks = allTasks.where((task) => task.isCompleted).toList();
+      });
+
+      print('Loaded ${allTasks.length} tasks from backend');
+    } catch (e) {
+      print('Error loading tasks: $e');
+
+      // Fallback to local storage if backend fails
+      await _loadTasksFromLocal();
+    }
+  }
+
+  // Fallback method to load from local storage
+  Future<void> _loadTasksFromLocal() async {
     final prefs = await SharedPreferences.getInstance();
     final tasksString = prefs.getString('tasks') ?? '[]';
     final completedTasksString = prefs.getString('completed_tasks') ?? '[]';
@@ -201,15 +234,9 @@ class _ToDoPageState extends State<ToDoPage> {
   }
 
   void addTask(Task task) {
-    setState(() {
-      tasks.add(task);
-    });
-    _saveTasks();
-
-    // Schedule notification if task has due date
-    if (task.dueDate != null) {
-      TaskNotificationService.scheduleTaskReminder(task);
-    }
+    // Since task is already added to backend via AddTaskDialog,
+    // we just need to refresh the tasks from backend
+    _loadTasks();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -219,39 +246,108 @@ class _ToDoPageState extends State<ToDoPage> {
     );
   }
 
-  void markTaskComplete(int index) {
+  Future<void> markTaskComplete(int index) async {
     final task = tasks[index];
-    final completedTask = task.copyWith(isCompleted: true);
 
-    setState(() {
-      completedTasks.add(completedTask);
-      tasks.removeAt(index);
-    });
-    _saveTasks();
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
 
-    // Cancel notifications for completed task
-    TaskNotificationService.cancelTaskNotifications(task.id);
+      // Mark task as completed in backend
+      await _taskBackend.completeTask(userId, task.id);
 
-    // Show completion notification
-    TaskNotificationService.showTaskCompletedNotification(task);
+      // Update local state
+      final completedTask = task.copyWith(isCompleted: true);
+      setState(() {
+        completedTasks.add(completedTask);
+        tasks.removeAt(index);
+      });
+
+      // Cancel notifications for completed task
+      TaskNotificationService.cancelTaskNotifications(task.id);
+
+      // Show completion notification
+      TaskNotificationService.showTaskCompletedNotification(task);
+
+      // Backup to local storage
+      _saveTasks();
+    } catch (e) {
+      print('Error completing task: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error completing task: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void deleteTask(int index) {
+  Future<void> deleteTask(int index) async {
     final task = tasks[index];
-    setState(() {
-      tasks.removeAt(index);
-    });
-    _saveTasks();
 
-    // Cancel notifications for deleted task
-    TaskNotificationService.cancelTaskNotifications(task.id);
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Delete task from backend
+      await _taskBackend.deleteTask(userId, task.id);
+
+      // Update local state
+      setState(() {
+        tasks.removeAt(index);
+      });
+
+      // Cancel notifications for deleted task
+      TaskNotificationService.cancelTaskNotifications(task.id);
+
+      // Backup to local storage
+      _saveTasks();
+    } catch (e) {
+      print('Error deleting task: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting task: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void deleteCompletedTask(int index) {
-    setState(() {
-      completedTasks.removeAt(index);
-    });
-    _saveTasks();
+  Future<void> deleteCompletedTask(int index) async {
+    final task = completedTasks[index];
+
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Delete completed task from backend
+      await _taskBackend.deleteTask(userId, task.id);
+
+      // Update local state
+      setState(() {
+        completedTasks.removeAt(index);
+      });
+
+      // Backup to local storage
+      _saveTasks();
+    } catch (e) {
+      print('Error deleting completed task: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting task: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void editTask(int index) {
@@ -262,19 +358,16 @@ class _ToDoPageState extends State<ToDoPage> {
         return AddTaskDialog(
           existingTask: task, // Pass the existing task for editing
           onTaskAdded: (updatedTask) {
+            // Since task is already updated in backend via AddTaskDialog,
+            // we just need to refresh the tasks from backend
+            _loadTasks();
+
             // Cancel old notifications
             TaskNotificationService.cancelTaskNotifications(task.id);
 
-            // Update task with same ID
-            final newTask = updatedTask.copyWith(id: task.id);
-            setState(() {
-              tasks[index] = newTask;
-            });
-            _saveTasks();
-
             // Schedule new notifications if needed
-            if (newTask.dueDate != null) {
-              TaskNotificationService.scheduleTaskReminder(newTask);
+            if (updatedTask.dueDate != null) {
+              TaskNotificationService.scheduleTaskReminder(updatedTask);
             }
           },
         );
@@ -453,6 +546,7 @@ class _ToDoPageState extends State<ToDoPage> {
                     ),
 
                     SizedBox(height: 8),
+
                     Row(
                       children: [
                         Text(
@@ -614,4 +708,4 @@ class _ToDoPageState extends State<ToDoPage> {
       ),
     );
   }
-} 
+}

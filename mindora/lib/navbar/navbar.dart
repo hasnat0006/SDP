@@ -57,7 +57,6 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
         _cachedNavItems = null;
         _instantiatedPages.clear();
       });
-      print('Loaded user data - ID: $_userId, Type: $_userType');
     } catch (e) {
       print('Error loading user data: $e');
     }
@@ -71,30 +70,28 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
 
   // Navigation items configuration
   List<NavItem> get _navItems {
-    if (_cachedNavItems == null) {
-      _cachedNavItems = [
+    _cachedNavItems ??= [
+      NavItem(
+        icon: Icons.dashboard,
+        label: '',
+        page: DashboardPageWrapper(userType: _userType, userId: _userId),
+      ),
+      NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
+      if (_userType == 'patient')
         NavItem(
-          icon: Icons.dashboard,
+          icon: Icons.checklist,
           label: '',
-          page: DashboardPageWrapper(userType: _userType, userId: _userId),
+          page: const TodoPageWrapper(),
         ),
-        NavItem(icon: Icons.forum, label: '', page: const ForumPage()),
-        if (_userType == 'patient')
-          NavItem(
-            icon: Icons.checklist,
-            label: '',
-            page: const TodoPageWrapper(),
-          ),
-        if (_userType == 'doctor')
-          NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
-        NavItem(
-          icon: Icons.person,
-          label: '',
-          page: ProfilePageWrapper(userType: _userType),
-        ),
-        NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
-      ];
-    }
+      if (_userType == 'doctor')
+        NavItem(icon: Icons.event, label: '', page: ManageAppointments()),
+      NavItem(
+        icon: Icons.person,
+        label: '',
+        page: ProfilePageWrapper(userType: _userType),
+      ),
+      NavItem(icon: Icons.settings, label: '', page: const SettingsPage()),
+    ];
     return _cachedNavItems!;
   }
 
