@@ -337,39 +337,37 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                   ),
                   const SizedBox(height: 20),
                   
-                  // Prediction result
-                  Text(
-                    'You seem',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _getMoodEmoji(predictedMood),
-                        style: const TextStyle(fontSize: 32),
+                  // Prediction result - single line with highlighted mood and emoji at end
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        color: Colors.grey[700],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        predictedMood,
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF6D3670),
+                      children: [
+                        TextSpan(text: 'You seem '),
+                        TextSpan(
+                          text: predictedMood.toLowerCase(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF6D3670),
+                            shadows: [
+                              Shadow(
+                                offset: const Offset(0.5, 1),
+                                blurRadius: 2,
+                                color: const Color(0xFF6D3670).withOpacity(0.3),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'today!',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.grey[700],
+                        TextSpan(text: ' today! '),
+                        TextSpan(
+                          text: _getMoodEmoji(predictedMood),
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ],
                     ),
                   ),
                   
