@@ -159,6 +159,14 @@ class MoodTrackerBackend {
         'message': 'Stress data for date retrieved successfully'
       };
     } catch (e) {
+      // Check if it's a 404 error (no data found)
+      if (e.toString().contains('404')) {
+        return {
+          'success': false,
+          'data': null,
+          'message': 'No stress data found for this date'
+        };
+      }
       return {
         'success': false,
         'error': e.toString(),
@@ -177,6 +185,14 @@ class MoodTrackerBackend {
         'message': 'Sleep data for date retrieved successfully'
       };
     } catch (e) {
+      // Check if it's a 404 error (no data found)
+      if (e.toString().contains('404')) {
+        return {
+          'success': false,
+          'data': null,
+          'message': 'No sleep data found for this date'
+        };
+      }
       return {
         'success': false,
         'error': e.toString(),

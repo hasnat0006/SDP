@@ -1,4 +1,5 @@
 import 'package:client/mood/Mood_intensity.dart';
+import 'package:client/mood/predictive_mood_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/arc_gauge.dart';
@@ -14,8 +15,31 @@ class _MoodSpinnerState extends State<MoodSpinner> {
   double currentRotation = 0.0;
   String selectedSegment = 'Happy';
   bool isHovering = false;
+  bool isPredictiveButtonHovering = false;
 
-  // Get current mood data based on selected segment
+  @override
+  void initState() {
+    super.initState();
+    // Show predictive mood popup when page loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showPredictiveMoodPopup();
+    });
+  }
+
+  void _showPredictiveMoodPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must choose an option
+      builder: (BuildContext context) {
+        return PredictiveMoodPopup(
+          onManualSelection: () {
+            // User chose manual selection, continue with normal flow
+            // The popup is already dismissed by the PredictiveMoodPopup widget
+          },
+        );
+      },
+    );
+  }
   Map<String, String> get currentMood {
     // Define the segments data locally to avoid null issues
     const segments = [
@@ -145,6 +169,85 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                         color: Color.fromARGB(120, 0, 0, 0), // Soft shadow
                       ),
                     ],
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+                
+                // Predictive Mood Button
+                MouseRegion(
+                  onEnter: (_) => setState(() => isPredictiveButtonHovering = true),
+                  onExit: (_) => setState(() => isPredictiveButtonHovering = false),
+                  child: GestureDetector(
+                    onTap: () {
+                      _showPredictiveMoodPopup();
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isPredictiveButtonHovering
+                              ? [
+                                  const Color(0xFFE1A6F0),
+                                  const Color(0xFFD39AD5),
+                                ]
+                              : [
+                                  const Color(0xFFEBB3F5).withOpacity(0.8),
+                                  const Color(0xFFDDA6E8).withOpacity(0.8),
+                                ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          if (isPredictiveButtonHovering)
+                            BoxShadow(
+                              color: const Color(0xFFD39AD5).withOpacity(0.6),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                              spreadRadius: 2,
+                            )
+                          else
+                            BoxShadow(
+                              color: const Color(0xFFD39AD5).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '🤖',
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Predictive Mood',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isPredictiveButtonHovering 
+                                  ? Colors.white 
+                                  : const Color(0xFF6D3670),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: isPredictiveButtonHovering 
+                                ? Colors.white 
+                                : const Color(0xFF6D3670),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 

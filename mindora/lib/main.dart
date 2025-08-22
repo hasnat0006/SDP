@@ -1,5 +1,6 @@
 import 'package:client/login/signup/login.dart';
 import 'package:client/services/notification_service.dart';
+import 'package:client/services/gemini_service.dart';
 
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await NotificationService.initializeNotification();
+  GeminiService.initialize();
   runApp(const MyApp());
 }
 
