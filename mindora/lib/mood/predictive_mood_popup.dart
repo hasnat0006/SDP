@@ -228,6 +228,8 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -249,9 +251,18 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
           ),
         ],
       ),
-      content: SizedBox(
-        width: 320,
-        child: isLoading 
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.85, // Max 85% of screen width
+          minWidth: 280, // Minimum width for readability
+          maxHeight: MediaQuery.of(context).size.height * 0.7, // Max 70% of screen height
+        ),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width > 400 
+                ? 320 // Fixed width on larger screens
+                : MediaQuery.of(context).size.width * 0.85, // Responsive on smaller screens
+            child: isLoading 
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -431,6 +442,8 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                   ),
                 ],
               ),
+          ),
+        ),
       ),
       actions: isLoading || errorMessage.isNotEmpty
         ? [
