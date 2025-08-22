@@ -4,6 +4,7 @@ import 'bookform.dart';
 import 'viewdetails.dart';
 
 class TherapistCard extends StatelessWidget {
+  final String docId;
   final String name;
   final String institution;
   final String imagepath;
@@ -12,6 +13,7 @@ class TherapistCard extends StatelessWidget {
   final String education;
   final String special;
   final String exp;
+  final String userId;
 
   const TherapistCard({
     super.key,
@@ -23,6 +25,8 @@ class TherapistCard extends StatelessWidget {
     required this.education,
     required this.special,
     required this.exp,
+    required this.userId,
+    required this.docId,
   });
 
   @override
@@ -98,6 +102,7 @@ class TherapistCard extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => BookForm(
+                              docId: docId,
                               name: name,
                               institution: institution,
                               imagepath: imagepath,
@@ -106,6 +111,7 @@ class TherapistCard extends StatelessWidget {
                               education: education,
                               special: special,
                               exp: exp,
+                              userId: userId,
                             ),
                           ),
                         );
@@ -146,6 +152,7 @@ class TherapistCard extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => Viewdetails(
+                              docId: docId,
                               name: name,
                               institution: institution,
                               imagepath: imagepath,
@@ -154,6 +161,7 @@ class TherapistCard extends StatelessWidget {
                               education: education,
                               special: special,
                               exp: exp,
+                              userId: userId,
                             ),
                           ),
                         );

@@ -1,10 +1,11 @@
-import 'dart:convert';
+import 'package:client/appointment/backend.dart';
+import 'package:client/appointment/bookform.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'therapistcard.dart'; // Import the TherapistCard widget
 
 class Therapist {
+  final String docId;
   final String name;
   final String institution;
   final String imagepath;
@@ -15,6 +16,7 @@ class Therapist {
   final String exp;
 
   Therapist({
+    required this.docId,
     required this.name,
     required this.institution,
     required this.imagepath,
@@ -27,7 +29,9 @@ class Therapist {
 }
 
 class BookAppt extends StatefulWidget {
-  const BookAppt({super.key});
+  final String userId;
+
+  BookAppt({super.key, required this.userId});
 
   @override
   State<BookAppt> createState() => _BookAppt();
@@ -45,6 +49,7 @@ class _BookAppt extends State<BookAppt> {
   @override
   void initState() {
     super.initState();
+    print(widget.userId);
     fetchTherapists();
   }
 
@@ -58,52 +63,39 @@ class _BookAppt extends State<BookAppt> {
   // Fetch therapists data from the backend API
   Future<void> fetchTherapists() async {
     try {
-      final response = await http.get(
-        Uri.parse('http://localhost:5000/therapists'),
-      );
+      // Call GetTherapist to get the data
+      final data = await GetTherapist();
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body); // Decode the response body
+      print("Therapist");
+      print(data);
+      // Process the therapist data from the backend
+      List<Therapist> therapists = data.map((item) {
+        return Therapist(
+          docId: item['doc_id'] ?? '', // doc_id is already a string (UUID)
+          name:
+              item['name'] ??
+              'Unknown', // Using bdn as name since name field doesn't exist
+          institution: item['institute'] ?? 'Unknown Institution',
+          imagepath: item['image_path'] ?? 'assets/default_image.png',
+          shortbio: item['shortbio'] ?? 'No bio available',
+          education: item['education'] ?? 'No education details',
+          description: item['description'] ?? 'No description available',
+          special: item['special'] != null
+              ? (item['special'] is List
+                    ? (item['special'] as List).join(', ')
+                    : item['special'].toString())
+              : 'No specialties listed',
+          exp: item['exp'] ?? 'No experience listed',
+        );
+      }).toList();
 
-        if (data is Map) {
-          // If the response is a map (single object), parse it directly
-          final therapist = Therapist(
-            name: data['name'] ?? 'Unknown', // Provide a default value if null
-            institution: data['institute'] ?? 'Unknown Institution',
-            imagepath:
-                data['image_path'] ??
-                'assets/default_image.png', // Default image if null
-            shortbio:
-                data['shortbio'] ?? 'No bio available', // Default bio if null
-            education:
-                data['education'] ??
-                'No education details', // Default education
-            description:
-                data['description'] ??
-                'No description available', // Default description
-            special:
-                data['special'] ?? 'No specialties listed', // Default specialty
-            exp:
-                data['exp'] ??
-                'No experience listed', // Default experience if null
-          );
-
-          setState(() {
-            therapistinfo = [therapist]; // Wrap the single therapist in a list
-            isLoading = false; // Stop the loading spinner once data is fetched
-          });
-        } else {
-          throw Exception('Unexpected response format');
-        }
-      } else {
-        setState(() {
-          isLoading = false;
-        });
-        throw Exception('Failed to load therapist data');
-      }
+      setState(() {
+        therapistinfo = therapists; // Set the list of therapists
+        isLoading = false; // Stop the loading spinner once data is fetched
+      });
     } catch (e) {
       setState(() {
-        isLoading = false;
+        isLoading = false; // Stop the loading spinner on error
       });
       print('Error: $e'); // Print the error message in the console
       ScaffoldMessenger.of(
@@ -227,6 +219,7 @@ class _BookAppt extends State<BookAppt> {
                                   onTap: () =>
                                       _showTherapistDetails(context, t),
                                   child: TherapistCard(
+                                    docId: t.docId,
                                     name: t.name,
                                     institution: t.institution,
                                     imagepath: t.imagepath,
@@ -235,6 +228,7 @@ class _BookAppt extends State<BookAppt> {
                                     education: t.education,
                                     special: t.special,
                                     exp: t.exp,
+                                    userId: widget.userId,
                                   ),
                                 );
                               },
@@ -347,8 +341,23 @@ class _BookAppt extends State<BookAppt> {
               ),
             ),
             onPressed: () {
-              Navigator.pop(context);
-              // Navigate to your booking flow from here if desired.
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookForm(
+                    docId: t.docId,
+                    name: t.name,
+                    institution: t.institution,
+                    imagepath: t.imagepath,
+                    shortbio: t.shortbio,
+                    education: t.education,
+                    description: t.description,
+                    special: t.special,
+                    exp: t.exp,
+                    userId: widget.userId,
+                  ), // Pass userId if needed
+                ),
+              );
             },
             child: Text(
               'Book',
