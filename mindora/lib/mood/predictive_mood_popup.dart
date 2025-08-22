@@ -586,9 +586,9 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
     if (hasSleepData && hasStressData) {
       return 'Prediction is based on your logged data in Sleep and Stress trackers';
     } else if (hasSleepData && !hasStressData) {
-      return 'Prediction done based on available data but since we couldn\'t find Stress tracker, result shown on basis of Sleep tracker data';
+      return 'Prediction done based on available tracker\'s data but since we couldn\'t find Stress tracker\'s data, result shown on basis of Sleep tracker data only';
     } else if (!hasSleepData && hasStressData) {
-      return 'Prediction done based on available data but since we couldn\'t find Sleep tracker, result shown on basis of Stress tracker data';
+      return 'Prediction done based on available tracker\'s data but since we couldn\'t find Sleep tracker\'s data, result shown on basis of Stress tracker data only';
     } else {
       return 'No data available for prediction';
     }
