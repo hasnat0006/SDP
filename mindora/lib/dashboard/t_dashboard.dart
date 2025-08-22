@@ -180,10 +180,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ManageAppointments(
-                        doctorId: _userId,
-                        userType: _userType,
-                      ),
+                      builder: (context) => ManageAppointments(),
                     ),
                   );
                 },

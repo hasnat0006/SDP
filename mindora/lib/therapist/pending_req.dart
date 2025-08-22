@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:client/services/user_service.dart';
 import './backend.dart';
 
 class PendingRequestsPage extends StatefulWidget {
-  final String? doctorId;
-  final String? userType; // Add user type for consistency
-  
-  const PendingRequestsPage({Key? key, this.doctorId, this.userType}) : super(key: key);
+  const PendingRequestsPage({Key? key}) : super(key: key);
 
   @override
   State<PendingRequestsPage> createState() => _PendingRequestsPageState();
@@ -15,30 +13,58 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
   bool acceptingAppointments = true;
   List<Appointment> pendingRequests = [];
   bool isLoading = true;
+  String _userId = '';
+  String _userType = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchPendingRequests();
+    _loadUserDataAndFetchRequests();
+  }
+
+  Future<void> _loadUserDataAndFetchRequests() async {
+    try {
+      // Load user data first
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      
+      print('Loaded user data in pending requests - ID: $_userId, Type: $_userType');
+      
+      // Then fetch pending requests
+      await _fetchPendingRequests();
+    } catch (e) {
+      print('❌ Error loading user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+      _showErrorDialog('Failed to load user data: $e');
+    }
   }
 
   Future<void> _fetchPendingRequests() async {
     try {
-      print('🔄 Fetching pending appointments for doctor: ${widget.doctorId}');
+      print('🔄 Fetching pending appointments for doctor: $_userId');
       
-      final fetched = await AppointmentService.fetchPendingAppointmentsForDoctor(widget.doctorId);
+      final fetched = await AppointmentService.fetchPendingAppointmentsForDoctor(_userId);
       
       print('✅ Fetched ${fetched.length} pending appointments');
-      setState(() {
-        pendingRequests = fetched;
-        isLoading = false;
-      });
+      
+      if (mounted) {
+        setState(() {
+          pendingRequests = fetched;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print('❌ Error fetching pending appointments: $e');
-      setState(() {
-        isLoading = false;
-      });
-      _showErrorDialog('Failed to load pending appointments: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 

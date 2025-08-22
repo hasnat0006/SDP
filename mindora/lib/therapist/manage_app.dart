@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-
-import 'pending_req.dart';  // Import your PendingRequestsPage here
+import 'package:client/services/user_service.dart';
+import 'pending_req.dart';
 import 'backend.dart';
 
 class ManageAppointments extends StatefulWidget {
-  final String? doctorId;
-  final String? userType; // Add user type to determine doctor vs patient
-  
-  const ManageAppointments({Key? key, this.doctorId, this.userType}) : super(key: key);
+  const ManageAppointments({Key? key}) : super(key: key);
 
   @override
   State<ManageAppointments> createState() => _ManageAppointmentsState();
@@ -17,11 +14,37 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
   bool acceptingAppointments = true;
   List<Appointment> appointments = [];
   bool isLoading = true;
+  String _userId = '';
+  String _userType = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchAppointments();
+    _loadUserDataAndFetchAppointments();
+  }
+
+  Future<void> _loadUserDataAndFetchAppointments() async {
+    try {
+      // Load user data first
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      
+      print('Loaded user data - ID: $_userId, Type: $_userType');
+      
+      // Then fetch appointments
+      await _fetchAppointments();
+    } catch (e) {
+      print('❌ Error loading user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+      if (mounted) {
+        _showErrorDialog('Failed to load user data: $e');
+      }
+    }
   }
 
   Future<void> _fetchAppointments() async {
@@ -31,45 +54,48 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
       List<Appointment> fetched;
       
       // Check if user is doctor or patient
-      if (widget.userType == 'doctor') {
+      if (_userType == 'doctor') {
         // For doctors, fetch appointments where they are the doctor
-        fetched = await AppointmentService.fetchConfirmedAppointmentsForDoctor(widget.doctorId);
+        fetched = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
       } else {
         // For patients, fetch appointments where they are the patient
-        fetched = await AppointmentService.fetchMyAppointments(widget.doctorId); // doctorId is actually userId in this case
+        fetched = await AppointmentService.fetchMyAppointments(_userId);
       }
       
       print('✅ Fetched ${fetched.length} appointments');
-      setState(() {
-        appointments = fetched;
-        isLoading = false;
-      });
+      
+      if (mounted) {
+        setState(() {
+          appointments = fetched;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print('❌ Error fetching appointments: $e');
-      setState(() {
-        isLoading = false;
-      });
-      // Show error dialog
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to load appointments: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        setState(() {
+          isLoading = false;
+        });
+        _showErrorDialog('Failed to load appointments: $e');
       }
     }
   }
 
-
-
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showRescheduleDialog(BuildContext context, int index) {
     showDialog(
@@ -481,10 +507,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   Navigator.push(
                     context,
                     PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => PendingRequestsPage(
-                        doctorId: widget.doctorId,
-                        userType: widget.userType,
-                      ),
+                      pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),
                       transitionsBuilder: (context, animation, secondaryAnimation, child) {
                         const begin = Offset(1.0, 0.0);
                         const end = Offset.zero;
