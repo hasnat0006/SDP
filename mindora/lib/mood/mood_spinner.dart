@@ -249,17 +249,10 @@ class _MoodSpinnerState extends State<MoodSpinner> {
                             )
                           else
                             BoxShadow(
-                              color: const Color(0xFFD39AD5).withOpacity(0.4),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                              spreadRadius: 1,
+                              color: const Color(0xFFD39AD5).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
-                          // Additional base shadow for more depth
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
                         ],
                       ),
                       child: Row(

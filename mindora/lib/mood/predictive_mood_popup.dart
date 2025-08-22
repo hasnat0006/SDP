@@ -228,8 +228,6 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -251,18 +249,9 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
           ),
         ],
       ),
-      content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85, // Max 85% of screen width
-          minWidth: 280, // Minimum width for readability
-          maxHeight: MediaQuery.of(context).size.height * 0.7, // Max 70% of screen height
-        ),
-        child: SingleChildScrollView(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width > 400 
-                ? 320 // Fixed width on larger screens
-                : MediaQuery.of(context).size.width * 0.85, // Responsive on smaller screens
-            child: isLoading 
+      content: SizedBox(
+        width: 320,
+        child: isLoading 
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -419,31 +408,56 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Icon(
-                          _getInfoIcon(),
-                          color: _getInfoIconColor(),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getInfoText(),
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: _getInfoTextColor(),
-                              fontStyle: FontStyle.italic,
+                        Row(
+                          children: [
+                            Icon(
+                              _getInfoIcon(),
+                              color: _getInfoIconColor(),
+                              size: 16,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _getInfoText(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: _getInfoTextColor(),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        if (!hasSleepData || !hasStressData) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_outlined,
+                                color: Colors.orange[600],
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Since only one data source was found, prediction is based on that limited information.',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: Colors.orange[700],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
                 ],
               ),
-          ),
-        ),
       ),
       actions: isLoading || errorMessage.isNotEmpty
         ? [
@@ -508,7 +522,7 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                                   : Colors.transparent,
                             ),
                             child: Text(
-                              "Manual",
+                              "No, log manually",
                               style: GoogleFonts.poppins(
                                 color: isManualButtonHovering 
                                     ? const Color(0xFF6D3670) 
@@ -584,7 +598,11 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
   }
 
   IconData _getInfoIcon() {
-    return Icons.info_outline; // Always use info icon
+    if (hasSleepData && hasStressData) {
+      return Icons.info_outline;
+    } else {
+      return Icons.warning_amber_outlined;
+    }
   }
 
   Color _getInfoIconColor() {
@@ -599,9 +617,9 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
     if (hasSleepData && hasStressData) {
       return 'Prediction is based on your logged data in Sleep and Stress trackers';
     } else if (hasSleepData && !hasStressData) {
-      return 'Prediction done based on available tracker\'s data but since we couldn\'t find Stress tracker\'s data, result shown on basis of Sleep tracker data only';
+      return 'Prediction is based on your Sleep tracker data only';
     } else if (!hasSleepData && hasStressData) {
-      return 'Prediction done based on available tracker\'s data but since we couldn\'t find Sleep tracker\'s data, result shown on basis of Stress tracker data only';
+      return 'Prediction is based on your Stress tracker data only';
     } else {
       return 'No data available for prediction';
     }
