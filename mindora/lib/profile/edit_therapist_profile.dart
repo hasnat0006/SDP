@@ -61,8 +61,8 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
 
   // Helper method to safely convert any value to string
   String _safeStringValue(dynamic value) {
-    if (value == null) return '';
-    if (value is String) return value;
+    if (value == null || value == '') return 'Not set yet';
+    if (value is String) return value.trim().isEmpty ? 'Not set yet' : value;
     if (value is DateTime) {
       print("WARNING: DateTime found where String expected: $value");
       return value.toIso8601String().split('T')[0]; // Convert to date string
@@ -122,16 +122,23 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
                 ? widget.therapistData['dob']
                 : null)
           : null;
+
+      // Provide default date if none exists
+      _selectedDate ??= DateTime.now().subtract(
+        Duration(days: 365 * 30),
+      ); // Default to 30 years ago for therapists
       print("Date initialization successful: $_selectedDate");
     } catch (e) {
       print("Error initializing date: $e");
-      _selectedDate = null;
+      _selectedDate = DateTime.now().subtract(
+        Duration(days: 365 * 30),
+      ); // Fallback default
     }
     _selectedGender =
         widget.therapistData['gender'] != null &&
             _genderOptions.contains(widget.therapistData['gender'])
         ? widget.therapistData['gender']
-        : null;
+        : 'Prefer not to say'; // Default gender option
     _isAcceptingPatients = widget.therapistData['accept_patient'] ?? false;
     _specializations = List<String>.from(widget.therapistData['special'] ?? []);
     _selectedImage = widget.currentImage;
@@ -255,16 +262,36 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
         }
 
         final profileData = {
-          'name': _nameController.text,
-          'email': _emailController.text,
-          'bdn': _bdnController.text,
-          'institute': _instituteController.text,
-          'profession': _professionController.text,
-          'shortbio': _shortbioController.text,
-          'education': _educationController.text,
-          'description': _descriptionController.text,
-          'exp': _expController.text, // Keep as text (e.g., "10 years")
-          'phone_no': _phoneController.text,
+          'name': _nameController.text == 'Not set yet'
+              ? ''
+              : _nameController.text,
+          'email': _emailController.text == 'Not set yet'
+              ? ''
+              : _emailController.text,
+          'bdn': _bdnController.text == 'Not set yet'
+              ? ''
+              : _bdnController.text,
+          'institute': _instituteController.text == 'Not set yet'
+              ? ''
+              : _instituteController.text,
+          'profession': _professionController.text == 'Not set yet'
+              ? ''
+              : _professionController.text,
+          'shortbio': _shortbioController.text == 'Not set yet'
+              ? ''
+              : _shortbioController.text,
+          'education': _educationController.text == 'Not set yet'
+              ? ''
+              : _educationController.text,
+          'description': _descriptionController.text == 'Not set yet'
+              ? ''
+              : _descriptionController.text,
+          'exp': _expController.text == 'Not set yet'
+              ? ''
+              : _expController.text, // Keep as text (e.g., "10 years")
+          'phone_no': _phoneController.text == 'Not set yet'
+              ? ''
+              : _phoneController.text,
           'special': _specializations,
           'accept_patient': _isAcceptingPatients,
           'dob': formattedDate,
@@ -528,7 +555,7 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
     }
 
     // Fallback to default asset image
-    return AssetImage(profileImageUrl ?? 'assets/therapist.png');
+    return AssetImage('assets/therapist.png');
   }
 
   Future<void> _selectImageFromFiles() async {
@@ -897,8 +924,14 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.person),
             ),
+            onTap: () {
+              // Clear placeholder text when user taps on the field
+              if (_nameController.text == 'Not set yet') {
+                _nameController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your name';
               }
               return null;
@@ -915,8 +948,14 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               prefixIcon: Icon(Icons.email),
             ),
             keyboardType: TextInputType.emailAddress,
+            onTap: () {
+              // Clear placeholder text when user taps on the field
+              if (_emailController.text == 'Not set yet') {
+                _emailController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your email';
               }
               if (!value.contains('@')) {
@@ -1036,8 +1075,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               prefixIcon: Icon(Icons.work),
               hintText: 'e.g., Clinical Psychologist, Psychiatrist',
             ),
+            onTap: () {
+              if (_professionController.text == 'Not set yet') {
+                _professionController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your profession';
               }
               return null;
@@ -1053,8 +1097,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.badge),
             ),
+            onTap: () {
+              if (_bdnController.text == 'Not set yet') {
+                _bdnController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your BMDC number';
               }
               return null;
@@ -1071,8 +1120,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               prefixIcon: Icon(Icons.phone),
             ),
             keyboardType: TextInputType.phone,
+            onTap: () {
+              if (_phoneController.text == 'Not set yet') {
+                _phoneController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your phone number';
               }
               return null;
@@ -1088,8 +1142,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.business),
             ),
+            onTap: () {
+              if (_instituteController.text == 'Not set yet') {
+                _instituteController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your workplace';
               }
               return null;
@@ -1107,8 +1166,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               hintText: 'e.g., 5 years, 2+ years, 10+ years',
             ),
             keyboardType: TextInputType.text,
+            onTap: () {
+              if (_expController.text == 'Not set yet') {
+                _expController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your experience';
               }
               return null;
@@ -1362,8 +1426,13 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               alignLabelWithHint: true,
             ),
             maxLines: 5,
+            onTap: () {
+              if (_descriptionController.text == 'Not set yet') {
+                _descriptionController.clear();
+              }
+            },
             validator: (value) {
-              if (value == null || value.isEmpty) {
+              if (value == null || value.isEmpty || value == 'Not set yet') {
                 return 'Please enter your professional description';
               }
               return null;
@@ -1380,6 +1449,11 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               alignLabelWithHint: true,
             ),
             maxLines: 3,
+            onTap: () {
+              if (_shortbioController.text == 'Not set yet') {
+                _shortbioController.clear();
+              }
+            },
             validator: (value) {
               // Make short bio optional
               return null;
@@ -1396,6 +1470,11 @@ class _EditTherapistProfilePageState extends State<EditTherapistProfilePage> {
               alignLabelWithHint: true,
             ),
             maxLines: 4,
+            onTap: () {
+              if (_educationController.text == 'Not set yet') {
+                _educationController.clear();
+              }
+            },
             validator: (value) {
               // Make education optional
               return null;

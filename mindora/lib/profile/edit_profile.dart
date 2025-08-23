@@ -41,14 +41,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void initState() {
     super.initState();
     _loadUserData();
-    _nameController = TextEditingController(text: widget.userData['name']);
-    _emailController = TextEditingController(text: widget.userData['email']);
-    _professionController = TextEditingController(
-      text: widget.userData['profession'],
+    _nameController = TextEditingController(
+      text: widget.userData['name'] ?? 'Not set yet',
     );
-    _bioController = TextEditingController(text: widget.userData['bio']);
-    _selectedDate = widget.userData['dob'];
-    _selectedGender = widget.userData['gender'];
+    _emailController = TextEditingController(
+      text: widget.userData['email'] ?? 'Not set yet',
+    );
+    _professionController = TextEditingController(
+      text: widget.userData['profession'] ?? 'Not set yet',
+    );
+    _bioController = TextEditingController(
+      text: widget.userData['bio'] ?? 'Not set yet',
+    );
+    _selectedDate =
+        widget.userData['dob'] ??
+        DateTime.now().subtract(
+          Duration(days: 365 * 20),
+        ); // Default to 20 years ago
+    _selectedGender = widget.userData['gender'] ?? 'Female';
     _emergencyContacts = List<String>.from(
       widget.userData['emergency_contact'] ?? [],
     );
@@ -147,10 +157,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         // Prepare profile data
         final profileData = {
-          'name': _nameController.text,
-          'email': _emailController.text,
-          'profession': _professionController.text,
-          'bio': _bioController.text,
+          'name': _nameController.text == 'Not set yet'
+              ? ''
+              : _nameController.text,
+          'email': _emailController.text == 'Not set yet'
+              ? ''
+              : _emailController.text,
+          'profession': _professionController.text == 'Not set yet'
+              ? ''
+              : _professionController.text,
+          'bio': _bioController.text == 'Not set yet'
+              ? ''
+              : _bioController.text,
           'dob': _selectedDate.toIso8601String(),
           'gender': _selectedGender,
           'emergency_contact': _emergencyContacts,
@@ -466,7 +484,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
 
     // Fallback to default asset image
-    return AssetImage(profileImageUrl ?? 'assets/nabiha.jpeg');
+    return AssetImage('assets/demo_profile.jpg');
   }
 
   void _saveProfile() async {
@@ -579,7 +597,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 label: 'Full Name',
                 icon: Icons.person_outline,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      value == 'Not set yet') {
                     return 'Please enter your name';
                   }
                   return null;
@@ -593,7 +613,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      value == 'Not set yet') {
                     return 'Please enter your email';
                   }
                   if (!value.contains('@') || !value.contains('.')) {
@@ -617,7 +639,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 label: 'Profession',
                 icon: Icons.work_outline,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      value == 'Not set yet') {
                     return 'Please enter your profession';
                   }
                   return null;
@@ -631,7 +655,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 icon: Icons.description_outlined,
                 maxLines: 3,
                 validator: (value) {
-                  if (value != null && value.length > 150) {
+                  if (value != null &&
+                      value != 'Not set yet' &&
+                      value.length > 150) {
                     return 'Bio should be less than 150 characters';
                   }
                   return null;
@@ -719,6 +745,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       style: GoogleFonts.poppins(),
+      onTap: () {
+        // Clear placeholder text when user taps on the field
+        if (controller.text == 'Not set yet') {
+          controller.clear();
+        }
+      },
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(
