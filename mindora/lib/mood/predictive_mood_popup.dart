@@ -522,7 +522,7 @@ class _PredictiveMoodPopupState extends State<PredictiveMoodPopup>
                                   : Colors.transparent,
                             ),
                             child: Text(
-                              "No, log manually",
+                              "Log manually",
                               style: GoogleFonts.poppins(
                                 color: isManualButtonHovering 
                                     ? const Color(0xFF6D3670) 
