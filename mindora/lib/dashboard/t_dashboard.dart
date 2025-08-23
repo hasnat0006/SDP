@@ -1,6 +1,7 @@
 import 'package:client/forum/forum.dart';
 import 'package:client/services/user_service.dart';
 import 'package:client/therapist/backend.dart';
+import 'package:client/profile/backend.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
@@ -17,6 +18,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   String _userId = '';
   String _userType = '';
   String _userName = '';
+  Map<String, dynamic>? _userProfileData; // Add this line
   List<Map<String, String>> todayAppointments = [];
   bool isLoadingAppointments = true;
   List<int> monthlyStats = List.generate(12, (index) => 0);
@@ -42,6 +44,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       }
       print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
       
+      // Load user profile data to get the actual name
+      if (_userId.isNotEmpty) {
+        await _loadUserProfile();
+      }
       
       if (_userType == 'patient') {
         print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
@@ -50,6 +56,38 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     } catch (e) {
       print('Error loading doctor data: $e');
     }
+  }
+
+  // Add this method to load user profile
+  Future<void> _loadUserProfile() async {
+    try {
+      final ProfileBackend profileBackend = ProfileBackend();
+      final response = await profileBackend.getUserProfile(_userId, _userType);
+      
+      if (response['success'] == true || response.containsKey('name')) {
+        setState(() {
+          _userProfileData = response;
+        });
+        print('Doctor profile loaded successfully: ${response['name']}');
+      } else {
+        print('Failed to load doctor profile: ${response['message'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      print('Error loading doctor profile: $e');
+    }
+  }
+
+  // Add this method to get profile image
+  ImageProvider _getProfileImage() {
+    final profileImageUrl = _userProfileData?['profileImage'];
+    if (profileImageUrl != null && 
+        profileImageUrl.toString().isNotEmpty &&
+        profileImageUrl.toString().startsWith('http')) {
+      return NetworkImage(profileImageUrl);
+    }
+    
+    // Fallback to default asset image
+    return const AssetImage('assets/nabiha.jpg');
   }
 
   Future<void> _loadTodayAppointments() async {
@@ -146,6 +184,13 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
   Widget _buildHeader() {
     final String formattedDate = DateFormat('EEE, dd MMM yyyy').format(DateTime.now());
+    
+    // Get the doctor's actual name from profile data
+    String doctorName = _userProfileData?['name'] ?? _userName;
+    if (doctorName.isEmpty) {
+      doctorName = 'Doctor';
+    }
+    
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFD1A1E3),
@@ -154,9 +199,12 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 30,
-            backgroundImage: AssetImage('assets/nabiha.jpg'), 
+            backgroundImage: _getProfileImage(), // Use dynamic profile image
+            onBackgroundImageError: (exception, stackTrace) {
+              print('Error loading doctor profile image: $exception');
+            },
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -177,7 +225,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   ),
                 ),
                 Text(
-                  "Dr. $_userName!",
+                  "Dr. $doctorName!", // Use actual doctor name from profile
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -248,7 +296,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                     Icon(Icons.access_time, color: Colors.white, size: 54),
                     SizedBox(height: 10),
                     Text(
-                      "Manage Appointments",
+                      "Manage\n Appointments",
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
