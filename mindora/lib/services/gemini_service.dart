@@ -41,35 +41,26 @@ $dataInfo
 
 $predictionContext, predict the most likely mood from the following options:
 - Happy
-- Sad  
+- Sad
 - Angry
 - Excited
 - Stressed
 
-Consider these patterns:
-${hasSleepData && hasStressData ? '''
-- Happy: Good sleep (7-8h) + low stress (1-2)
-- Excited: Excellent sleep (8-9h) + very low stress (1) OR slightly less sleep (6-7h) + low stress (1-2) 
-- Sad: Poor sleep (<6h OR >10h) + moderate to high stress (3-5)
-- Angry: Any sleep + high stress (4-5), especially if sleep is also poor
-- Stressed: Poor sleep (<6h) + high stress (4-5) OR good sleep but very high stress (5)
-''' : hasSleepData ? '''
-- Happy: Good sleep (7-9h)
-- Excited: Excellent sleep (8-9h)
-- Sad: Poor sleep (<6h OR >10h)
-- Stressed: Very poor sleep (<5h)
-- Angry: Moderately poor sleep (5-6h)
-''' : '''
-- Happy: Low stress (1-2)
-- Excited: Very low stress (1)
-- Stressed: High stress (4-5)
-- Angry: High stress (4-5)
-- Sad: Moderate to high stress (3-5)
-'''}
+Guidelines:
+- Happy: Rested, energized, and low stress. Usually good sleep (7–9h) and stress 1–2.
+- Excited: Very well-rested or slightly underslept but still energized, with very low stress (1–2).
+- Sad: Fatigued, drained, or demotivated. Often poor sleep (<6h or >10h) plus moderate–high stress (3–5).
+- Angry: Irritable, frustrated, or tense. Often from poor sleep combined with high stress (4–5).
+- Stressed: Overwhelmed, restless, or pressured. Can happen with poor sleep (<6h) + high stress (4–5), or even with normal sleep if stress is very high (5).
 
-Be diverse in your predictions. Don't always choose the same moods. Consider the full range of possibilities.
+Additional Instructions:
+- Think like a human: balance both sleep and stress when deciding.
+- If multiple moods are possible, pick the one that best fits a person's likely experience.
+- Don't always pick the same mood for the same range of inputs — vary naturally to reflect real life.
+- Consider that mood patterns can be nuanced and individual - someone might feel excited despite moderate stress, or sad even with decent sleep if they're going through a tough time.
+- Factor in that sleep quality matters as much as quantity, and stress can compound the effects of poor rest.
 
-Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No explanation or additional text.
+Respond with ONLY the mood name (Happy, Sad, Angry, Excited, or Stressed). No explanations.
 ''';
 
       print('🤖 Gemini Request Data:');
