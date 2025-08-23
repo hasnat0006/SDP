@@ -125,45 +125,20 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
         sleepData = sleepResult['data'];
       }
 
-      // Get weekly mood data
+      // Get weekly mood data - optimized loading
       final weeklyResult = await MoodTrackerBackend.getWeeklyMoodData(userId);
       if (weeklyResult['success']) {
         weeklyMoodData = List<Map<String, dynamic>>.from(weeklyResult['data']);
-        print('🔍 Weekly mood data loaded: $weeklyMoodData');
-        
-        // Debug: Print each entry with its date
-        if (weeklyMoodData != null) {
-          print('🔍 === WEEKLY MOOD DATA DEBUG ===');
-          print('🔍 Total entries received: ${weeklyMoodData!.length}');
-          for (var entry in weeklyMoodData!) {
-            print('🔍 Entry: ${entry['date']} -> ${entry['mood_status']} (level: ${entry['mood_level']})');
-          }
-          print('🔍 === END WEEKLY DATA ===');
+        // Set chartData for weekly view immediately to avoid double loading
+        if (selectedFilterIndex == 0) {
+          chartData = weeklyMoodData;
         }
-        
-        // Debug: Print the current week range for comparison
-        final now = DateTime.now();
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        final endOfWeek = startOfWeek.add(Duration(days: 6));
-        print('🔍 === WEEK CALCULATION DEBUG ===');
-        print('🔍 Today is: ${now.toIso8601String().split('T')[0]} (weekday: ${now.weekday}/7)');
-        print('🔍 Today name: ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now.weekday - 1]}');
-        print('🔍 Current week start (Monday): ${startOfWeek.toIso8601String().split('T')[0]}');
-        print('🔍 Current week end (Sunday): ${endOfWeek.toIso8601String().split('T')[0]}');
-        print('🔍 Current week range string: ${getCurrentWeekRange()}');
-        print('🔍 Expected dates for this week:');
-        for (int i = 0; i < 7; i++) {
-          final dayDate = startOfWeek.add(Duration(days: i));
-          final dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i];
-          print('🔍   $dayName: ${dayDate.toIso8601String().split('T')[0]}');
-        }
-        print('🔍 === END WEEK CALCULATION ===');
-      } else {
-        print('⚠️ Failed to load weekly mood data: ${weeklyResult['message']}');
       }
 
-      // Load initial chart data (weekly by default)
-      await _loadChartData();
+      // Load initial chart data only if not weekly (since we just loaded it)
+      if (selectedFilterIndex != 0) {
+        await _loadChartData();
+      }
 
     } catch (e) {
       print('Error loading data: $e');
@@ -224,32 +199,6 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
     return <String>[];
   }
 
-  IconData _getMoodIcon(String moodStatus) {
-    switch (moodStatus.toLowerCase()) {
-      case 'happy':
-        return Icons.sentiment_very_satisfied; // Big smile
-      case 'sad':
-        return Icons.sentiment_very_dissatisfied; // Crying face
-      case 'angry':
-        return Icons.local_fire_department; // Fire icon
-      case 'anxious':
-        return Icons.psychology; // Brain/worry icon
-      case 'excited':
-        return Icons.celebration; // Party/celebration icon
-      case 'calm':
-        return Icons.self_improvement; // Meditation icon
-      case 'confused':
-        return Icons.help_outline; // Question mark
-      case 'tired':
-        return Icons.bedtime; // Sleep icon
-      case 'grateful':
-        return Icons.volunteer_activism; // Heart hands icon
-      case 'stressed':
-        return Icons.warning; // Warning icon for stress
-      default:
-        return Icons.sentiment_neutral; // Neutral face
-    }
-  }
 // Filter Tabs
 final List<String> filters = ["1 Week", "1 Month", "1 Year", "All Time"];
 int selectedFilterIndex = 0; // Default to "1 Week"
@@ -890,10 +839,10 @@ Row(
     );
   }
 
-  // Dynamic mood chart widget based on selected filter
+  // Dynamic mood chart widget based on selected filter - optimized
   Widget _buildMoodChart() {
+    // For weekly view, use weeklyMoodData if chartData is null
     if (chartData == null && selectedFilterIndex == 0 && weeklyMoodData != null) {
-      // Use weekly mood data for the weekly view if chart data is not loaded yet
       chartData = weeklyMoodData;
     }
 
@@ -913,8 +862,12 @@ Row(
           ],
         ),
         child: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFB79AE0),
+          child: Text(
+            'No data available',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
           ),
         ),
       );
@@ -934,38 +887,44 @@ Row(
     }
   }
 
-  // Weekly chart (7 days)
+  // Weekly chart (7 days) - Optimized version
   Widget _buildWeeklyChart() {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final List<double> data = List.filled(7, 0.0);
     
     if (chartData is List) {
       final weeklyList = chartData as List<dynamic>;
+      final now = DateTime.now();
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
       
+      // Create a map of dates in this week for faster lookup
+      final Map<String, int> weekDayMap = {};
+      for (int i = 0; i < 7; i++) {
+        final dayDate = startOfWeek.add(Duration(days: i));
+        final dateString = dayDate.toIso8601String().split('T')[0];
+        weekDayMap[dateString] = i;
+      }
+      
+      // Process data more efficiently
       for (var dayData in weeklyList) {
         if (dayData is Map<String, dynamic> && dayData['date'] != null) {
           try {
-            final DateTime dayDate = DateTime.parse(dayData['date']);
-            final double moodLevel = double.tryParse(dayData['mood_level']?.toString() ?? '0') ?? 0.0;
-            
-            // Map weekday to array index
-            int dayOfWeek;
-            switch (dayDate.weekday) {
-              case DateTime.monday: dayOfWeek = 0; break;
-              case DateTime.tuesday: dayOfWeek = 1; break;
-              case DateTime.wednesday: dayOfWeek = 2; break;
-              case DateTime.thursday: dayOfWeek = 3; break;
-              case DateTime.friday: dayOfWeek = 4; break;
-              case DateTime.saturday: dayOfWeek = 5; break;
-              case DateTime.sunday: dayOfWeek = 6; break;
-              default: dayOfWeek = -1;
+            String dateString;
+            if (dayData['date'] is String) {
+              dateString = dayData['date'].split('T')[0]; // Handle both formats
+            } else {
+              final DateTime date = dayData['date'];
+              dateString = date.toIso8601String().split('T')[0];
             }
             
-            if (dayOfWeek >= 0 && dayOfWeek < 7) {
-              data[dayOfWeek] = moodLevel;
+            if (weekDayMap.containsKey(dateString)) {
+              final int dayIndex = weekDayMap[dateString]!;
+              final double moodLevel = double.tryParse(dayData['mood_level']?.toString() ?? '0') ?? 0.0;
+              data[dayIndex] = moodLevel;
             }
           } catch (e) {
-            print('Error parsing weekly mood data: $e');
+            // Silently continue on error to avoid performance impact
+            continue;
           }
         }
       }
@@ -1034,7 +993,7 @@ Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
+                          duration: const Duration(milliseconds: 300), // Reduced animation time
                           height: barHeight,
                           width: 40,
                           decoration: BoxDecoration(

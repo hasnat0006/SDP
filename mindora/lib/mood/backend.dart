@@ -79,7 +79,7 @@ class MoodTrackerBackend {
 
       // Cast the reason field to List<String> for each entry if it exists
       if (response is List) {
-        for (var entry in response[0]) {
+        for (var entry in response) {  // Fixed: removed [0] index
           if (entry is Map &&
               entry.containsKey('reason') &&
               entry['reason'] != null) {
