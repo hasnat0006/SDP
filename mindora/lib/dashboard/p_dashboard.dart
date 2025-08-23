@@ -320,7 +320,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               Text(
                 _userProfileData?['name'] != null 
-                    ? "Welcome back, ${_userProfileData!['name']}!"
+                    ? "Welcome back,\n ${_userProfileData!['name']}!"
                     : _userType.isNotEmpty
                         ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
                         : "Welcome back, User!",
