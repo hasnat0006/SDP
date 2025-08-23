@@ -9,7 +9,7 @@ app.use(cors());
 const mood = require("./Route/mood");
 const sleep = require("./Route/sleep");
 const stress = require("./Route/stress");
-const todo = require("./Route/Todo/todo");
+const todo = require("./Route/todo/todo");
 const therapists = require("./Route/appt");
 const auth = require("./Route/auth/fetchusers");
 const forumRoutes = require("./Route/forum/forum");
