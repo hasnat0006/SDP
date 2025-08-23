@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
-String get apiUrl => dotenv.env['EMULATOR_URL'] ?? 'http://127.0.0.1:5000';
+String get apiUrl => dotenv.env['PRODUCTION_URL'] ?? 'http://127.0.0.1:5000';
 
-Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
+Future<dynamic> getFromBackend(String endpoint) async {
   try {
     final url = '$apiUrl/$endpoint';
     debugPrint('🌐 API: $url');
@@ -39,7 +39,7 @@ Future<Map<String, dynamic>> getFromBackend(String endpoint) async {
   }
 }
 
-Future<List<dynamic>> postToBackend(
+Future<dynamic> postToBackend(
   String endpoint,
   Map<String, dynamic> data,
 ) async {

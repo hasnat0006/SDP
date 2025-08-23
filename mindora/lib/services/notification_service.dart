@@ -1,5 +1,6 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'navigation_service.dart';
 
 class NotificationService {
   static Future<void> initializeNotification() async {
@@ -72,9 +73,17 @@ class NotificationService {
   ) async {
     debugPrint('onActionReceivedMethod');
     final payload = receivedAction.payload ?? {};
-    if (payload["navigate"] == "true") {
-      // Handle navigation here if needed
+
+    // Handle task notification navigation
+    if (payload["navigate"] == "true" || payload.containsKey("task_id")) {
+      await _navigateToTask(payload);
     }
+  }
+
+  // Navigate to the task list page and potentially focus on a specific task
+  static Future<void> _navigateToTask(Map<String, String?> payload) async {
+    // Use the navigation service to handle the task navigation
+    await NavigationService.navigateToTaskFromNotification(payload);
   }
 
   static Future<void> showNotification({

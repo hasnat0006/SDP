@@ -1,6 +1,7 @@
 import 'package:client/login/signup/login.dart';
 import 'package:client/navbar/navbar.dart';
 import 'package:client/services/notification_service.dart';
+import 'package:client/services/navigation_service.dart';
 import 'package:client/services/supabase_service.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Mental Health Dashboard',
       debugShowCheckedModeBanner: false,
+      navigatorKey:
+          NavigationService.navigatorKey, // Use navigation service key
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4A148C)),
@@ -46,7 +49,6 @@ class _AuthCheckerState extends State<AuthChecker>
     with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
-  bool _authCheckComplete = false;
   bool _shouldNavigateToMain = false;
 
   @override
@@ -75,7 +77,6 @@ class _AuthCheckerState extends State<AuthChecker>
     final isLoggedIn = await UserService.isLoggedIn();
 
     setState(() {
-      _authCheckComplete = true;
       _shouldNavigateToMain = isLoggedIn;
     });
 

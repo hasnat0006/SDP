@@ -19,9 +19,18 @@ router.get("/get-info", async (req, res) => {
     `
         : await sql`
       SELECT * FROM users, doctor
-      WHERE users.id = doctor.user_id
+      WHERE users.id = doctor.doc_id
       AND users.id = ${user_id}
     `;
+
+    if (user_type === "doctor") {
+      const countPatient = await sql`
+          SELECT COUNT(*) FROM appointment
+          WHERE doc_id = ${user_id}
+        `;
+      result[0].patient_count = countPatient[0].count;
+    }
+
     console.log("Profile information retrieved:", result);
     if (result.length === 0) {
       return res.status(404).json({ error: "Profile not found" });
@@ -51,8 +60,33 @@ async function update_patient(user_id, updateData) {
   return result1.length > 0 ? result1 : result2;
 }
 
+async function update_doctor(user_id, updateData) {
+  const result1 = await sql`
+    UPDATE users
+    SET name = ${updateData.name}, email = ${updateData.email}, phone_no = ${updateData.phone_no}
+    WHERE users.id = ${user_id}
+    RETURNING *
+  `;
+
+  console.log("User information updated:", result1);
+
+  const result2 = await sql`
+    UPDATE doctor
+    SET
+    special = ${updateData.special}, bdn = ${updateData.bdn}, accept_patient = ${updateData.accept_patient}, shortbio = ${updateData.shortbio}, education = ${updateData.education}, exp = ${updateData.exp}, profession = ${updateData.profession}, description = ${updateData.description}, dob = ${updateData.dob}, gender = ${updateData.gender}
+    WHERE doctor.doc_id = ${user_id}
+    RETURNING *
+  `;
+
+  console.log("Doctor information updated:", result2);
+
+  return result1.length > 0 ? result1 : result2;
+}
+
 router.post("/update-info", async (req, res) => {
   try {
+    console.log("Updating profile information:", req.body);
+
     const { user_id, user_type, ...updateData } = req.body;
 
     if (!user_id || !user_type) {
@@ -63,7 +97,7 @@ router.post("/update-info", async (req, res) => {
     if (user_type === "patient") {
       result = await update_patient(user_id, updateData);
     } else {
-      // result = await update_doctor(user_id, updateData);
+      result = await update_doctor(user_id, updateData);
     }
 
     console.log(result);
@@ -84,7 +118,9 @@ router.post("/update-profile-image", async (req, res) => {
     console.log("Updating profile image for:", user_id, user_type);
     console.log("New profile image:", profileImage);
     if (!user_id || !user_type || !profileImage) {
-      return res.status(400).json({ error: "Missing user_id, user_type, or profileImage" });
+      return res
+        .status(400)
+        .json({ error: "Missing user_id, user_type, or profileImage" });
     }
 
     let result = await sql`
@@ -140,14 +176,13 @@ async function get_streak(user_id) {
 router.get("/get-mood", async (req, res) => {
   try {
     const { user_id } = req.query;
-
     if (!user_id) {
       return res.status(400).json({ error: "Missing user_id" });
     }
 
     const result = await sql`
       SELECT mood_status FROM mood_tracker
-      WHERE user_id = ${user_id}
+      WHERE user_id = ${user_id} and date = CURRENT_DATE
     `;
     if (result.length === 0) {
       return res.status(404).json({ error: "Mood data not found" });

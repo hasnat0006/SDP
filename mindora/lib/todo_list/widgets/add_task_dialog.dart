@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
+import '../backend.dart';
+import '../../services/user_service.dart';
 
 class AddTaskDialog extends StatefulWidget {
   final Function(Task) onTaskAdded;
@@ -21,6 +23,10 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   TaskPriority selectedPriority = TaskPriority.medium;
   DateTime? selectedDueDate;
   TimeOfDay? selectedDueTime;
+
+  // Backend integration
+  final TaskBackend _taskBackend = TaskBackend();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -244,7 +250,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                       SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          'You\'ll receive a notification 1 hour before the due time',
+                          'You\'ll receive a notification at the exact due time',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue[600],
@@ -262,7 +268,9 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20,
@@ -271,13 +279,19 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                     ),
                     child: Text(
                       'Cancel',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: _isSubmitting
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _addTask,
+                    onPressed: _isSubmitting ? null : _addTask,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple[400],
+                      backgroundColor: _isSubmitting
+                          ? Colors.grey[400]
+                          : Colors.purple[400],
                       padding: EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -286,10 +300,31 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: Text(
-                      isEditing ? 'Update Task' : 'Add Task',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: _isSubmitting
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                isEditing ? 'Updating...' : 'Adding...',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            isEditing ? 'Update Task' : 'Add Task',
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ],
               ),
@@ -353,7 +388,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     }
   }
 
-  void _addTask() {
+  Future<void> _addTask() async {
     if (titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -364,43 +399,93 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       return;
     }
 
-    DateTime? finalDueDate;
-    if (selectedDueDate != null) {
-      finalDueDate = selectedDueDate!;
-      if (selectedDueTime != null) {
-        finalDueDate = DateTime(
-          selectedDueDate!.year,
-          selectedDueDate!.month,
-          selectedDueDate!.day,
-          selectedDueTime!.hour,
-          selectedDueTime!.minute,
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      DateTime? finalDueDate;
+      if (selectedDueDate != null) {
+        finalDueDate = selectedDueDate!;
+        if (selectedDueTime != null) {
+          finalDueDate = DateTime(
+            selectedDueDate!.year,
+            selectedDueDate!.month,
+            selectedDueDate!.day,
+            selectedDueTime!.hour,
+            selectedDueTime!.minute,
+          );
+        } else {
+          // Default to end of day if no time is selected
+          finalDueDate = DateTime(
+            selectedDueDate!.year,
+            selectedDueDate!.month,
+            selectedDueDate!.day,
+            23,
+            59,
+          );
+        }
+      }
+
+      final task = Task(
+        id: isEditing
+            ? widget.existingTask!.id
+            : DateTime.now().millisecondsSinceEpoch.toString(),
+        title: titleController.text.trim(),
+        description: descriptionController.text.trim().isEmpty
+            ? null
+            : descriptionController.text.trim(),
+        priority: selectedPriority,
+        dueDate: finalDueDate,
+      );
+
+      if (isEditing) {
+        // Update existing task
+        await _taskBackend.updateTask(userId, task);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Task updated successfully!'),
+            backgroundColor: Colors.green[400],
+          ),
         );
       } else {
-        // Default to end of day if no time is selected
-        finalDueDate = DateTime(
-          selectedDueDate!.year,
-          selectedDueDate!.month,
-          selectedDueDate!.day,
-          23,
-          59,
+        // Add new task
+        final newTask = await _taskBackend.addTask(userId, task);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Task added successfully!'),
+            backgroundColor: Colors.green[400],
+          ),
         );
+        // Call the callback with the new task from backend
+        widget.onTaskAdded(newTask);
+        Navigator.of(context).pop();
+        return;
+      }
+
+      // For editing, call callback with updated task
+      widget.onTaskAdded(task);
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red[400],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
-
-    final task = Task(
-      id: isEditing
-          ? widget.existingTask!.id
-          : DateTime.now().millisecondsSinceEpoch.toString(),
-      title: titleController.text.trim(),
-      description: descriptionController.text.trim().isEmpty
-          ? null
-          : descriptionController.text.trim(),
-      priority: selectedPriority,
-      dueDate: finalDueDate,
-    );
-
-    widget.onTaskAdded(task);
-    Navigator.of(context).pop();
   }
 
   Color _getPriorityColor(TaskPriority priority) {

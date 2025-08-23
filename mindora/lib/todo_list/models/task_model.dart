@@ -62,7 +62,7 @@ class Task {
       'title': title,
       'description': description,
       'dueDate': dueDate?.toIso8601String(),
-      'priority': priority.index,
+      'priority': priority.toString().split('.').last, // Convert enum to string
       'isCompleted': isCompleted,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -71,14 +71,39 @@ class Task {
   // Create from JSON
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      id: json['id'],
-      title: json['title'],
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
       description: json['description'],
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
-      priority: TaskPriority.values[json['priority'] ?? 1],
-      isCompleted: json['isCompleted'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
+      dueDate: json['dueDate'] != null
+          ? DateTime.parse(json['dueDate'])
+          : (json['duedate'] != null ? DateTime.parse(json['duedate']) : null),
+      priority: _parsePriority(json['priority']),
+      isCompleted: json['isCompleted'] ?? json['iscompleted'] ?? false,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : (json['createdat'] != null
+                ? DateTime.parse(json['createdat'])
+                : DateTime.now()),
     );
+  } // Helper method to parse priority from different formats
+  static TaskPriority _parsePriority(dynamic priority) {
+    if (priority is int) {
+      if (priority >= 0 && priority < TaskPriority.values.length) {
+        return TaskPriority.values[priority];
+      }
+    } else if (priority is String) {
+      switch (priority.toLowerCase()) {
+        case 'low':
+          return TaskPriority.low;
+        case 'medium':
+          return TaskPriority.medium;
+        case 'high':
+          return TaskPriority.high;
+        case 'critical':
+          return TaskPriority.critical;
+      }
+    }
+    return TaskPriority.medium; // default
   }
 
   // Copy with method for updates

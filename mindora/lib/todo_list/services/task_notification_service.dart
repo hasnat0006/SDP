@@ -2,47 +2,18 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import '../models/task_model.dart';
 
 class TaskNotificationService {
-  static Future<void> scheduleTaskReminder(Task task) async {
+  static Future<void> scheduleTaskDueNotification(Task task) async {
     if (task.dueDate == null) return;
 
     final now = DateTime.now();
-    final reminderTime = task.dueDate!.subtract(Duration(hours: 1));
 
-    // Only schedule if reminder time is in the future
-    if (reminderTime.isAfter(now)) {
+    // Schedule notification for exact due time only
+    if (task.dueDate!.isAfter(now)) {
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
           id: task.id.hashCode,
           channelKey: 'high_importance_channel',
-          title: 'Task Reminder',
-          body: 'Don\'t forget: ${task.title}',
-          notificationLayout: NotificationLayout.Default,
-          category: NotificationCategory.Reminder,
-          payload: {
-            'task_id': task.id,
-            'task_title': task.title,
-            'type': 'reminder',
-          },
-        ),
-        schedule: NotificationCalendar(
-          year: reminderTime.year,
-          month: reminderTime.month,
-          day: reminderTime.day,
-          hour: reminderTime.hour,
-          minute: reminderTime.minute,
-          second: 0,
-          millisecond: 0,
-        ),
-      );
-    }
-
-    // Schedule notification for due time
-    if (task.dueDate!.isAfter(now)) {
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: (task.id.hashCode + 1000),
-          channelKey: 'high_importance_channel',
-          title: 'Task Due',
+          title: 'Task Due Now!',
           body: 'Task "${task.title}" is now due!',
           notificationLayout: NotificationLayout.Default,
           category: NotificationCategory.Alarm,
@@ -50,6 +21,7 @@ class TaskNotificationService {
             'task_id': task.id,
             'task_title': task.title,
             'type': 'due',
+            'navigate': 'true',
           },
         ),
         schedule: NotificationCalendar(
@@ -67,7 +39,6 @@ class TaskNotificationService {
 
   static Future<void> cancelTaskNotifications(String taskId) async {
     await AwesomeNotifications().cancel(taskId.hashCode);
-    await AwesomeNotifications().cancel(taskId.hashCode + 1000);
   }
 
   static Future<void> showTaskCompletedNotification(Task task) async {
