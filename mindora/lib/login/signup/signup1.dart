@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login.dart'; // <-- Import for LoginPage navigation
 import './backend.dart'; // <-- Import backend service
+import './emergency_contact_popup.dart'; // <-- Import emergency contact popup
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -28,7 +29,110 @@ class _SignUpPageState extends State<SignUpPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _bdnController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSignup() async {
+    // Set loading state
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Access the field data
+      String email = _emailController.text.trim();
+      String password = _passwordController.text;
+      String confirmPassword = _confirmPasswordController.text;
+
+      // Validate form using backend service
+      final validation = BackendService.validateSignupForm(
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
+      );
+
+      if (!validation['isValid']) {
+        _showErrorMessage(validation['message']);
+        return;
+      }
+
+      // Apply backend signup logic here
+      final result = await BackendService.signUpUser(
+        email: email,
+        password: password,
+        name: _fullNameController.text,
+        bdn: !_isPatient ? _bdnController.text : null,
+        isPatient: _isPatient,
+      );
+
+      if (result['success']) {
+        print('✅ User created successfully');
+
+        // If it's a patient, show emergency contact popup
+        if (_isPatient) {
+          final userId = result['userId']?.toString();
+          if (userId != null) {
+            _showEmergencyContactPopup(userId);
+          } else {
+            print('❌ User ID not found in response');
+            _navigateToLogin();
+          }
+        } else {
+          // For doctors, navigate directly to login
+          _navigateToLogin();
+        }
+      } else {
+        _showErrorMessage(result['message']);
+      }
+    } catch (e) {
+      print('❌ Signup error: $e');
+      _showErrorMessage('An error occurred during signup');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showEmergencyContactPopup(String userId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent closing by tapping outside
+      builder: (context) => EmergencyContactPopup(
+        userId: userId,
+        onSaved: () {
+          print('✅ Emergency contacts saved, navigating to login');
+          _navigateToLogin();
+        },
+      ),
+    );
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginPage(),
+      ),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Account created successfully! Please login.'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
@@ -272,89 +376,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   vertical: 16,
                 ),
               ),
-              onPressed: _isLoading
-                  ? null
-                  : () async {
-                      // Set loading state
-                      setState(() {
-                        _isLoading = true;
-                      });
-
-                      try {
-                        // Access the field data
-                        String email = _emailController.text.trim();
-                        String password = _passwordController.text;
-                        String confirmPassword =
-                            _confirmPasswordController.text;
-
-                        // Validate form using backend service
-                        final validation = BackendService.validateSignupForm(
-                          email: email,
-                          password: password,
-                          confirmPassword: confirmPassword,
-                        );
-
-                        if (!validation['isValid']) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(validation['message']),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-
-                        // Print or process the data (you can replace this with your signup logic)
-                        print('Email: $email');
-                        print('Password: $password');
-                        print('Confirm Password: $confirmPassword');
-                        print('Full Name: ${_fullNameController.text}');
-                        if (!_isPatient) {
-                          print('BDN Number: ${_bdnController.text}');
-                        }
-
-                        // Apply backend signup logic here
-                        final result = await BackendService.signUpUser(
-                          email: email,
-                          password: password,
-                          name: _fullNameController.text,
-                          bdn: !_isPatient ? _bdnController.text : null,
-                          isPatient: _isPatient,
-                        );
-
-                        if (result['success']) {
-                          // Show success message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result['message']),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
-                            ),
-                          );
-                        } else {
-                          // Handle backend errors
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result['message']),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } finally {
-                        // Reset loading state
-                        if (mounted) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                        }
-                      }
-                    },
+              onPressed: _isLoading ? null : _handleSignup,
               child: _isLoading
                   ? const Row(
                       mainAxisSize: MainAxisSize.min,
