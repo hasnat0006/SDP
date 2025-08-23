@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../backend/main_query.dart'; // Import to access apiUrl
 
 class Appointment {
   final String appId;
@@ -26,13 +27,19 @@ class Appointment {
     // Store original date for parsing
     String originalDate = json['date']?.toString() ?? '';
     
-    // Format the date for display
+    // Format the date for display - use UTC date components only
     String formattedDate = '';
     if (json['date'] != null) {
       try {
-        DateTime dateTime = DateTime.parse(json['date']);
-        formattedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+        // Parse the date string and extract UTC date components
+        DateTime utcDateTime = DateTime.parse(json['date']).toUtc();
+        
+        // Use UTC date components to avoid timezone issues
+        formattedDate = '${utcDateTime.day}/${utcDateTime.month}/${utcDateTime.year}';
+        
+        print('🔍 Original date: ${json['date']} -> Formatted: $formattedDate');
       } catch (e) {
+        print('❌ Error parsing date: ${json['date']}, error: $e');
         formattedDate = json['date']?.toString() ?? '';
       }
     }
@@ -67,189 +74,190 @@ class Appointment {
 }
 
 class PatientDetails {
-	final String name;
-	final String gender;
-	final String dob;
-	final String profession;
-	final String age; // Changed from int to String to handle empty values
+    final String name;
+    final String gender;
+    final String dob;
+    final String profession;
+    final String age; // Changed from int to String to handle empty values
 
-	PatientDetails({
-		required this.name,
-		required this.gender,
-		required this.dob,
-		required this.profession,
-		required this.age,
-	});
+    PatientDetails({
+        required this.name,
+        required this.gender,
+        required this.dob,
+        required this.profession,
+        required this.age,
+    });
 
-	factory PatientDetails.fromJson(Map<String, dynamic> json) {
-		// Calculate age from dob
-		String calculatedAge = '';
-		if (json['dob'] != null && json['dob'].toString().isNotEmpty) {
-			try {
-				DateTime dobDate = DateTime.parse(json['dob']);
-				DateTime now = DateTime.now();
-				int ageInYears = now.year - dobDate.year;
-				if (now.month < dobDate.month || (now.month == dobDate.month && now.day < dobDate.day)) {
-					ageInYears--;
-				}
-				calculatedAge = '$ageInYears years';
-			} catch (e) {
-				calculatedAge = '';
-			}
-		}
+    factory PatientDetails.fromJson(Map<String, dynamic> json) {
+        // Calculate age from dob
+        String calculatedAge = '';
+        if (json['dob'] != null && json['dob'].toString().isNotEmpty) {
+            try {
+                DateTime dobDate = DateTime.parse(json['dob']);
+                DateTime now = DateTime.now();
+                int ageInYears = now.year - dobDate.year;
+                if (now.month < dobDate.month || (now.month == dobDate.month && now.day < dobDate.day)) {
+                    ageInYears--;
+                }
+                calculatedAge = '$ageInYears years';
+            } catch (e) {
+                calculatedAge = '';
+            }
+        }
 
-		return PatientDetails(
-			name: json['name']?.toString() ?? '',
-			gender: json['gender']?.toString() ?? '',
-			dob: json['dob']?.toString() ?? '',
-			profession: json['profession']?.toString() ?? '',
-			age: calculatedAge,
-		);
-	}
+        return PatientDetails(
+            name: json['name']?.toString() ?? '',
+            gender: json['gender']?.toString() ?? '',
+            dob: json['dob']?.toString() ?? '',
+            profession: json['profession']?.toString() ?? '',
+            age: calculatedAge,
+        );
+    }
 }
 
 class AppointmentService {
-	static const String baseUrl = 'http://127.0.0.1:5000'; // Backend server URL
+    // Remove hardcoded baseUrl and use apiUrl from main_query.dart
+    static String get baseUrl => apiUrl; // Use the centralized API URL
 
-	static Future<String> fetchUserName(String userId) async {
-		try {
-			final response = await http.get(
-				Uri.parse('$baseUrl/user/$userId'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			if (response.statusCode == 200) {
-				final Map<String, dynamic> data = json.decode(response.body);
-				return data['name']?.toString() ?? 'Unknown User';
-			} else {
-				return 'Unknown User';
-			}
-		} catch (e) {
-			print('❌ Error fetching user name: $e');
-			return 'Unknown User';
-		}
-	}
+    static Future<String> fetchUserName(String userId) async {
+        try {
+            final response = await http.get(
+                Uri.parse('$baseUrl/user/$userId'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            if (response.statusCode == 200) {
+                final Map<String, dynamic> data = json.decode(response.body);
+                return data['name']?.toString() ?? 'Unknown User';
+            } else {
+                return 'Unknown User';
+            }
+        } catch (e) {
+            print('❌ Error fetching user name: $e');
+            return 'Unknown User';
+        }
+    }
 
-	static Future<PatientDetails?> fetchPatientDetails(String userId) async {
-		try {
-			print('🌐 Fetching patient details for user: $userId');
-			final response = await http.get(
-				Uri.parse('$baseUrl/patient/$userId'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			print('📡 Patient response status: ${response.statusCode}');
-			print('📋 Patient response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final Map<String, dynamic> data = json.decode(response.body);
-				return PatientDetails.fromJson(data);
-			} else {
-				print('❌ Patient not found or error: ${response.statusCode}');
-				return null;
-			}
-		} catch (e) {
-			print('❌ Error fetching patient details: $e');
-			return null;
-		}
-	}
+    static Future<PatientDetails?> fetchPatientDetails(String userId) async {
+        try {
+            print('🌐 Fetching patient details for user: $userId');
+            final response = await http.get(
+                Uri.parse('$baseUrl/patient/$userId'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            print('📡 Patient response status: ${response.statusCode}');
+            print('📋 Patient response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final Map<String, dynamic> data = json.decode(response.body);
+                return PatientDetails.fromJson(data);
+            } else {
+                print('❌ Patient not found or error: ${response.statusCode}');
+                return null;
+            }
+        } catch (e) {
+            print('❌ Error fetching patient details: $e');
+            return null;
+        }
+    }
 
-	static Future<List<Appointment>> fetchConfirmedAppointments() async {
-		try {
-			print('🌐 Making request to: $baseUrl/confirmed-appointments');
-			final response = await http.get(
-				Uri.parse('$baseUrl/confirmed-appointments'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			print('📡 Response status: ${response.statusCode}');
-			print('📋 Response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final List<dynamic> data = json.decode(response.body);
-				print('✅ Parsed ${data.length} appointments from API');
-				
-				// Create appointments and fetch user names
-				List<Appointment> appointments = [];
-				for (var json in data) {
-					var appointment = Appointment.fromJson(json);
-					// Fetch user name for this appointment
-					String userName = await fetchUserName(appointment.userId);
-					
-					// Create new appointment with user name
-					appointments.add(Appointment(
-						appId: appointment.appId,
-						userId: appointment.userId,
-						userName: userName,
-						date: appointment.date,
-						originalDate: appointment.originalDate, // Add this line everywhere
-						time: appointment.time,
-						status: appointment.status,
-						reminder: appointment.reminder,
-					));
-				}
-				
-				return appointments;
-			} else {
-				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
-			}
-		} catch (e) {
-			print('❌ AppointmentService error: $e');
-			throw Exception('Failed to load confirmed appointments: $e');
-		}
-	}
+    static Future<List<Appointment>> fetchConfirmedAppointments() async {
+        try {
+            print('🌐 Making request to: $baseUrl/confirmed-appointments');
+            final response = await http.get(
+                Uri.parse('$baseUrl/confirmed-appointments'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            print('📡 Response status: ${response.statusCode}');
+            print('📋 Response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final List<dynamic> data = json.decode(response.body);
+                print('✅ Parsed ${data.length} appointments from API');
+                
+                // Create appointments and fetch user names
+                List<Appointment> appointments = [];
+                for (var json in data) {
+                    var appointment = Appointment.fromJson(json);
+                    // Fetch user name for this appointment
+                    String userName = await fetchUserName(appointment.userId);
+                    
+                    // Create new appointment with user name
+                    appointments.add(Appointment(
+                        appId: appointment.appId,
+                        userId: appointment.userId,
+                        userName: userName,
+                        date: appointment.date,
+                        originalDate: appointment.originalDate, // Add this line everywhere
+                        time: appointment.time,
+                        status: appointment.status,
+                        reminder: appointment.reminder,
+                    ));
+                }
+                
+                return appointments;
+            } else {
+                throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+            }
+        } catch (e) {
+            print('❌ AppointmentService error: $e');
+            throw Exception('Failed to load confirmed appointments: $e');
+        }
+    }
 
-	static Future<List<Appointment>> fetchConfirmedAppointmentsForDoctor(String? doctorId) async {
-		if (doctorId == null || doctorId.isEmpty) {
-			// Fallback to all appointments if no doctor ID
-			return fetchConfirmedAppointments();
-		}
+    static Future<List<Appointment>> fetchConfirmedAppointmentsForDoctor(String? doctorId) async {
+        if (doctorId == null || doctorId.isEmpty) {
+            // Fallback to all appointments if no doctor ID
+            return fetchConfirmedAppointments();
+        }
 
-		try {
-			print('🌐 Making request to: $baseUrl/confirmed-appointments/doctor/$doctorId');
-			final response = await http.get(
-				Uri.parse('$baseUrl/confirmed-appointments/doctor/$doctorId'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			print('📡 Response status: ${response.statusCode}');
-			print('📋 Response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final List<dynamic> data = json.decode(response.body);
-				print('✅ Parsed ${data.length} appointments from API for doctor: $doctorId');
-				
-				// Create appointments and fetch user names
-				List<Appointment> appointments = [];
-				for (var json in data) {
-					var appointment = Appointment.fromJson(json);
-					// Fetch user name for this appointment
-					String userName = await fetchUserName(appointment.userId);
-					
-					// Create new appointment with user name
-					appointments.add(Appointment(
-						appId: appointment.appId,
-						userId: appointment.userId,
-						userName: userName,
-						date: appointment.date,
-						originalDate: appointment.originalDate, // Add this line
-						time: appointment.time,
-						status: appointment.status,
-						reminder: appointment.reminder,
-					));
-				}
-				
-				return appointments;
-			} else {
-				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
-			}
-		} catch (e) {
-			print('❌ AppointmentService error: $e');
-			throw Exception('Failed to load confirmed appointments for doctor: $e');
-		}
-	}
+        try {
+            print('🌐 Making request to: $baseUrl/confirmed-appointments/doctor/$doctorId');
+            final response = await http.get(
+                Uri.parse('$baseUrl/confirmed-appointments/doctor/$doctorId'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            print('📡 Response status: ${response.statusCode}');
+            print('📋 Response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final List<dynamic> data = json.decode(response.body);
+                print('✅ Parsed ${data.length} appointments from API for doctor: $doctorId');
+                
+                // Create appointments and fetch user names
+                List<Appointment> appointments = [];
+                for (var json in data) {
+                    var appointment = Appointment.fromJson(json);
+                    // Fetch user name for this appointment
+                    String userName = await fetchUserName(appointment.userId);
+                    
+                    // Create new appointment with user name
+                    appointments.add(Appointment(
+                        appId: appointment.appId,
+                        userId: appointment.userId,
+                        userName: userName,
+                        date: appointment.date,
+                        originalDate: appointment.originalDate, // Add this line
+                        time: appointment.time,
+                        status: appointment.status,
+                        reminder: appointment.reminder,
+                    ));
+                }
+                
+                return appointments;
+            } else {
+                throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+            }
+        } catch (e) {
+            print('❌ AppointmentService error: $e');
+            throw Exception('Failed to load confirmed appointments for doctor: $e');
+        }
+    }
 
-	static Future<List<Appointment>> fetchMyAppointments(String? userId) async {
+    static Future<List<Appointment>> fetchMyAppointments(String? userId) async {
     if (userId == null || userId.isEmpty) {
         throw Exception('User ID is required');
     }
@@ -305,130 +313,130 @@ class AppointmentService {
     }
 }
 
-	static Future<bool> cancelAppointment(String appointmentId) async {
-		try {
-			print('🌐 Making request to cancel appointment: $baseUrl/cancel-appointment/$appointmentId');
-			final response = await http.put(
-				Uri.parse('$baseUrl/cancel-appointment/$appointmentId'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			print('📡 Cancel response status: ${response.statusCode}');
-			print('📋 Cancel response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final Map<String, dynamic> data = json.decode(response.body);
-				return data['success'] == true;
-			} else {
-				print('❌ Failed to cancel appointment: ${response.statusCode}');
-				return false;
-			}
-		} catch (e) {
-			print('❌ Error cancelling appointment: $e');
-			return false;
-		}
-	}
+    static Future<bool> cancelAppointment(String appointmentId) async {
+        try {
+            print('🌐 Making request to cancel appointment: $baseUrl/cancel-appointment/$appointmentId');
+            final response = await http.put(
+                Uri.parse('$baseUrl/cancel-appointment/$appointmentId'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            print('📡 Cancel response status: ${response.statusCode}');
+            print('📋 Cancel response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final Map<String, dynamic> data = json.decode(response.body);
+                return data['success'] == true;
+            } else {
+                print('❌ Failed to cancel appointment: ${response.statusCode}');
+                return false;
+            }
+        } catch (e) {
+            print('❌ Error cancelling appointment: $e');
+            return false;
+        }
+    }
 
-	static Future<bool> updateReminder(String appointmentId, String reminderStatus) async {
-		try {
-			print('🌐 Making request to update reminder: $baseUrl/update-reminder/$appointmentId');
-			final response = await http.put(
-				Uri.parse('$baseUrl/update-reminder/$appointmentId'),
-				headers: {'Content-Type': 'application/json'},
-				body: json.encode({'reminder': reminderStatus}),
-			);
-			
-			print('📡 Update reminder response status: ${response.statusCode}');
-			print('📋 Update reminder response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final Map<String, dynamic> data = json.decode(response.body);
-				return data['success'] == true;
-			} else {
-				print('❌ Failed to update reminder: ${response.statusCode}');
-				return false;
-			}
-		} catch (e) {
-			print('❌ Error updating reminder: $e');
-			return false;
-		}
-	}
+    static Future<bool> updateReminder(String appointmentId, String reminderStatus) async {
+        try {
+            print('🌐 Making request to update reminder: $baseUrl/update-reminder/$appointmentId');
+            final response = await http.put(
+                Uri.parse('$baseUrl/update-reminder/$appointmentId'),
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({'reminder': reminderStatus}),
+            );
+            
+            print('📡 Update reminder response status: ${response.statusCode}');
+            print('📋 Update reminder response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final Map<String, dynamic> data = json.decode(response.body);
+                return data['success'] == true;
+            } else {
+                print('❌ Failed to update reminder: ${response.statusCode}');
+                return false;
+            }
+        } catch (e) {
+            print('❌ Error updating reminder: $e');
+            return false;
+        }
+    }
 
-	static Future<List<Appointment>> fetchPendingAppointmentsForDoctor(String? doctorId) async {
-		if (doctorId == null || doctorId.isEmpty) {
-			throw Exception('Doctor ID is required');
-		}
+    static Future<List<Appointment>> fetchPendingAppointmentsForDoctor(String? doctorId) async {
+        if (doctorId == null || doctorId.isEmpty) {
+            throw Exception('Doctor ID is required');
+        }
 
-		try {
-			print('🌐 Making request to: $baseUrl/pending-appointments/doctor/$doctorId');
-			final response = await http.get(
-				Uri.parse('$baseUrl/pending-appointments/doctor/$doctorId'),
-				headers: {'Content-Type': 'application/json'},
-			);
-			
-			print('📡 Response status: ${response.statusCode}');
-			print('📋 Response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final List<dynamic> data = json.decode(response.body);
-				print('✅ Parsed ${data.length} pending appointments from API for doctor: $doctorId');
-				
-				// Create appointments and fetch user names
-				List<Appointment> appointments = [];
-				for (var json in data) {
-					var appointment = Appointment.fromJson(json);
-					// Fetch user name for this appointment
-					String userName = await fetchUserName(appointment.userId);
-					
-					// Create new appointment with user name
-					appointments.add(Appointment(
-						appId: appointment.appId,
-						userId: appointment.userId,
-						userName: userName,
-						date: appointment.date,
-						originalDate: appointment.originalDate, // Add this line
-						time: appointment.time,
-						status: appointment.status,
-						reminder: appointment.reminder,
-					));
-				}
-				
-				return appointments;
-			} else {
-				throw Exception('Server returned status ${response.statusCode}: ${response.body}');
-			}
-		} catch (e) {
-			print('❌ AppointmentService error: $e');
-			throw Exception('Failed to load pending appointments for doctor: $e');
-		}
-	}
+        try {
+            print('🌐 Making request to: $baseUrl/pending-appointments/doctor/$doctorId');
+            final response = await http.get(
+                Uri.parse('$baseUrl/pending-appointments/doctor/$doctorId'),
+                headers: {'Content-Type': 'application/json'},
+            );
+            
+            print('📡 Response status: ${response.statusCode}');
+            print('📋 Response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final List<dynamic> data = json.decode(response.body);
+                print('✅ Parsed ${data.length} pending appointments from API for doctor: $doctorId');
+                
+                // Create appointments and fetch user names
+                List<Appointment> appointments = [];
+                for (var json in data) {
+                    var appointment = Appointment.fromJson(json);
+                    // Fetch user name for this appointment
+                    String userName = await fetchUserName(appointment.userId);
+                    
+                    // Create new appointment with user name
+                    appointments.add(Appointment(
+                        appId: appointment.appId,
+                        userId: appointment.userId,
+                        userName: userName,
+                        date: appointment.date,
+                        originalDate: appointment.originalDate, // Add this line
+                        time: appointment.time,
+                        status: appointment.status,
+                        reminder: appointment.reminder,
+                    ));
+                }
+                
+                return appointments;
+            } else {
+                throw Exception('Server returned status ${response.statusCode}: ${response.body}');
+            }
+        } catch (e) {
+            print('❌ AppointmentService error: $e');
+            throw Exception('Failed to load pending appointments for doctor: $e');
+        }
+    }
 
-	static Future<bool> updateAppointmentStatus(String appointmentId, String status) async {
-		try {
-			print('🌐 Making request to update appointment status: $baseUrl/update-appointment-status/$appointmentId');
-			final response = await http.put(
-				Uri.parse('$baseUrl/update-appointment-status/$appointmentId'),
-				headers: {'Content-Type': 'application/json'},
-				body: json.encode({'status': status}),
-			);
-			
-			print('📡 Update status response status: ${response.statusCode}');
-			print('📋 Update status response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final Map<String, dynamic> data = json.decode(response.body);
-				return data['success'] == true;
-			} else {
-				print('❌ Failed to update appointment status: ${response.statusCode}');
-				return false;
-			}
-		} catch (e) {
-			print('❌ Error updating appointment status: $e');
-			return false;
-		}
-	}
+    static Future<bool> updateAppointmentStatus(String appointmentId, String status) async {
+        try {
+            print('🌐 Making request to update appointment status: $baseUrl/update-appointment-status/$appointmentId');
+            final response = await http.put(
+                Uri.parse('$baseUrl/update-appointment-status/$appointmentId'),
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({'status': status}),
+            );
+            
+            print('📡 Update status response status: ${response.statusCode}');
+            print('📋 Update status response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final Map<String, dynamic> data = json.decode(response.body);
+                return data['success'] == true;
+            } else {
+                print('❌ Failed to update appointment status: ${response.statusCode}');
+                return false;
+            }
+        } catch (e) {
+            print('❌ Error updating appointment status: $e');
+            return false;
+        }
+    }
 
-	static Future<List<int>> fetchMonthlyAppointmentStats(String doctorId) async {
+    static Future<List<int>> fetchMonthlyAppointmentStats(String doctorId) async {
     try {
         print('🌐 Making request to: $baseUrl/doctor/monthly-stats/$doctorId');
         final response = await http.get(
@@ -452,7 +460,7 @@ class AppointmentService {
     }
 }
 
-	static Future<bool> incrementMonthlyAppointments(String doctorId, int month) async {
+    static Future<bool> incrementMonthlyAppointments(String doctorId, int month) async {
   try {
     print('🌐 incrementMonthlyAppointments called with doctorId: $doctorId, month: $month');
     print('🌐 Making request to: $baseUrl/doctor/increment-monthly/$doctorId');
@@ -481,32 +489,32 @@ class AppointmentService {
   }
 }
 
-	static Future<bool> decrementMonthlyAppointments(String doctorId, int month) async {
-		try {
-			print('🌐 decrementMonthlyAppointments called with doctorId: $doctorId, month: $month');
-			print('🌐 Making request to: $baseUrl/doctor/decrement-monthly/$doctorId');
-			
-			final response = await http.post(
-				Uri.parse('$baseUrl/doctor/decrement-monthly/$doctorId'),
-				headers: {'Content-Type': 'application/json'},
-				body: json.encode({'month': month}),
-			);
-			
-			print('📡 Decrement response status: ${response.statusCode}');
-			print('📡 Decrement response body: ${response.body}');
-			
-			if (response.statusCode == 200) {
-				final responseData = json.decode(response.body);
-				print('✅ Decrement successful: ${responseData}');
-				return true;
-			} else {
-				print('❌ Decrement failed with status: ${response.statusCode}');
-				return false;
-			}
-		} catch (e, stackTrace) {
-			print('❌ Error decrementing monthly stats: $e');
-			print('❌ Stack trace: $stackTrace');
-			return false;
-		}
-	}
+    static Future<bool> decrementMonthlyAppointments(String doctorId, int month) async {
+        try {
+            print('🌐 decrementMonthlyAppointments called with doctorId: $doctorId, month: $month');
+            print('🌐 Making request to: $baseUrl/doctor/decrement-monthly/$doctorId');
+            
+            final response = await http.post(
+                Uri.parse('$baseUrl/doctor/decrement-monthly/$doctorId'),
+                headers: {'Content-Type': 'application/json'},
+                body: json.encode({'month': month}),
+            );
+            
+            print('📡 Decrement response status: ${response.statusCode}');
+            print('📡 Decrement response body: ${response.body}');
+            
+            if (response.statusCode == 200) {
+                final responseData = json.decode(response.body);
+                print('✅ Decrement successful: ${responseData}');
+                return true;
+            } else {
+                print('❌ Decrement failed with status: ${response.statusCode}');
+                return false;
+            }
+        } catch (e, stackTrace) {
+            print('❌ Error decrementing monthly stats: $e');
+            print('❌ Stack trace: $stackTrace');
+            return false;
+        }
+    }
 }
