@@ -311,17 +311,10 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 8),
-                        Text("Accepting New Appointments"),
                       ],
                     ),
                   ),
-                  Switch(
-                    value: acceptingAppointments,
-                    onChanged: (value) {
-                      setState(() => acceptingAppointments = value);
-                    },
-                    activeColor: Colors.green,
-                  ),
+                  
                 ],
               ),
             ),
