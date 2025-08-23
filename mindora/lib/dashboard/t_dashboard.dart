@@ -87,7 +87,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     }
     
     // Fallback to default asset image
-    return const AssetImage('assets/nabiha.jpg');
+    return const AssetImage('assets/demo_profile.jpg');
   }
 
   Future<void> _loadTodayAppointments() async {

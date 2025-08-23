@@ -66,6 +66,9 @@ class _SignUpPageState extends State<SignUpPage> {
         isPatient: _isPatient,
       );
 
+      print("result: ");
+      print(result);
+
       if (result['success']) {
         print('✅ User created successfully');
 

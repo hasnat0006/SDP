@@ -88,7 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     
     // Fallback to default asset image
-    return const AssetImage('assets/zaima.jpg');
+    return const AssetImage('assets/demo_profile.jpg');
   }
 
   Future<void> _loadTodayStressData() async {

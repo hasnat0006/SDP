@@ -25,7 +25,7 @@ class _UserProfilePageState extends State<UserProfilePage>
     'gender': 'Not specified',
     'profession': 'Loading...',
     'bio': 'Loading...',
-    'profileImage': 'assets/nabiha.jpeg', // Default fallback
+    'profileImage': 'assets/demo_profile.jpg', // Default fallback
     'emergency_contact': null,
   };
 
@@ -249,7 +249,7 @@ class _UserProfilePageState extends State<UserProfilePage>
     }
 
     // Fallback to default asset image
-    return AssetImage(profileImageUrl ?? 'assets/nabiha.jpeg');
+    return AssetImage(profileImageUrl ?? 'assets/demo_profile.jpg');
   }
 
   @override

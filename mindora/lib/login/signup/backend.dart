@@ -17,12 +17,11 @@ class BackendService {
         'bdn': bdn,
         'isPatient': isPatient,
       });
-
       return {
         'success': true,
         'message': 'Account created successfully!',
         'data': response,
-        'userId': response[0]['user']['id'].toString(), // Extract user ID
+        'userId': response['user']['id'], // Extract user ID
       };
     } catch (e) {
       return {
@@ -61,8 +60,10 @@ class BackendService {
   // Validation for emergency contacts
   static Map<String, dynamic> validateEmergencyContacts(List<String> contacts) {
     // Remove empty contacts
-    final validContacts = contacts.where((contact) => contact.trim().isNotEmpty).toList();
-    
+    final validContacts = contacts
+        .where((contact) => contact.trim().isNotEmpty)
+        .toList();
+
     if (validContacts.length < 2) {
       return {
         'isValid': false,
