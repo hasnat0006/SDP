@@ -2,7 +2,6 @@ import 'package:client/appointment/bookappt.dart';
 import 'package:client/appointment/booked_appt.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/journal/journal.dart';
-import 'package:client/demo_notification_page.dart';
 import 'package:client/mood/mood_spinner.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
@@ -513,20 +512,6 @@ class _DashboardPageState extends State<DashboardPage> {
                         child: child,
                       );
                     },
-              ),
-            );
-          },
-        ),
-        _trackerTile(
-          Icons.notifications,
-          'Demo Notification',
-          'Test app notifications',
-          context,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const DemoNotificationPage(),
               ),
             );
           },
