@@ -1,7 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class GeminiService {
-  static const String _apiKey = "AIzaSyCfVufSlPBJAktd2Bs776JGvX2ubUx9W_o";
+  static final String _apiKey = dotenv.env['GEMINI_API']!;
   static late GenerativeModel _model;
 
   static void initialize() {
