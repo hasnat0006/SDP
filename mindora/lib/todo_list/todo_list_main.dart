@@ -216,7 +216,7 @@ class _ToDoPageState extends State<ToDoPage> {
           // Schedule notifications for tasks with due dates
           for (final task in selectedTasks) {
             if (task.dueDate != null) {
-              TaskNotificationService.scheduleTaskReminder(task);
+              TaskNotificationService.scheduleTaskDueNotification(task);
             }
           }
 
@@ -367,7 +367,7 @@ class _ToDoPageState extends State<ToDoPage> {
 
             // Schedule new notifications if needed
             if (updatedTask.dueDate != null) {
-              TaskNotificationService.scheduleTaskReminder(updatedTask);
+              TaskNotificationService.scheduleTaskDueNotification(updatedTask);
             }
           },
         );

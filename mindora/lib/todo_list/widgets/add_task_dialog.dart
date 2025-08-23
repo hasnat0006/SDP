@@ -250,7 +250,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                       SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          'You\'ll receive a notification 1 hour before the due time',
+                          'You\'ll receive a notification at the exact due time',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue[600],

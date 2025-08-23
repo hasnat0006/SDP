@@ -1,6 +1,7 @@
 import 'package:client/dashboard/t_dashboard.dart';
 import 'package:client/forum/forum.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/services/notification_navigation_controller.dart';
 import 'package:client/therapist/manage_app.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -37,6 +38,10 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   String _userId = '';
   String _userType = '';
 
+  // Navigation controller for handling notification navigation
+  final NotificationNavigationController _navController =
+      NotificationNavigationController();
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,9 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+
+    // Listen for navigation requests from notifications
+    _navController.navigationRequest.addListener(_handleNavigationRequest);
   }
 
   Future<void> _loadUserData() async {
@@ -65,7 +73,41 @@ class _MainNavBarState extends State<MainNavBar> with TickerProviderStateMixin {
   @override
   void dispose() {
     _animationController.dispose();
+    _navController.navigationRequest.removeListener(_handleNavigationRequest);
     super.dispose();
+  }
+
+  // Handle navigation requests from notifications
+  void _handleNavigationRequest() {
+    final request = _navController.navigationRequest.value;
+    if (request != null && _userType == 'patient') {
+      // Navigate to tasks tab (index 2 for patients)
+      setState(() {
+        _currentIndex = 2; // Tasks tab for patients
+      });
+
+      // Clear the navigation request
+      _navController.clearNavigationRequest();
+
+      // Show a snackbar with task information
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            request.type == "reminder"
+                ? "Navigated to reminder: ${request.taskTitle}"
+                : request.type == "due"
+                ? "Navigated to due task: ${request.taskTitle}"
+                : "Navigated to task: ${request.taskTitle}",
+          ),
+          backgroundColor: const Color(0xFF4A148C),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   // Navigation items configuration
