@@ -9,6 +9,7 @@ import 'package:client/services/user_service.dart';
 import 'package:client/profile/backend.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../todo_list/todo_list_main.dart';
 import '../stress/stress_tracker.dart';
 import '../stress/stress_insights.dart';
@@ -290,6 +291,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildHeader() {
+    // Get today's date and format it
+    final DateTime now = DateTime.now();
+    final String formattedDate = DateFormat('E, dd MMM yyyy').format(now);
+    
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFD1A1E3),
@@ -309,9 +314,9 @@ class _DashboardPageState extends State<DashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Tue, 25 Jan 2025",
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              Text(
+                formattedDate, // Use dynamic date instead of hardcoded
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
                 _userProfileData?['name'] != null 
