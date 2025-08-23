@@ -19,7 +19,6 @@ class EmergencyContactPopup extends StatefulWidget {
 class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
   final _contact1Controller = TextEditingController();
   final _contact2Controller = TextEditingController();
-  final _contact3Controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
@@ -27,7 +26,6 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
   void dispose() {
     _contact1Controller.dispose();
     _contact2Controller.dispose();
-    _contact3Controller.dispose();
     super.dispose();
   }
 
@@ -48,7 +46,7 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
         decoration: InputDecoration(
           labelText: '$label ${isRequired ? '*' : '(Optional)'}',
           hintText: 'Enter phone number',
-          prefixText: '+',
+         
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -62,7 +60,7 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
             return 'This field is required';
           }
           if (value != null && value.isNotEmpty && value.length < 10) {
-            return 'Please enter a valid phone number (at least 10 digits)';
+            return 'Please enter a valid phone number';
           }
           return null;
         },
@@ -75,11 +73,10 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
       return;
     }
 
-    // Check if at least 2 contacts are provided
+    // Check if both contacts are provided
     final contacts = [
       _contact1Controller.text.trim(),
       _contact2Controller.text.trim(),
-      _contact3Controller.text.trim(),
     ];
 
     final validContacts = contacts.where((contact) => contact.isNotEmpty).toList();
@@ -87,7 +84,7 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
     if (validContacts.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please provide at least 2 emergency contacts'),
+          content: Text('Please provide both emergency contacts'),
           backgroundColor: Colors.red,
         ),
       );
@@ -177,7 +174,7 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Please provide at least 2 emergency contacts. These will be used in case of emergencies.',
+                'Please provide 2 emergency contacts.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -185,7 +182,7 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
               ),
               const SizedBox(height: 24),
 
-              // Contact Fields
+              // Contact Fields (only 2 now)
               _buildContactField(
                 controller: _contact1Controller,
                 label: 'Emergency Contact 1',
@@ -195,11 +192,6 @@ class _EmergencyContactPopupState extends State<EmergencyContactPopup> {
                 controller: _contact2Controller,
                 label: 'Emergency Contact 2',
                 isRequired: true,
-              ),
-              _buildContactField(
-                controller: _contact3Controller,
-                label: 'Emergency Contact 3',
-                isRequired: false,
               ),
 
               // Buttons
