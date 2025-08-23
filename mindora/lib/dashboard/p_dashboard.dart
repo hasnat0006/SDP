@@ -6,6 +6,7 @@ import 'package:client/mood/mood_spinner.dart';
 import 'package:client/mood/Mood_insights.dart';
 import 'package:client/mood/backend.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/profile/backend.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../todo_list/todo_list_main.dart';
@@ -29,6 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _stressButtonText = 'Log your details for today';
   Map<String, dynamic>? _todayMoodData;
   String _moodButtonText = 'Log your details for today';
+  Map<String, dynamic>? _userProfileData; // Add this line
 
   @override
   void initState() {
@@ -45,14 +47,47 @@ class _DashboardPageState extends State<DashboardPage> {
       });
       print('Loaded user data - ID: $_userId, Type: $_userType');
       
-      // Load today's stress data after user data is loaded
+      // Load user profile data including profile image
       if (_userId.isNotEmpty) {
+        await _loadUserProfile();
         await _loadTodayStressData();
         await _loadTodayMoodData();
       }
     } catch (e) {
       print('Error loading user data: $e');
     }
+  }
+
+  // Add this method to load user profile
+  Future<void> _loadUserProfile() async {
+    try {
+      final ProfileBackend profileBackend = ProfileBackend();
+      final response = await profileBackend.getUserProfile(_userId, _userType);
+      
+      if (response['success'] == true || response.containsKey('name')) {
+        setState(() {
+          _userProfileData = response;
+        });
+        print('User profile loaded successfully');
+      } else {
+        print('Failed to load user profile: ${response['message'] ?? 'Unknown error'}');
+      }
+    } catch (e) {
+      print('Error loading user profile: $e');
+    }
+  }
+
+  // Add this method to get profile image
+  ImageProvider _getProfileImage() {
+    final profileImageUrl = _userProfileData?['profileImage'];
+    if (profileImageUrl != null && 
+        profileImageUrl.toString().isNotEmpty &&
+        profileImageUrl.toString().startsWith('http')) {
+      return NetworkImage(profileImageUrl);
+    }
+    
+    // Fallback to default asset image
+    return const AssetImage('assets/zaima.jpg');
   }
 
   Future<void> _loadTodayStressData() async {
@@ -263,11 +298,12 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 30,
-            backgroundImage: AssetImage(
-              'assets/zaima.jpg',
-            ), // Replace with real image
+            backgroundImage: _getProfileImage(), // Use dynamic profile image
+            onBackgroundImageError: (exception, stackTrace) {
+              print('Error loading profile image: $exception');
+            },
           ),
           const SizedBox(width: 16),
           Column(
@@ -278,9 +314,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
-                _userType.isNotEmpty
-                    ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
-                    : "Welcome back, User!",
+                _userProfileData?['name'] != null 
+                    ? "Welcome back, ${_userProfileData!['name']}!"
+                    : _userType.isNotEmpty
+                        ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
+                        : "Welcome back, User!",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
