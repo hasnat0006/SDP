@@ -39,6 +39,17 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
     _loadData();
   }
 
+  // Helper method to safely parse double values
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
   Future<void> _loadChartData() async {
     String? userId = await UserService.getUserId();
     userId ??= 'test_user_123';
@@ -467,25 +478,44 @@ Divider(
 ),
                     const SizedBox(height: 20),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Icon(Icons.bedtime_rounded, color: Colors.deepPurple),
-                        const SizedBox(width: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              sleepData != null 
-                                  ? "${sleepData!['hours_slept']} hours of sleep"
-                                  : "Sleep data not available",
-                              style: GoogleFonts.poppins(fontSize: 14)
-                            ),
-                            Text(
-                              sleepData != null
-                                  ? MoodTrackerBackend.getSleepHoursDescription(sleepData!['hours_slept'].toDouble())
-                                  : "You haven't given today's sleep update yet",
-                              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)
-                            )
-                          ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.bedtime_rounded, color: Colors.deepPurple),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    sleepData != null 
+                                        ? "${sleepData!['sleep_hours'] ?? 'N/A'} hours of sleep"
+                                        : "Sleep data not available",
+                                    style: GoogleFonts.poppins(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                sleepData != null
+                                    ? MoodTrackerBackend.getSleepHoursDescription(_parseDouble(sleepData!['sleep_hours']))
+                                    : "You haven't given today's sleep update yet",
+                                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        CircleAvatar(
+                          backgroundColor: const Color(0xFFEEE6FA),
+                          radius: 18,
+                          child: Icon(
+                            Icons.bedtime,
+                            color: Colors.deepPurple,
+                            size: 20,
+                          ),
                         )
                       ],
                     )
@@ -672,15 +702,15 @@ const SizedBox(height: 20),
 
 _buildMoodChart(),
 
-const SizedBox(height: 20),
+const SizedBox(height: 10),
 
-
-              const SizedBox(height: 20),
+const SizedBox(height: 10),
               // Right-aligned: History: [calendar icon] [date]
 
 const SizedBox(height: 10),
 
-// Title: Mood History + current week range
+// Title: Mood History + current week range - COMMENTED OUT
+/*
 Text(
   "Mood History (${getCurrentWeekRange()})",
   style: GoogleFonts.poppins(
@@ -689,14 +719,15 @@ Text(
     color: Colors.brown,
   ),
 ),
+*/
 
 const SizedBox(height: 8),
 
 
               const SizedBox(height: 12),
 
-              //Mood History Icons
-
+              //Mood History Icons - COMMENTED OUT
+              /*
 Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
   children: List.generate(7, (index) {
@@ -835,6 +866,7 @@ Row(
     );
   }),
 ),
+*/
 
 
 
@@ -977,7 +1009,7 @@ Row(
                 final double barHeight = data[i] == 0 
                     ? 20.0 
                     : maxVal > 0 
-                        ? ((data[i] / maxVal) * 180) + 20 
+                        ? ((data[i] / maxVal) * 140) + 20 
                         : 20.0;
                 
                 Color getBarColor(double moodValue) {
@@ -1118,7 +1150,7 @@ Row(
                 final double barHeight = data[i] == 0 
                     ? 20.0 
                     : maxVal > 0 
-                        ? ((data[i] / maxVal) * 180) + 20 
+                        ? ((data[i] / maxVal) * 140) + 20 
                         : 20.0;
                 
                 Color getBarColor(double moodValue) {
@@ -1251,7 +1283,7 @@ Row(
                   final double barHeight = data[i] == 0 
                       ? 20.0 
                       : maxVal > 0 
-                          ? ((data[i] / maxVal) * 180) + 20 
+                          ? ((data[i] / maxVal) * 140) + 20 
                           : 20.0;
                   
                   Color getBarColor(double moodValue) {
@@ -1386,7 +1418,7 @@ Row(
                   final double barHeight = data[i] == 0 
                       ? 20.0 
                       : maxVal > 0 
-                          ? ((data[i] / maxVal) * 180) + 20 
+                          ? ((data[i] / maxVal) * 140) + 20 
                           : 20.0;
                   
                   Color getBarColor(double moodValue) {

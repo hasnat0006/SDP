@@ -5,13 +5,12 @@ const router = express.Router();
 // Store sleep tracking data
 router.post("/track", async (req, res) => {
   try {
-    const { user_id, hours_slept, sleep_quality, bedtime, wake_time, date } =
-      req.body;
-
+    const { user_id, sleep_hours, sleep_quality, bedtime, wake_time, date } = req.body;
+    
     const result = await sql`
       INSERT INTO sleep_tracker (
         user_id, 
-        hours_slept, 
+        sleep_hours, 
         sleep_quality, 
         bedtime, 
         wake_time, 
@@ -19,7 +18,7 @@ router.post("/track", async (req, res) => {
       ) 
       VALUES (
         ${user_id}, 
-        ${hours_slept}, 
+        ${sleep_hours}, 
         ${sleep_quality}, 
         ${bedtime}, 
         ${wake_time}, 
@@ -65,24 +64,27 @@ router.get("/data/:userId", async (req, res) => {
 router.get("/data/:userId/:date", async (req, res) => {
   try {
     const { userId, date } = req.params;
-    console.log("User ID:", userId, "Date:", date);
-
-    // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
+    console.log("Sleep API - User ID:", userId, "Date:", date);
+    
     const result = await sql`
       SELECT * FROM sleep_tracker 
       WHERE user_id = ${userId} 
-      AND DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${date}
+      AND DATE(date) = ${date}
       ORDER BY date DESC
       LIMIT 1
     `;
+    
+    console.log("Sleep data query result:", result);
 
     if (result.length === 0) {
-      return res.status(404).json({
+      console.log("No sleep data found for date:", date);
+      return res.status(404).json({ 
         message: "No sleep data found for this date",
         data: null,
       });
     }
 
+    console.log("Returning sleep data:", result[0]);
     res.json(result[0]);
   } catch (err) {
     console.error("Error retrieving sleep data for date:", err);

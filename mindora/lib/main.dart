@@ -1,6 +1,7 @@
 import 'package:client/login/signup/login.dart';
 import 'package:client/navbar/navbar.dart';
 import 'package:client/services/notification_service.dart';
+import 'package:client/services/gemini_service.dart';
 import 'package:client/services/navigation_service.dart';
 import 'package:client/services/supabase_service.dart';
 import 'package:client/services/user_service.dart';
@@ -15,6 +16,7 @@ void main() async {
   // Initialize Supabase (non-blocking)
   await SupabaseService.initialize();
 
+  GeminiService.initialize();
   runApp(const MyApp());
 }
 

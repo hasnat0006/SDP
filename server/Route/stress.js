@@ -7,7 +7,6 @@ router.post("/track", async (req, res) => {
   try {
     const { user_id, stress_level, cause, logged_symptoms, Notes, date } = req.body;
     
-    // Store the date with explicit timezone handling for Dhaka
     const result = await sql`
       INSERT INTO stress_tracker (
         user_id, 
@@ -23,7 +22,7 @@ router.post("/track", async (req, res) => {
         ${cause}, 
         ${logged_symptoms}, 
         ${Notes}, 
-        (${date}::timestamp AT TIME ZONE '+06:00')::timestamp with time zone
+        ${date}
       )
       RETURNING *
     `;

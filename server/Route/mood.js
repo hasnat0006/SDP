@@ -31,7 +31,7 @@ router.post("/track", async (req, res) => {
         ${mood_status}, 
         ${mood_level}, 
         ${reasonArray}, 
-        (${date}::timestamp AT TIME ZONE '+06:00')::timestamp with time zone
+        ${date}
       )
       RETURNING *
     `;
@@ -85,11 +85,9 @@ router.get("/data/:userId/:date", async (req, res) => {
     const { userId, date } = req.params;
     console.log("User ID:", userId, "Date:", date);
     
-    // Convert the date to local timezone (UTC+6 for Dhaka) before comparing
     const result = await sql`
       SELECT * FROM mood_tracker 
-      WHERE user_id = ${userId} 
-      AND DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${date}
+      WHERE user_id = ${userId} AND DATE(date) = ${date}
       ORDER BY date DESC
       LIMIT 1
     `;
@@ -125,16 +123,16 @@ router.get("/weekly/:userId", async (req, res) => {
     // Get data for a wider range to ensure we catch all relevant data
     const result = await sql`
       SELECT 
-        DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as date,
+        DATE(date) as date,
         mood_status,
         mood_level,
         reason,
-        EXTRACT(DOW FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as day_of_week,
-        TO_CHAR(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00', 'YYYY-MM-DD') as formatted_date
+        EXTRACT(DOW FROM date) as day_of_week,
+        TO_CHAR(date, 'YYYY-MM-DD') as formatted_date
       FROM mood_tracker 
       WHERE user_id = ${userId} 
-        AND date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00' >= CURRENT_DATE - INTERVAL '10 days'
-        AND date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00' <= CURRENT_DATE + INTERVAL '3 days'
+        AND date >= CURRENT_DATE - INTERVAL '10 days'
+        AND date <= CURRENT_DATE + INTERVAL '3 days'
       ORDER BY date ASC
     `;
 
@@ -182,15 +180,15 @@ router.get("/monthly/:userId/:year/:month", async (req, res) => {
     
     const result = await sql`
       SELECT 
-        DATE(date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as date,
+        DATE(date) as date,
         mood_status,
         mood_level,
         reason,
-        EXTRACT(WEEK FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') - EXTRACT(WEEK FROM DATE_TRUNC('month', date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00')) + 1 as week_number
+        EXTRACT(WEEK FROM date) - EXTRACT(WEEK FROM DATE_TRUNC('month', date)) + 1 as week_number
       FROM mood_tracker 
       WHERE user_id = ${userId} 
-        AND EXTRACT(YEAR FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${year}
-        AND EXTRACT(MONTH FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${month}
+        AND EXTRACT(YEAR FROM date) = ${year}
+        AND EXTRACT(MONTH FROM date) = ${month}
       ORDER BY date ASC
     `;
 
@@ -233,13 +231,13 @@ router.get("/yearly/:userId/:year", async (req, res) => {
     
     const result = await sql`
       SELECT 
-        EXTRACT(MONTH FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as month,
+        EXTRACT(MONTH FROM date) as month,
         AVG(mood_level::float) as avg_mood_level,
         COUNT(*) as entry_count
       FROM mood_tracker 
       WHERE user_id = ${userId} 
-        AND EXTRACT(YEAR FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') = ${year}
-      GROUP BY EXTRACT(MONTH FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00')
+        AND EXTRACT(YEAR FROM date) = ${year}
+      GROUP BY EXTRACT(MONTH FROM date)
       ORDER BY month ASC
     `;
 
@@ -265,12 +263,12 @@ router.get("/all-time/:userId", async (req, res) => {
     
     const result = await sql`
       SELECT 
-        EXTRACT(YEAR FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00') as year,
+        EXTRACT(YEAR FROM date) as year,
         AVG(mood_level::float) as avg_mood_level,
         COUNT(*) as entry_count
       FROM mood_tracker 
       WHERE user_id = ${userId}
-      GROUP BY EXTRACT(YEAR FROM date AT TIME ZONE 'UTC' AT TIME ZONE '+06:00')
+      GROUP BY EXTRACT(YEAR FROM date)
       ORDER BY year ASC
     `;
 
