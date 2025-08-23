@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:screen_state/screen_state.dart';
 import 'sleepinput.dart';
+import 'backend.dart';
 
 class Sleeptracker extends StatefulWidget {
   final String userId;
@@ -56,10 +57,76 @@ class _SleeptrackerState extends State<Sleeptracker> {
 
           debugPrint('$offDuration');
         }
+
+        final hours = _totalScreenOff.inHours;
       });
     } catch (e) {
       debugPrint('Failed to listen to screen events: $e');
     }
+  }
+
+  Future<void> sleepConfirm({required int hours}) async {
+    try {
+      // 1. Capture now
+      final now = DateTime.now();
+
+      // 2a. If you just want ISO 8601:
+
+      // 2b. Or use intl for a 'yyyy-MM-dd' string:
+      final formattedDate = DateFormat('yyyy-MM-dd').format(now);
+
+      // 3. Build your payload
+
+      // 4. Send to backend
+      await sleepInput(hours: hours, date: now, userId: widget.userId);
+      await _showSuccessPopup();
+    } catch (error) {
+      // surfacing errors to console or UI
+      print('Error recording sleep: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> _showSuccessPopup() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Success!',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'Your sleep hours have been recorded successfully.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop(); // Close the popup
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MainNavBar(),
+                  ), // Navigate to the main page
+                );
+              },
+              child: Text(
+                'Close',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple[700],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -102,14 +169,14 @@ class _SleeptrackerState extends State<Sleeptracker> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'You were “asleep” from\n'
+                  'You were sleeping from\n'
                   '${_formatTime(_sleepStartTime)} to ${_formatTime(_wakeTime)}',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Total locked time: $hours h $minutes m',
+                  'Total hours slept: $hours h $minutes m',
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 16),
@@ -117,10 +184,9 @@ class _SleeptrackerState extends State<Sleeptracker> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => MainNavBar()),
-                      ),
+                      onPressed: () {
+                        sleepConfirm(hours: hours); // Show success pop-up
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 211, 154, 213),
                         textStyle: TextStyle(
