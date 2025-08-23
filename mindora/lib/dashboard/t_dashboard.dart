@@ -19,12 +19,15 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   String _userName = '';
   List<Map<String, String>> todayAppointments = [];
   bool isLoadingAppointments = true;
+  List<int> monthlyStats = List.generate(12, (index) => 0);
+  bool isLoadingStats = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadTodayAppointments();
+    _loadMonthlyStats();
   }
 
   Future<void> _loadUserData() async {
@@ -39,7 +42,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       }
       print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
       
-      // Safety check - if this is not a doctor/therapist account, don't load appointments
+      
       if (_userType == 'patient') {
         print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
         return;
@@ -51,7 +54,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
   Future<void> _loadTodayAppointments() async {
     try {
-      // Safety check - only load appointments if user type is doctor/therapist
+      
       if (_userType == 'patient') {
         print('⚠️ Skipping appointment loading for patient account');
         if (mounted) {
@@ -62,10 +65,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         return;
       }
       
-      // Import the appointment service
+      
       final appointments = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
       
-      // Filter for today's appointments
+     
       final today = DateTime.now();
       final todayStr = '${today.day}/${today.month}/${today.year}';
       
@@ -82,7 +85,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             'age': patientDetails?.age ?? '',
             'gender': patientDetails?.gender ?? '',
             'profession': patientDetails?.profession ?? '',
-            'reason': 'Consultation', // Default reason since not in DB
+            'reason': 'Consultation', 
           });
         }
       }
@@ -98,6 +101,42 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       if (mounted) {
         setState(() {
           isLoadingAppointments = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMonthlyStats() async {
+    try {
+      if (_userId.isEmpty) {
+        
+        await _loadUserData();
+      }
+      
+      if (_userType == 'patient') {
+        print('⚠️ Skipping stats loading for patient account');
+        if (mounted) {
+          setState(() {
+            isLoadingStats = false;
+          });
+        }
+        return;
+      }
+      
+      final stats = await AppointmentService.fetchMonthlyAppointmentStats(_userId);
+      
+      if (mounted) {
+        setState(() {
+          monthlyStats = stats;
+          isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading monthly stats: $e');
+      if (mounted) {
+        setState(() {
+          monthlyStats = List.generate(12, (index) => 0);
+          isLoadingStats = false;
         });
       }
     }
@@ -176,16 +215,32 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   shadowColor: Colors.grey.withOpacity(0.18),
                   padding: EdgeInsets.zero,
                 ),
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ManageAppointments(
-                        doctorId: _userId,
-                        userType: _userType,
-                      ),
+                      builder: (context) => ManageAppointments(),
                     ),
                   );
+                  
+                  
+                  print('🔄 Returned from manage appointments, refreshing dashboard...');
+                  if (mounted) {
+                   
+                    setState(() {
+                      isLoadingStats = true;
+                    });
+                    await _loadMonthlyStats();
+                    
+                   
+                    setState(() {
+                      isLoadingAppointments = true;
+                    });
+                    await _loadTodayAppointments();
+                    
+                    print('✅ Dashboard data refreshed');
+                  }
                 },
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -259,17 +314,35 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     ];
     final now = DateTime.now();
     final currentMonth = now.month;
-    final random = Random();
 
-    final List<int> data = List.generate(12, (i) {
-      if (i < currentMonth) {
-        return 5 + random.nextInt(16);
-      } else {
-        return 0;
-      }
-    });
+    if (isLoadingStats) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8, bottom: 20),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32.0),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
 
-    final int maxVal = data.reduce(max);
+    
+    final List<int> data = monthlyStats;
+    final int maxVal = data.isEmpty ? 1 : data.reduce((a, b) => a > b ? a : b);
+    final int displayMaxVal = maxVal == 0 ? 1 : maxVal;
 
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 20),
@@ -288,9 +361,24 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Appointments in 2025",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Appointments in 2025",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // Refresh monthly stats
+                  setState(() {
+                    isLoadingStats = true;
+                  });
+                  await _loadMonthlyStats();
+                },
+                child: const Text('Refresh'),
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -298,7 +386,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(12, (i) {
-                final double barHeight = maxVal > 0 ? (data[i] / maxVal) * 120 : 0;
+                final double barHeight = displayMaxVal > 0 ? (data[i] / displayMaxVal) * 120 : 0;
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,

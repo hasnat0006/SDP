@@ -38,8 +38,10 @@ router.get("/login", async (req, res) => {
 // Signup endpoint
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, name, bdn, isPatient } = req.body;
+    const { email, password, name, bdn, isPatient, emergencyContacts } = req.body;
     console.log("Attempting to create new user:", email);
+    console.log("Emergency contacts:", emergencyContacts);
+    
     // Check if user already exists
     const existingUser = await sql`SELECT * FROM users WHERE email = ${email}`;
     if (existingUser.length > 0) {
@@ -60,7 +62,7 @@ router.post("/signup", async (req, res) => {
       RETURNING id, email
     `;
 
-    await postInOtherTable(newUser[0].id, bdn, isPatient);
+    await postInOtherTable(newUser[0].id, bdn, isPatient, emergencyContacts);
     console.log("Successfully created user:", newUser[0]);
     res.status(201).json({
       message: "User created successfully",
@@ -72,13 +74,53 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-async function postInOtherTable(userId, bdn, isPatient) {
-  if (isPatient) {
-    // Logic to insert into patient table
-    await sql`
-      INSERT INTO patient (user_id) 
-      VALUES (${userId})
+// Add emergency contact update route
+router.post("/update-emergency-contacts", async (req, res) => {
+  try {
+    const { userId, emergencyContacts } = req.body;
+    console.log("Updating emergency contacts for user:", userId);
+    console.log("Emergency contacts:", emergencyContacts);
+    
+    if (!emergencyContacts || !Array.isArray(emergencyContacts)) {
+      return res.status(400).json({ error: "Emergency contacts must be an array" });
+    }
+
+    // Update patient table with emergency contacts
+    const result = await sql`
+      UPDATE patient 
+      SET emergency_contact = ${emergencyContacts}
+      WHERE user_id = ${userId}
     `;
+
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    console.log("Successfully updated emergency contacts");
+    res.status(200).json({
+      message: "Emergency contacts updated successfully",
+      contacts: emergencyContacts
+    });
+  } catch (err) {
+    console.error("Update emergency contacts error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function postInOtherTable(userId, bdn, isPatient, emergencyContacts = null) {
+  if (isPatient) {
+    // Logic to insert into patient table with emergency contacts
+    if (emergencyContacts && Array.isArray(emergencyContacts)) {
+      await sql`
+        INSERT INTO patient (user_id, emergency_contact) 
+        VALUES (${userId}, ${emergencyContacts})
+      `;
+    } else {
+      await sql`
+        INSERT INTO patient (user_id) 
+        VALUES (${userId})
+      `;
+    }
   } else {
     // Logic to insert into doctor table
     await sql`

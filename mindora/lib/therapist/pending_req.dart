@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:client/services/user_service.dart';
 import './backend.dart';
 
 class PendingRequestsPage extends StatefulWidget {
-  final String? doctorId;
-  final String? userType; // Add user type for consistency
-  
-  const PendingRequestsPage({Key? key, this.doctorId, this.userType}) : super(key: key);
+  const PendingRequestsPage({Key? key}) : super(key: key);
 
   @override
   State<PendingRequestsPage> createState() => _PendingRequestsPageState();
@@ -15,30 +13,58 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
   bool acceptingAppointments = true;
   List<Appointment> pendingRequests = [];
   bool isLoading = true;
+  String _userId = '';
+  String _userType = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchPendingRequests();
+    _loadUserDataAndFetchRequests();
+  }
+
+  Future<void> _loadUserDataAndFetchRequests() async {
+    try {
+      // Load user data first
+      final userData = await UserService.getUserData();
+      setState(() {
+        _userId = userData['userId'] ?? '';
+        _userType = userData['userType'] ?? '';
+      });
+      
+      print('Loaded user data in pending requests - ID: $_userId, Type: $_userType');
+      
+      // Then fetch pending requests
+      await _fetchPendingRequests();
+    } catch (e) {
+      print('❌ Error loading user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+      _showErrorDialog('Failed to load user data: $e');
+    }
   }
 
   Future<void> _fetchPendingRequests() async {
     try {
-      print('🔄 Fetching pending appointments for doctor: ${widget.doctorId}');
+      print('🔄 Fetching pending appointments for doctor: $_userId');
       
-      final fetched = await AppointmentService.fetchPendingAppointmentsForDoctor(widget.doctorId);
+      final fetched = await AppointmentService.fetchPendingAppointmentsForDoctor(_userId);
       
       print('✅ Fetched ${fetched.length} pending appointments');
-      setState(() {
-        pendingRequests = fetched;
-        isLoading = false;
-      });
+      
+      if (mounted) {
+        setState(() {
+          pendingRequests = fetched;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       print('❌ Error fetching pending appointments: $e');
-      setState(() {
-        isLoading = false;
-      });
-      _showErrorDialog('Failed to load pending appointments: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -62,6 +88,11 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
 
   void _acceptRequest(int index) async {
     final appointmentId = pendingRequests[index].appId;
+    final appointment = pendingRequests[index];
+    
+    print('🔍 Starting accept request for appointment: $appointmentId');
+    print('🔍 Appointment original date: ${appointment.originalDate}');
+    print('🔍 Doctor ID: $_userId');
     
     // Show loading dialog
     showDialog(
@@ -79,40 +110,91 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
     );
 
     try {
+      // Update appointment status to confirmed
+      print('🔍 Calling updateAppointmentStatus...');
       final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'confirmed');
-      
-      // Close loading dialog
-      Navigator.pop(context);
+      print('✅ Update appointment status result: $success');
       
       if (success) {
-        setState(() {
-          pendingRequests.removeAt(index);
-        });
+        // Parse the appointment date to get the month
+        try {
+          print('🔍 Parsing appointment original date: ${appointment.originalDate}');
+          
+          // Parse the original ISO date
+          DateTime appointmentDate = DateTime.parse(appointment.originalDate);
+          int month = appointmentDate.month; // Get month (1-12)
+          
+          print('🔍 Parsed appointment date: ${appointment.originalDate} -> Month: $month');
+          print('🔍 About to call incrementMonthlyAppointments with doctorId: $_userId, month: $month');
+          
+          // Increment monthly stats
+          final incrementSuccess = await AppointmentService.incrementMonthlyAppointments(_userId, month);
+          print('✅ Increment result: $incrementSuccess for month: $month');
+          
+          if (!incrementSuccess) {
+            print('❌ Failed to increment monthly stats');
+          }
+          
+        } catch (e, stackTrace) {
+          print('❌ Error parsing appointment date for stats: $e');
+          print('❌ Stack trace: $stackTrace');
+          print('❌ Original appointment date was: ${appointment.originalDate}');
+          print('❌ Formatted appointment date was: ${appointment.date}');
+        }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment accepted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        // Close loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        
+        // Remove from pending list
+        if (mounted) {
+          setState(() {
+            pendingRequests.removeAt(index);
+          });
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment accepted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
+        print('❌ Failed to update appointment status');
+        // Close loading dialog
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to accept appointment'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error in _acceptRequest: $e');
+      print('❌ Stack trace: $stackTrace');
+      
+      // Close loading dialog
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to accept appointment'),
+          SnackBar(
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.pop(context);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 

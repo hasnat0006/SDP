@@ -1,7 +1,7 @@
 import '../../backend/main_query.dart';
 
 class BackendService {
-  // User signup function
+  // Updated signUpUser function
   static Future<Map<String, dynamic>> signUpUser({
     required String email,
     required String password,
@@ -22,6 +22,7 @@ class BackendService {
         'success': true,
         'message': 'Account created successfully!',
         'data': response,
+        'userId': response[0]['user']['id'].toString(), // Extract user ID
       };
     } catch (e) {
       return {
@@ -30,6 +31,56 @@ class BackendService {
         'error': e.toString(),
       };
     }
+  }
+
+  // New method to update emergency contacts
+  static Future<Map<String, dynamic>> updateEmergencyContacts({
+    required String userId,
+    required List<String> emergencyContacts,
+  }) async {
+    try {
+      final response = await postToBackend('update-emergency-contacts', {
+        'userId': userId,
+        'emergencyContacts': emergencyContacts,
+      });
+
+      return {
+        'success': true,
+        'message': 'Emergency contacts updated successfully!',
+        'data': response,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to update emergency contacts: ${e.toString()}',
+        'error': e.toString(),
+      };
+    }
+  }
+
+  // Validation for emergency contacts
+  static Map<String, dynamic> validateEmergencyContacts(List<String> contacts) {
+    // Remove empty contacts
+    final validContacts = contacts.where((contact) => contact.trim().isNotEmpty).toList();
+    
+    if (validContacts.length < 2) {
+      return {
+        'isValid': false,
+        'message': 'At least 2 emergency contacts are required',
+      };
+    }
+
+    // Validate phone number format (basic validation)
+    for (String contact in validContacts) {
+      if (contact.trim().length < 10) {
+        return {
+          'isValid': false,
+          'message': 'Please enter valid phone numbers (at least 10 digits)',
+        };
+      }
+    }
+
+    return {'isValid': true, 'message': 'Emergency contacts are valid'};
   }
 
   // User login function (for future use)
