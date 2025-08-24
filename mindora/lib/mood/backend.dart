@@ -323,15 +323,15 @@ class MoodTrackerBackend {
   static String getMoodEmoji(String moodStatus) {
     switch (moodStatus.toLowerCase()) {
       case 'happy':
-        return '�'; // Big smile
+        return '😄'; // Big smile
       case 'sad':
-        return '�'; // Crying loudly
+        return '😭'; // Crying loudly
       case 'angry':
-        return '�'; // Red angry face
+        return '😡'; // Red angry face
       case 'anxious':
         return '😰'; // Anxious with sweat
       case 'excited':
-        return '�'; // Star-struck excited
+        return '🤩'; // Star-struck excited
       case 'calm':
         return '🧘'; // Meditation pose
       case 'confused':

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:math';
+import 'dart:math' as math;
 import 'Selected_mood_stats.dart';
 import 'backend.dart';
 import '../services/user_service.dart';
@@ -750,7 +750,7 @@ const SizedBox(height: 10),
     
     final double maxVal = data.every((element) => element == 0.0) 
         ? 5.0 
-        : data.reduce(max).clamp(1.0, 5.0);
+        : data.reduce(math.max).clamp(1.0, 5.0);
 
     return Container(
       width: double.infinity,
@@ -1043,17 +1043,17 @@ const SizedBox(height: 10),
           titleStyle: const TextStyle(fontSize: 0), // Hide titles
           borderSide: BorderSide(
             color: const Color(0xFFD2B48C), // Light brown border
-            width: isTouched ? 2 : 1.5,
+            width: isTouched ? 1.5 : 1, // Reduced thickness
           ),
-          badgeWidget: isTouched ? _buildTooltip(mood, percentage) : null,
-          badgePositionPercentageOffset: 1.2,
+          badgeWidget: isTouched ? _buildTooltip(mood, percentage, i, sortedMoods.length) : null,
+          badgePositionPercentageOffset: 1.1, // Closer to avoid going off-screen
         ),
       );
     }
 
     return Container(
       width: double.infinity,
-      height: 380,
+      height: 480, // Increased height to accommodate breakdown box above
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1088,26 +1088,180 @@ const SizedBox(height: 10),
           ),
           const SizedBox(height: 20),
           
-          // Chart and Legend Layout
-          Expanded(
-            child: Row(
-              children: [
-                // Pie Chart - Left side
-                Expanded(
-                  flex: 3,
-                  child: Center(
-                    child: Stack(
-                      alignment: Alignment.center,
+          // Breakdown box positioned above the pie chart
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOut,
+            builder: (context, opacity, child) {
+              return Opacity(
+                opacity: opacity,
+                child: Transform.translate(
+                  offset: Offset(0, 20 * (1 - opacity)), // Slide down effect
+                  child: Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF9F4), // Light background
+                      border: Border.all(
+                        color: Colors.brown.shade600,
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Main pie chart
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: Container(
+                        Text(
+                          'Monthly Breakdown',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.brown.shade800,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Dynamic grid layout to prevent overflow
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate how many items can fit in one row
+                            double itemWidth = 80; // Approximate width of each mood item
+                            int itemsPerRow = (constraints.maxWidth / itemWidth).floor();
+                            if (itemsPerRow < 2) itemsPerRow = 2; // Minimum 2 per row
+                            if (itemsPerRow > 3) itemsPerRow = 3; // Maximum 3 per row
+                            
+                            List<Widget> rows = [];
+                            List<MapEntry<String, int>> moodList = sortedMoods.take(5).toList();
+                            
+                            for (int i = 0; i < moodList.length; i += itemsPerRow) {
+                              List<Widget> rowItems = [];
+                              
+                              for (int j = i; j < i + itemsPerRow && j < moodList.length; j++) {
+                                final entry = moodList[j];
+                                final mood = entry.key;
+                                final count = entry.value;
+                                final percentage = (count / totalEntries * 100);
+                                
+                                rowItems.add(
+                                  Expanded(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Color indicator
+                                        Container(
+                                          width: 10,
+                                          height: 10,
+                                          decoration: BoxDecoration(
+                                            color: getMoodColor(mood),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFFD2B48C),
+                                              width: 0.8,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        // Mood info
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                mood.capitalize(),
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.brown.shade800,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                '${percentage.toStringAsFixed(1)}%',
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 8,
+                                                  color: Colors.brown.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                                
+                                // Add spacing between items in the same row
+                                if (j < i + itemsPerRow - 1 && j < moodList.length - 1) {
+                                  rowItems.add(const SizedBox(width: 8));
+                                }
+                              }
+                              
+                              rows.add(
+                                Row(
+                                  children: rowItems,
+                                ),
+                              );
+                              
+                              // Add spacing between rows
+                              if (i + itemsPerRow < moodList.length) {
+                                rows.add(const SizedBox(height: 8));
+                              }
+                            }
+                            
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: rows,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          
+          // Centered pie chart without clipping
+          Center(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Make chart size responsive to screen width
+                double chartSize = math.min(
+                  constraints.maxWidth * 0.7,
+                  constraints.maxHeight * 0.4,
+                ).clamp(220.0, 280.0);
+                
+                // Dynamic center space radius based on chart size
+                double centerRadius = chartSize * 0.15; // 15% of chart size
+                
+                return Container(
+                  width: chartSize,
+                  height: chartSize,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Animated pie chart with proper value animation (no clipping)
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, animationValue, child) {
+                          return Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: const Color(0xFFD2B48C), // Light brown outer border
-                                width: 3,
+                                color: const Color(0xFFD2B48C),
+                                width: chartSize * 0.008, // Dynamic border width
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -1119,9 +1273,20 @@ const SizedBox(height: 10),
                             ),
                             child: PieChart(
                               PieChartData(
-                                sections: sections,
-                                centerSpaceRadius: 40, // Inner circle
-                                sectionsSpace: 2, // Space between sections
+                                sections: sections.map((section) {
+                                  return PieChartSectionData(
+                                    color: section.color,
+                                    value: section.value * animationValue, // Animate the values properly
+                                    title: section.title,
+                                    radius: section.radius,
+                                    titleStyle: section.titleStyle,
+                                    borderSide: section.borderSide,
+                                    badgeWidget: section.badgeWidget,
+                                    badgePositionPercentageOffset: section.badgePositionPercentageOffset,
+                                  );
+                                }).toList(),
+                                centerSpaceRadius: centerRadius,
+                                sectionsSpace: 1.5, // Reduced from 2 to 1.5
                                 pieTouchData: PieTouchData(
                                   touchCallback: (FlTouchEvent event, pieTouchResponse) {
                                     setState(() {
@@ -1146,133 +1311,70 @@ const SizedBox(height: 10),
                                     }
                                   },
                                 ),
-                                startDegreeOffset: -90, // Start from top
+                                startDegreeOffset: -90,
                               ),
                             ),
-                          ),
-                        ),
-                        // Inner circle with border
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFFFFF9F4),
-                            border: Border.all(
-                              color: const Color(0xFFD2B48C), // Light brown border
-                              width: 2,
-                            ),
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.analytics_outlined,
-                                  color: Colors.brown.shade600,
-                                  size: 24,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$totalEntries',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.brown.shade800,
-                                  ),
-                                ),
-                                Text(
-                                  'entries',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 8,
-                                    color: Colors.brown.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                // Legend - Right side
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ...sortedMoods.asMap().entries.map((entry) {
-                          final mood = entry.value.key;
-                          final count = entry.value.value;
-                          final percentage = (count / totalEntries * 100);
-                          final emoji = MoodTrackerBackend.getMoodEmoji(mood);
+                          );
+                        },
+                      ),
+                      // Inner circle with border - with scale animation
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.elasticOut,
+                        builder: (context, scaleValue, child) {
+                          // Dynamic inner circle size based on center radius
+                          double innerSize = centerRadius * 1.6; // Slightly smaller than center space
                           
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              children: [
-                                // Color indicator
-                                Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: getMoodColor(mood),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFFD2B48C),
-                                      width: 1,
+                          return Transform.scale(
+                            scale: scaleValue,
+                            child: Container(
+                              width: innerSize,
+                              height: innerSize,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFFFF9F4),
+                                border: Border.all(
+                                  color: const Color(0xFFD2B48C),
+                                  width: chartSize * 0.006, // Dynamic border width
+                                ),
+                              ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.analytics_outlined,
+                                      color: Colors.brown.shade600,
+                                      size: innerSize * 0.3, // Dynamic icon size
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Mood info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            emoji,
-                                            style: const TextStyle(fontSize: 14),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              mood.capitalize(),
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.brown.shade800,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                    SizedBox(height: innerSize * 0.025),
+                                    Text(
+                                      '$totalEntries',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: innerSize * 0.15, // Dynamic font size
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.brown.shade800,
                                       ),
-                                      Text(
-                                        '${percentage.toStringAsFixed(1)}% • $count days',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 10,
-                                          color: Colors.brown.shade600,
-                                        ),
+                                    ),
+                                    Text(
+                                      'entries',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: innerSize * 0.1, // Dynamic font size
+                                        color: Colors.brown.shade600,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
-                        }).toList(),
-                      ],
-                    ),
+                        },
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -1281,11 +1383,11 @@ const SizedBox(height: 10),
   }
 
   // Helper method to build tooltip for touched slice
-  Widget _buildTooltip(String mood, double percentage) {
-    final emoji = MoodTrackerBackend.getMoodEmoji(mood);
+  Widget _buildTooltip(String mood, double percentage, int sectionIndex, int totalSections) {
     final moodCapitalized = mood.capitalize();
     
     return Container(
+      constraints: const BoxConstraints(maxWidth: 180), // Prevent going off-screen
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1315,42 +1417,25 @@ const SizedBox(height: 10),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              emoji,
-              style: const TextStyle(fontSize: 18),
+          Text(
+            moodCapitalized,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                moodCapitalized,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                '${percentage.toStringAsFixed(1)}% of month',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.9),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
+          Text(
+            '${percentage.toStringAsFixed(1)}% of month',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.9),
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ),
