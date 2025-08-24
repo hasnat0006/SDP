@@ -57,3 +57,20 @@ Future<List<dynamic>> GetTherapist() async {
     rethrow; // Rethrow the error to be handled elsewhere
   }
 }
+
+Future<List<dynamic>> GetAppointments() async {
+  try {
+    final data = await postToBackend('yourappt', {});
+
+    if (data.isNotEmpty && data[0] is List) {
+      print('✅ Appointment data fetched and unwrapped');
+      return data[0]; // Return the actual therapist array
+    } else {
+      print('✅ Single therapist data fetched');
+      return data; // Return as is if it's not wrapped
+    }
+  } catch (e) {
+    print('❌ Error: $e');
+    rethrow;
+  }
+}

@@ -465,42 +465,23 @@ class _DashboardPageState extends State<DashboardPage> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => BookedAppointments(
-                  appointments: [
-                    Appointment(
-                      name: 'Dr. Afsana Rahman',
-                      institution: 'MindCare Clinic',
-                      imagepath: 'mindora/assets/ifrit.jpeg',
-                      location: 'Uttara, Dhaka, Bangladesh',
-                      dateTime: DateTime.now().add(const Duration(days: 2)),
-                      specialty: 'Psychiatrist',
-                      status: AppointmentStatus.booked,
-                    ),
-                    Appointment(
-                      name: 'Dr. Farhan Kabir',
-                      institution: 'Serenity Health',
-                      imagepath: 'assets/doctor_2.jpg',
-                      location: 'Banani, Dhaka, Bangladesh',
-                      dateTime: DateTime.now().subtract(
-                        const Duration(days: 3),
-                      ),
-                      specialty: 'Psychiatrist',
-                      status: AppointmentStatus.completed,
-                    ),
-                    Appointment(
-                      name: 'Dr. Mariam Hossain',
-                      institution: 'Tranquil Minds',
-                      imagepath: 'assets/doctor_3.jpg',
-                      location: 'Dhanmondi, Dhaka, Bangladesh',
-                      dateTime: DateTime.now().subtract(
-                        const Duration(days: 1),
-                      ),
-                      specialty: 'Psychiatrist',
-                      status: AppointmentStatus.completed,
-                    ),
-                  ],
-                ),
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    BookedAppointments(userId: _userId),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                      const begin = Offset(1.0, 0.0);
+                      const end = Offset.zero;
+                      const curve = Curves.ease;
+                      final tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: curve));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
               ),
             );
           },
