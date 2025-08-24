@@ -653,10 +653,10 @@ _buildMoodChart(),
 
 const SizedBox(height: 10),
 
-const SizedBox(height: 10),
+//const SizedBox(height: 10),
               // Right-aligned: History: [calendar icon] [date]
 
-const SizedBox(height: 10),
+//const SizedBox(height: 10),
 
 // Title: Mood History + current week range - COMMENTED OUT
 /*
@@ -670,10 +670,10 @@ Text(
 ),
 */
 
-const SizedBox(height: 8),
+//const SizedBox(height: 8),
 
 
-              const SizedBox(height: 12),
+              //const SizedBox(height: 12),
 
               //Mood History Icons - COMMENTED OUT
               /*
@@ -887,10 +887,11 @@ Row(
     }
   }
 
-  // Weekly chart (7 days) - Optimized version
+  // Weekly chart (7 days) - Color coordinated version
   Widget _buildWeeklyChart() {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final List<double> data = List.filled(7, 0.0);
+    final List<String> moodTypes = List.filled(7, ''); // Store mood types for colors
     
     if (chartData is List) {
       final weeklyList = chartData as List<dynamic>;
@@ -920,7 +921,9 @@ Row(
             if (weekDayMap.containsKey(dateString)) {
               final int dayIndex = weekDayMap[dateString]!;
               final double moodLevel = double.tryParse(dayData['mood_level']?.toString() ?? '0') ?? 0.0;
+              final String moodStatus = dayData['mood_status']?.toString() ?? '';
               data[dayIndex] = moodLevel;
+              moodTypes[dayIndex] = moodStatus;
             }
           } catch (e) {
             // Silently continue on error to avoid performance impact
@@ -936,8 +939,8 @@ Row(
 
     return Container(
       width: double.infinity,
-      height: 310,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      height: 360,
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -955,36 +958,48 @@ Row(
           Text(
             'Weekly Mood Overview',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.brown.shade800,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Chart area
           Expanded(
+            flex: 3,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(7, (i) {
                 final double barHeight = data[i] == 0 
                     ? 20.0 
                     : maxVal > 0 
-                        ? ((data[i] / maxVal) * 140) + 20 
+                        ? ((data[i] / maxVal) * 120) + 20 
                         : 20.0;
                 
-                Color getBarColor(double moodValue) {
-                  if (moodValue == 0) return Colors.grey[300]!;
-                  
-                  final colors = [
-                    const Color(0xFF81C784), // Light green
-                    const Color(0xFF66BB6A), // Medium green
-                    const Color(0xFF4CAF50), // Green
-                    const Color(0xFF43A047), // Dark green
-                    const Color(0xFF388E3C), // Darker green
-                  ];
-                  
-                  int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
-                  return colors[colorIndex];
+                // Get mood-specific pastel color
+                Color getBarColor(String moodType, double moodValue) {
+                  if (moodValue == 0 || moodType.isEmpty) {
+                    return const Color(0xFFE8E8E8); // Light grey for no data
+                  }
+                   const Color(0xFFE2D5F1);
+                  // Pastel colors matching your app's soothing theme
+                  switch (moodType.toLowerCase()) {
+                    case 'happy':
+                      return const Color.fromARGB(255, 240, 201, 221); // Soft pastel yellow
+                    case 'sad':
+                      return const Color(0xFFD4E6F1); // Soft pastel blue
+                    case 'angry':
+                      return const Color.fromARGB(255, 240, 158, 166); // Soft pastel pink/red
+                    case 'excited':
+                      return  const Color(0xFFE2D5F1); // Soft pastel purple
+                    case 'stressed':
+                      return const Color(0xFFD5F4E6); // Soft pastel green
+                    default:
+                      return const Color(0xFFF0F0F0); // Default light grey
+                  }
                 }
+                
+                final barColor = getBarColor(moodTypes[i], data[i]);
                 
                 return Expanded(
                   child: Padding(
@@ -993,27 +1008,41 @@ Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         AnimatedContainer(
-                          duration: const Duration(milliseconds: 300), // Reduced animation time
+                          duration: const Duration(milliseconds: 300),
                           height: barHeight,
-                          width: 40,
+                          width: 36,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                getBarColor(data[i]),
-                                getBarColor(data[i]).withOpacity(0.7),
+                                barColor,
+                                barColor.withOpacity(0.8),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: barColor.withOpacity(0.3),
+                              width: 1,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: getBarColor(data[i]).withOpacity(0.3),
-                                blurRadius: 4,
+                                color: barColor.withOpacity(0.2),
+                                blurRadius: 3,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
+                          child: data[i] > 0 ? Center(
+                            child: Text(
+                              data[i].toInt().toString(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.brown.shade600,
+                              ),
+                            ),
+                          ) : null,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -1031,8 +1060,70 @@ Row(
               }),
             ),
           ),
+          const SizedBox(height: 16),
+          // Legend area
+          _buildMoodLegend(moodTypes),
         ],
       ),
+    );
+  }
+
+  // Helper method to build simple mood color legend
+  Widget _buildMoodLegend(List<String> moodTypes) {
+    // Define the 5 main moods with their pastel colors
+    final Map<String, Color> mainMoods = {
+      'Happy': const Color.fromARGB(255, 240, 201, 221),
+      'Sad': const Color(0xFFD4E6F1),
+      'Angry': const Color.fromARGB(255, 240, 158, 166),
+      'Excited':  const Color(0xFFE2D5F1),
+      'Stressed':  const Color(0xFFD5F4E6),
+    };
+   
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Mood Colours:',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.brown.shade700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 16,
+          runSpacing: 4,
+          children: mainMoods.entries.map((entry) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: entry.value,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: entry.value.withOpacity(0.6),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  entry.key,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.brown.shade600,
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 

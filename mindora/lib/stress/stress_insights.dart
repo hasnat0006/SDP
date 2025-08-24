@@ -800,7 +800,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
       {'name': 'Meditation', 'icon': Icons.spa, 'duration': '10 mins'},
     ];
     
-    // If we have specific symptoms, provide targeted activities
+    // If specific symptoms, provide targeted activities
     if (symptoms.isNotEmpty) {
       for (String symptom in symptoms) {
         switch (symptom.toLowerCase()) {
