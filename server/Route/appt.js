@@ -28,30 +28,43 @@ router.post("/booked", async (req, res) => {
     const { docId, userId, name, institution, date, time, reason, email } =
       req.body;
     console.log("This is req body", req.body);
+    const query =
+      await sql`SELECT time from appointment where time = ${time} and doc_id = ${docId} and date = ${date}`;
+    console.log("Existing time slot: ", query[0]);
 
-    if (
-      !userId ||
-      !name ||
-      !institution ||
-      !date ||
-      !time ||
-      !reason ||
-      !docId
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-    const status = "Pending";
-    console.log(status);
-    const result = await sql`
+    if (query[0]) {
+      console.log("Already booked");
+      return res.status(409).json({ error: "Slot already booked" });
+    } else {
+      if (
+        !userId ||
+        !name ||
+        !institution ||
+        !date ||
+        !time ||
+        !reason ||
+        !docId
+      ) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+      const status = "Pending";
+      console.log(status);
+      const result = await sql`
       INSERT INTO appointment (doc_id, user_id, status, time, date, reason, reminder, email)
       VALUES (${docId}, ${userId}, 'Pending' , ${time}, ${date}, ${reason}, 'yes', ${email})
     `;
-    res.status(201).json({ message: "Appointment booked successfully" });
+      res.status(201).json({ message: "Appointment booked successfully" });
+    }
   } catch (err) {
     console.error("Error booking appointment:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
+router.get("/yourappt", async (req,res) => {
+
+  
+}); 
 
 // router.get("/data/:userId", async (req, res) => {
 //   try {

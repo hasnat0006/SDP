@@ -60,7 +60,8 @@ class _BookForm extends State<BookForm> {
         ? widget.name
         : 'Dr ${widget.name}';
   }
- Future<void> _submitForm() async {
+
+  Future<void> _submitForm() async {
     if (selectedDate != null &&
         selectedTime != null &&
         reasonController.text.isNotEmpty) {
@@ -98,7 +99,9 @@ class _BookForm extends State<BookForm> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Text("Success"),
-              content: const Text("Your appointment has been booked successfully!"),
+              content: const Text(
+                "Your appointment has been booked successfully!",
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -114,8 +117,10 @@ class _BookForm extends State<BookForm> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text("Error"),
-              content: const Text("There was an issue booking your appointment. Please try again."),
+              title: const Text("Time slot not available"),
+              content: const Text(
+                "The time slot is not available. Select another time slot.",
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
