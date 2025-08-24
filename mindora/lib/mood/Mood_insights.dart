@@ -1173,6 +1173,7 @@ const SizedBox(height: 10),
                                       padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.start,
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           // Color indicator
@@ -1222,10 +1223,7 @@ const SizedBox(height: 10),
                                   ),
                                 );
                                 
-                                // Add spacing between items in the same row
-                                if (j < i + itemsPerRow - 1 && j < moodList.length - 1) {
-                                  rowItems.add(const SizedBox(width: 6));
-                                }
+                                // Remove manual spacing - let MainAxisAlignment handle it
                               }
                               
                               rows.add(
@@ -1366,16 +1364,17 @@ const SizedBox(height: 10),
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      Icons.analytics_outlined,
-                                      color: Colors.brown.shade600,
+                                      Icons.analytics,
+                                      color: Colors.brown.shade700,
                                       size: innerSize * 0.3, // Dynamic icon size
+                                      weight: 700,
                                     ),
                                     SizedBox(height: innerSize * 0.025),
                                     Text(
                                       '$totalEntries',
                                       style: GoogleFonts.poppins(
                                         fontSize: innerSize * 0.15, // Dynamic font size
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w800,
                                         color: Colors.brown.shade800,
                                       ),
                                     ),
@@ -1383,8 +1382,8 @@ const SizedBox(height: 10),
                                       'entries',
                                       style: GoogleFonts.poppins(
                                         fontSize: innerSize * 0.1, // Dynamic font size
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.brown.shade600,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.brown.shade700,
                                       ),
                                     ),
                                   ],
