@@ -1199,7 +1199,7 @@ const SizedBox(height: 10),
                                                   mood.capitalize(),
                                                   style: GoogleFonts.poppins(
                                                     fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
+                                                    fontWeight: FontWeight.w600,
                                                     color: Colors.brown.shade800,
                                                   ),
                                                   overflow: TextOverflow.ellipsis,
@@ -1209,6 +1209,7 @@ const SizedBox(height: 10),
                                                   '${percentage.toStringAsFixed(1)}%',
                                                   style: GoogleFonts.poppins(
                                                     fontSize: 8,
+                                                    fontWeight: FontWeight.w600,
                                                     color: Colors.brown.shade600,
                                                   ),
                                                 ),
@@ -1374,7 +1375,7 @@ const SizedBox(height: 10),
                                       '$totalEntries',
                                       style: GoogleFonts.poppins(
                                         fontSize: innerSize * 0.15, // Dynamic font size
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: FontWeight.w700,
                                         color: Colors.brown.shade800,
                                       ),
                                     ),
@@ -1382,6 +1383,7 @@ const SizedBox(height: 10),
                                       'entries',
                                       style: GoogleFonts.poppins(
                                         fontSize: innerSize * 0.1, // Dynamic font size
+                                        fontWeight: FontWeight.w600,
                                         color: Colors.brown.shade600,
                                       ),
                                     ),
