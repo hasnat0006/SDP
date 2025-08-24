@@ -875,7 +875,16 @@ const SizedBox(height: 10),
               }),
             ),
           ),
-          const SizedBox(height: 16),
+          // Dynamic spacing between chart and legend
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate dynamic spacing based on available space
+              double availableHeight = constraints.maxHeight;
+              double dynamicSpacing = math.max(20, math.min(30, availableHeight * 0.05));
+              
+              return SizedBox(height: dynamicSpacing);
+            },
+          ),
           // Legend area
           _buildMoodLegend(moodTypes),
         ],
@@ -897,14 +906,14 @@ const SizedBox(height: 10),
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Mood Colours:',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.brown.shade700,
-          ),
-        ),
+        // Text(
+        //   'Mood Colours:',
+        //   style: GoogleFonts.poppins(
+        //     fontSize: 14,
+        //     fontWeight: FontWeight.w600,
+        //     color: Colors.brown.shade700,
+        //   ),
+        // ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 16,
