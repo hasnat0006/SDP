@@ -1101,7 +1101,10 @@ const SizedBox(height: 10),
                   child: Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: math.max(8, 12),
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF9F4), // Light background
                       border: Border.all(
@@ -1128,18 +1131,31 @@ const SizedBox(height: 10),
                             color: Colors.brown.shade800,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         // Dynamic grid layout to prevent overflow
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            // Calculate how many items can fit in one row
-                            double itemWidth = 80; // Approximate width of each mood item
-                            int itemsPerRow = (constraints.maxWidth / itemWidth).floor();
-                            if (itemsPerRow < 2) itemsPerRow = 2; // Minimum 2 per row
-                            if (itemsPerRow > 3) itemsPerRow = 3; // Maximum 3 per row
+                            List<MapEntry<String, int>> moodList = sortedMoods.take(5).toList();
+                            
+                            // Dynamic calculation based on available width and content
+                            double availableWidth = constraints.maxWidth;
+                            int itemsPerRow;
+                            
+                            // Determine items per row based on available width
+                            if (availableWidth > 280) {
+                              itemsPerRow = 3;
+                            } else if (availableWidth > 200) {
+                              itemsPerRow = 2;
+                            } else {
+                              itemsPerRow = 1;
+                            }
+                            
+                            // Ensure we don't exceed the number of moods available
+                            if (itemsPerRow > moodList.length) {
+                              itemsPerRow = moodList.length;
+                            }
                             
                             List<Widget> rows = [];
-                            List<MapEntry<String, int>> moodList = sortedMoods.take(5).toList();
                             
                             for (int i = 0; i < moodList.length; i += itemsPerRow) {
                               List<Widget> rowItems = [];
@@ -1151,70 +1167,75 @@ const SizedBox(height: 10),
                                 final percentage = (count / totalEntries * 100);
                                 
                                 rowItems.add(
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Color indicator
-                                        Container(
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            color: getMoodColor(mood),
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: const Color(0xFFD2B48C),
-                                              width: 0.8,
+                                  Flexible(
+                                    flex: 1,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          // Color indicator
+                                          Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              color: getMoodColor(mood),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: const Color(0xFFD2B48C),
+                                                width: 0.8,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        // Mood info
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                mood.capitalize(),
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.brown.shade800,
+                                          const SizedBox(width: 4),
+                                          // Mood info
+                                          Flexible(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  mood.capitalize(),
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.brown.shade800,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                '${percentage.toStringAsFixed(1)}%',
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 8,
-                                                  color: Colors.brown.shade600,
+                                                Text(
+                                                  '${percentage.toStringAsFixed(1)}%',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 8,
+                                                    color: Colors.brown.shade600,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 );
                                 
                                 // Add spacing between items in the same row
                                 if (j < i + itemsPerRow - 1 && j < moodList.length - 1) {
-                                  rowItems.add(const SizedBox(width: 8));
+                                  rowItems.add(const SizedBox(width: 6));
                                 }
                               }
                               
                               rows.add(
-                                Row(
-                                  children: rowItems,
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 2),
+                                  child: Row(
+                                    children: rowItems,
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  ),
                                 ),
                               );
-                              
-                              // Add spacing between rows
-                              if (i + itemsPerRow < moodList.length) {
-                                rows.add(const SizedBox(height: 8));
-                              }
                             }
                             
                             return Column(
