@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:math';
 import 'Selected_mood_stats.dart';
 import 'backend.dart';
 import '../services/user_service.dart';
+
+// String extension for capitalizing first letter
+extension StringCapitalization on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
+  }
+}
 
 class MoodInsightsPage extends StatefulWidget {
   final String moodLabel;
@@ -32,6 +41,7 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
   List<Map<String, dynamic>>? weeklyMoodData;
   dynamic chartData; // For storing chart data based on filter
   bool isLoading = true;
+  int touchedIndex = -1; // For pie chart interactions
 
   @override
   void initState() {
@@ -58,28 +68,16 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
     
     try {
       switch (selectedFilterIndex) {
-        case 0: // 1 Week
+        case 0: // Weekly
           final weeklyResult = await MoodTrackerBackend.getWeeklyMoodData(userId);
           if (weeklyResult['success']) {
             chartData = weeklyResult['data'];
           }
           break;
-        case 1: // 1 Month (4 weeks)
+        case 1: // Monthly
           final monthlyResult = await MoodTrackerBackend.getMonthlyMoodData(userId, now);
           if (monthlyResult['success']) {
             chartData = monthlyResult['data'];
-          }
-          break;
-        case 2: // 1 Year (12 months)
-          final yearlyResult = await MoodTrackerBackend.getYearlyMoodData(userId, now);
-          if (yearlyResult['success']) {
-            chartData = yearlyResult['data'];
-          }
-          break;
-        case 3: // All Time
-          final allTimeResult = await MoodTrackerBackend.getAllTimeMoodData(userId);
-          if (allTimeResult['success']) {
-            chartData = allTimeResult['data'];
           }
           break;
       }
@@ -200,8 +198,8 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
   }
 
 // Filter Tabs
-final List<String> filters = ["1 Week", "1 Month", "1 Year", "All Time"];
-int selectedFilterIndex = 0; // Default to "1 Week"
+final List<String> filters = ["Weekly", "Monthly"];
+int selectedFilterIndex = 0; // Default to "Weekly"
 String getCurrentWeekRange() {
   final now = DateTime.now();
   final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
@@ -653,185 +651,6 @@ _buildMoodChart(),
 
 const SizedBox(height: 10),
 
-//const SizedBox(height: 10),
-              // Right-aligned: History: [calendar icon] [date]
-
-//const SizedBox(height: 10),
-
-// Title: Mood History + current week range - COMMENTED OUT
-/*
-Text(
-  "Mood History (${getCurrentWeekRange()})",
-  style: GoogleFonts.poppins(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Colors.brown,
-  ),
-),
-*/
-
-//const SizedBox(height: 8),
-
-
-              //const SizedBox(height: 12),
-
-              //Mood History Icons - COMMENTED OUT
-              /*
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: List.generate(7, (index) {
-    final now = DateTime.now();
-    // Calculate the start of the current week (Monday)
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    // Calculate each day of the week
-    final dayDate = startOfWeek.add(Duration(days: index));
-    
-    // Get the correct day name for this date
-    final dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    final dayName = dayNames[index];
-    
-    // Debug: Print what date we're looking for
-    print('🔍 Looking for mood data for $dayName: ${dayDate.toIso8601String().split('T')[0]}');
-    
-    // Find mood data for this specific date
-    Map<String, dynamic>? dayMoodData;
-    if (weeklyMoodData != null) {
-      print('🔍 Available mood data dates:');
-      for (var data in weeklyMoodData!) {
-        print('   ${data['date']} -> ${data['mood_status']}');
-      }
-      
-      dayMoodData = weeklyMoodData!.firstWhere(
-        (data) {
-          final dayDateStr = dayDate.toIso8601String().split('T')[0];
-          
-          // Try different date matching approaches
-          DateTime dataDate;
-          try {
-            // Handle both DateTime and String formats
-            if (data['date'] is String) {
-              dataDate = DateTime.parse(data['date']);
-            } else {
-              dataDate = data['date'];
-            }
-          } catch (e) {
-            print('❌ Error parsing date: ${data['date']} - $e');
-            return false;
-          }
-          
-          final matches = dataDate.year == dayDate.year &&
-                         dataDate.month == dayDate.month &&
-                         dataDate.day == dayDate.day;
-          
-          // Debug logging for date matching
-          print('🔍 Comparing: $dayDateStr vs ${dataDate.toIso8601String().split('T')[0]} = $matches');
-          if (matches) {
-            print('✅ Found match for $dayName: ${data['mood_status']}');
-          }
-          
-          return matches;
-        },
-        orElse: () {
-          print('⚠️ No mood data found for $dayName (${dayDate.toIso8601String().split('T')[0]})');
-          return <String, dynamic>{};
-        },
-      );
-    }
-    
-    // Determine mood icon and color
-    IconData moodIcon;
-    Color moodColor;
-    
-    if (dayMoodData != null && 
-        dayMoodData.isNotEmpty && 
-        dayMoodData.containsKey('mood_status') && 
-        dayMoodData['mood_status'] != null &&
-        dayMoodData['mood_status'].toString().isNotEmpty) {
-      
-      final moodStatus = dayMoodData['mood_status'].toString();
-      print('✅ Using mood status for $dayName: $moodStatus');
-      
-      moodIcon = _getMoodIcon(moodStatus);
-      moodColor = MoodTrackerBackend.getMoodColor(moodStatus);
-    } else {
-      print('❌ No valid mood data for $dayName - using default');
-      moodIcon = Icons.help_outline;
-      moodColor = Colors.grey;
-    }
-    
-    // Check if this is today to add special styling
-    final isToday = dayDate.year == now.year && 
-                   dayDate.month == now.month && 
-                   dayDate.day == now.day;
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: moodColor.withOpacity(0.2),
-        shape: BoxShape.circle,
-        border: isToday 
-          ? Border.all(color: moodColor, width: 3) 
-          : Border.all(color: moodColor.withOpacity(0.3), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: moodColor.withOpacity(0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: moodColor.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              moodIcon,
-              color: moodColor,
-              size: 26,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            dayName,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
-              color: isToday ? moodColor : Colors.brown.shade800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }),
-),
-*/
-
-
-
-
-              // const SizedBox(height: 40),
-              // Center(
-              //   child: ElevatedButton(
-              //     onPressed: () {},
-              //     style: ElevatedButton.styleFrom(
-              //       backgroundColor: const Color(0xFFB79AE0),
-              //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              //       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-              //     ),
-              //     child: Text("Check Mood Stats →", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
-              //   ),
-              // )
             ],
           ),
         ),
@@ -876,12 +695,8 @@ Row(
     switch (selectedFilterIndex) {
       case 0: // Weekly
         return _buildWeeklyChart();
-      case 1: // Monthly (4 weeks)
-        return _buildMonthlyChart();
-      case 2: // Yearly (12 months)
-        return _buildYearlyChart();
-      case 3: // All Time
-        return _buildAllTimeChart();
+      case 1: // Monthly 
+        return _buildMonthlyPieChart();
       default:
         return _buildWeeklyChart();
     }
@@ -1127,56 +942,126 @@ Row(
     );
   }
 
-  // Monthly chart (4 weeks)
-  Widget _buildMonthlyChart() {
-    final List<double> data = List.filled(4, 0.0);
-    final List<String> weekLabels = ['W1', 'W2', 'W3', 'W4'];
-    
+  // Monthly pie chart - Interactive and animated
+  Widget _buildMonthlyPieChart() {
+    // Aggregate mood data for the current month
+    Map<String, int> moodCounts = {};
+    int totalEntries = 0;
+
     if (chartData is Map<String, dynamic>) {
       final weeklyData = chartData as Map<String, dynamic>;
       
       weeklyData.forEach((week, weekData) {
-        if (weekData is List && weekData.isNotEmpty) {
-          int weekIndex = -1;
-          if (week.contains('1')) weekIndex = 0;
-          else if (week.contains('2')) weekIndex = 1;
-          else if (week.contains('3')) weekIndex = 2;
-          else if (week.contains('4')) weekIndex = 3;
-          
-          if (weekIndex >= 0 && weekIndex < 4) {
-            double totalMood = 0.0;
-            int count = 0;
-            
-            for (var entry in weekData) {
-              if (entry is Map && entry['mood_level'] != null) {
-                totalMood += double.tryParse(entry['mood_level'].toString()) ?? 0.0;
-                count++;
-              }
-            }
-            
-            if (count > 0) {
-              data[weekIndex] = totalMood / count;
+        if (weekData is List) {
+          for (var entry in weekData) {
+            if (entry is Map && entry['mood_status'] != null) {
+              String moodStatus = entry['mood_status'].toString().toLowerCase();
+              moodCounts[moodStatus] = (moodCounts[moodStatus] ?? 0) + 1;
+              totalEntries++;
             }
           }
         }
       });
     }
-    
-    final double maxVal = data.every((element) => element == 0.0) 
-        ? 5.0 
-        : data.reduce(max).clamp(1.0, 5.0);
+
+    // If no data, show empty state
+    if (totalEntries == 0 || moodCounts.isEmpty) {
+      return Container(
+        width: double.infinity,
+        height: 380,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.mood,
+                size: 48,
+                color: Colors.brown.withOpacity(0.3),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'No mood data available',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.brown.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Define mood colors matching the weekly chart theme
+    Color getMoodColor(String mood) {
+      switch (mood.toLowerCase()) {
+        case 'happy':
+          return const Color.fromARGB(255, 240, 201, 221);
+        case 'sad':
+          return const Color(0xFFD4E6F1);
+        case 'angry':
+          return const Color.fromARGB(255, 240, 158, 166);
+        case 'excited':
+          return const Color(0xFFE2D5F1);
+        case 'stressed':
+          return const Color(0xFFD5F4E6);
+        default:
+          return const Color(0xFFF0F0F0);
+      }
+    }
+
+    // Create pie sections with proper theming
+    List<PieChartSectionData> sections = [];
+    List<MapEntry<String, int>> sortedMoods = moodCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    for (int i = 0; i < sortedMoods.length; i++) {
+      final mood = sortedMoods[i].key;
+      final count = sortedMoods[i].value;
+      final percentage = (count / totalEntries * 100);
+      
+      final bool isTouched = i == touchedIndex;
+
+      sections.add(
+        PieChartSectionData(
+          color: getMoodColor(mood),
+          value: percentage,
+          title: '', // Remove title from pie slices for cleaner look
+          radius: isTouched ? 100 : 85, // Increased size when touched
+          titleStyle: const TextStyle(fontSize: 0), // Hide titles
+          borderSide: BorderSide(
+            color: const Color(0xFFD2B48C), // Light brown border
+            width: isTouched ? 2 : 1.5,
+          ),
+          badgeWidget: isTouched ? _buildTooltip(mood, percentage) : null,
+          badgePositionPercentageOffset: 1.2,
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
-      height: 310,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      height: 380,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
@@ -1184,83 +1069,210 @@ Row(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Text(
-            'Monthly Mood Overview (4 Weeks)',
+            "Monthly Mood Distribution",
             style: GoogleFonts.poppins(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               color: Colors.brown.shade800,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
+          Text(
+            "Tap a slice to see details",
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Chart and Legend Layout
           Expanded(
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: List.generate(4, (i) {
-                final double barHeight = data[i] == 0 
-                    ? 20.0 
-                    : maxVal > 0 
-                        ? ((data[i] / maxVal) * 140) + 20 
-                        : 20.0;
-                
-                Color getBarColor(double moodValue) {
-                  if (moodValue == 0) return Colors.grey[300]!;
-                  
-                  final colors = [
-                    const Color(0xFF81C784),
-                    const Color(0xFF66BB6A),
-                    const Color(0xFF4CAF50),
-                    const Color(0xFF43A047),
-                    const Color(0xFF388E3C),
-                  ];
-                  
-                  int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
-                  return colors[colorIndex];
-                }
-                
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Pie Chart - Left side
+                Expanded(
+                  flex: 3,
+                  child: Center(
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
-                          height: barHeight,
-                          width: 60,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                getBarColor(data[i]),
-                                getBarColor(data[i]).withOpacity(0.7),
+                        // Main pie chart
+                        AspectRatio(
+                          aspectRatio: 1,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFD2B48C), // Light brown outer border
+                                width: 3,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFD2B48C).withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: getBarColor(data[i]).withOpacity(0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                            child: PieChart(
+                              PieChartData(
+                                sections: sections,
+                                centerSpaceRadius: 40, // Inner circle
+                                sectionsSpace: 2, // Space between sections
+                                pieTouchData: PieTouchData(
+                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                                    setState(() {
+                                      if (!event.isInterestedForInteractions ||
+                                          pieTouchResponse == null ||
+                                          pieTouchResponse.touchedSection == null) {
+                                        touchedIndex = -1;
+                                        return;
+                                      }
+                                      touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                                    });
+
+                                    // Auto-hide tooltip after 3 seconds
+                                    if (touchedIndex != -1) {
+                                      Future.delayed(const Duration(seconds: 3), () {
+                                        if (mounted) {
+                                          setState(() {
+                                            touchedIndex = -1;
+                                          });
+                                        }
+                                      });
+                                    }
+                                  },
+                                ),
+                                startDegreeOffset: -90, // Start from top
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          weekLabels[i],
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.brown.shade700,
+                        // Inner circle with border
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFFFFF9F4),
+                            border: Border.all(
+                              color: const Color(0xFFD2B48C), // Light brown border
+                              width: 2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.analytics_outlined,
+                                  color: Colors.brown.shade600,
+                                  size: 24,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$totalEntries',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.brown.shade800,
+                                  ),
+                                ),
+                                Text(
+                                  'entries',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 8,
+                                    color: Colors.brown.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                );
-              }),
+                ),
+                
+                // Legend - Right side
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ...sortedMoods.asMap().entries.map((entry) {
+                          final mood = entry.value.key;
+                          final count = entry.value.value;
+                          final percentage = (count / totalEntries * 100);
+                          final emoji = MoodTrackerBackend.getMoodEmoji(mood);
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                // Color indicator
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: getMoodColor(mood),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFFD2B48C),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Mood info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            emoji,
+                                            style: const TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              mood.capitalize(),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.brown.shade800,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '${percentage.toStringAsFixed(1)}% • $count days',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10,
+                                          color: Colors.brown.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1268,267 +1280,77 @@ Row(
     );
   }
 
-  // Yearly chart (12 months) - scrollable
-  Widget _buildYearlyChart() {
-    final List<double> data = List.filled(12, 0.0);
-    final List<String> monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // Helper method to build tooltip for touched slice
+  Widget _buildTooltip(String mood, double percentage) {
+    final emoji = MoodTrackerBackend.getMoodEmoji(mood);
+    final moodCapitalized = mood.capitalize();
     
-    if (chartData is List) {
-      final yearlyList = chartData as List<dynamic>;
-      
-      for (var monthData in yearlyList) {
-        if (monthData is Map<String, dynamic> && monthData['month'] != null) {
-          try {
-            final int month = int.parse(monthData['month'].toString());
-            final double avgMood = double.tryParse(monthData['avg_mood_level']?.toString() ?? '0') ?? 0.0;
-            
-            if (month >= 1 && month <= 12) {
-              data[month - 1] = avgMood;
-            }
-          } catch (e) {
-            print('Error parsing yearly mood data: $e');
-          }
-        }
-      }
-    }
-    
-    final double maxVal = data.every((element) => element == 0.0) 
-        ? 5.0 
-        : data.reduce(max).clamp(1.0, 5.0);
-
     return Container(
-      width: double.infinity,
-      height: 310,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            Colors.brown.shade800,
+            Colors.brown.shade600,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFD2B48C), // Light brown border
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Yearly Mood Overview (12 Months)',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.brown.shade800,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(12, (i) {
-                  final double barHeight = data[i] == 0 
-                      ? 20.0 
-                      : maxVal > 0 
-                          ? ((data[i] / maxVal) * 140) + 20 
-                          : 20.0;
-                  
-                  Color getBarColor(double moodValue) {
-                    if (moodValue == 0) return Colors.grey[300]!;
-                    
-                    final colors = [
-                      const Color(0xFF81C784),
-                      const Color(0xFF66BB6A),
-                      const Color(0xFF4CAF50),
-                      const Color(0xFF43A047),
-                      const Color(0xFF388E3C),
-                    ];
-                    
-                    int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
-                    return colors[colorIndex];
-                  }
-                  
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
-                          height: barHeight,
-                          width: 45,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                getBarColor(data[i]),
-                                getBarColor(data[i]).withOpacity(0.7),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: getBarColor(data[i]).withOpacity(0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          monthLabels[i],
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.brown.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // All-time chart (years) - scrollable
-  Widget _buildAllTimeChart() {
-    List<double> data = [];
-    List<String> yearLabels = [];
-    
-    if (chartData is List) {
-      final allTimeList = chartData as List<dynamic>;
-      
-      for (var yearData in allTimeList) {
-        if (yearData is Map<String, dynamic> && yearData['year'] != null) {
-          try {
-            final String year = yearData['year'].toString();
-            final double avgMood = double.tryParse(yearData['avg_mood_level']?.toString() ?? '0') ?? 0.0;
-            
-            yearLabels.add(year);
-            data.add(avgMood);
-          } catch (e) {
-            print('Error parsing all-time mood data: $e');
-          }
-        }
-      }
-    }
-    
-    if (data.isEmpty) {
-      data = [0.0];
-      yearLabels = ['No Data'];
-    }
-    
-    final double maxVal = data.every((element) => element == 0.0) 
-        ? 5.0 
-        : data.reduce(max).clamp(1.0, 5.0);
-
-    return Container(
-      width: double.infinity,
-      height: 310,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.white.withOpacity(0.1),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+            spreadRadius: 0.5,
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'All-Time Mood Overview',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.brown.shade800,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 18),
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: List.generate(data.length, (i) {
-                  final double barHeight = data[i] == 0 
-                      ? 20.0 
-                      : maxVal > 0 
-                          ? ((data[i] / maxVal) * 140) + 20 
-                          : 20.0;
-                  
-                  Color getBarColor(double moodValue) {
-                    if (moodValue == 0) return Colors.grey[300]!;
-                    
-                    final colors = [
-                      const Color(0xFF81C784),
-                      const Color(0xFF66BB6A),
-                      const Color(0xFF4CAF50),
-                      const Color(0xFF43A047),
-                      const Color(0xFF388E3C),
-                    ];
-                    
-                    int colorIndex = ((moodValue - 1) * (colors.length - 1) / 4).round().clamp(0, colors.length - 1);
-                    return colors[colorIndex];
-                  }
-                  
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 500),
-                          height: barHeight,
-                          width: 50,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                getBarColor(data[i]),
-                                getBarColor(data[i]).withOpacity(0.7),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: getBarColor(data[i]).withOpacity(0.3),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          yearLabels[i],
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.brown.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                moodCapitalized,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
-            ),
+              Text(
+                '${percentage.toStringAsFixed(1)}% of month',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
         ],
       ),
