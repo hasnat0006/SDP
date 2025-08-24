@@ -42,6 +42,8 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
   dynamic chartData; // For storing chart data based on filter
   bool isLoading = true;
   int touchedIndex = -1; // For pie chart interactions
+  bool isLoadingMonthlyData = false; // For monthly chart loading
+  bool showPieAnimation = false; // For pie chart sweep animation
 
   @override
   void initState() {
@@ -75,15 +77,43 @@ class _MoodInsightsPageState extends State<MoodInsightsPage> {
           }
           break;
         case 1: // Monthly
+          setState(() {
+            isLoadingMonthlyData = true;
+            showPieAnimation = false;
+          });
+          
           final monthlyResult = await MoodTrackerBackend.getMonthlyMoodData(userId, now);
           if (monthlyResult['success']) {
             chartData = monthlyResult['data'];
+            
+            // Start pie animation after data loads
+            setState(() {
+              isLoadingMonthlyData = false;
+            });
+            
+            // Trigger sweep animation after a brief delay
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                setState(() {
+                  showPieAnimation = true;
+                });
+              }
+            });
+          } else {
+            setState(() {
+              isLoadingMonthlyData = false;
+            });
           }
           break;
       }
     } catch (e) {
       print('Error loading chart data: $e');
       chartData = null;
+      if (selectedFilterIndex == 1) {
+        setState(() {
+          isLoadingMonthlyData = false;
+        });
+      }
     }
   }
 
@@ -973,6 +1003,76 @@ const SizedBox(height: 10),
       });
     }
 
+    // Show loading state when monthly data is being loaded
+    if (isLoadingMonthlyData) {
+      return Container(
+        width: double.infinity,
+        height: 480,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Text(
+              "Monthly Mood Distribution",
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.brown.shade800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Loading your mood data...",
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          const Color(0xFFB79AE0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.brown.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     // If no data, show empty state
     if (totalEntries == 0 || moodCounts.isEmpty) {
       return Container(
@@ -1279,10 +1379,11 @@ const SizedBox(height: 10),
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Animated pie chart with proper value animation (no clipping)
+                      // Animated pie chart with sweep animation
                       TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 1200),
+                        key: ValueKey('pie_chart_$showPieAnimation'), // Unique key for pie chart
+                        tween: Tween<double>(begin: 0.0, end: showPieAnimation ? 1.0 : 0.0),
+                        duration: const Duration(milliseconds: 1500),
                         curve: Curves.easeOutCubic,
                         builder: (context, animationValue, child) {
                           return Container(
@@ -1348,8 +1449,9 @@ const SizedBox(height: 10),
                       ),
                       // Inner circle with border - with scale animation
                       TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0.0, end: 1.0),
-                        duration: const Duration(milliseconds: 800),
+                        key: ValueKey('inner_circle_$showPieAnimation'), // Unique key for inner circle
+                        tween: Tween<double>(begin: 0.0, end: showPieAnimation ? 1.0 : 0.0),
+                        duration: const Duration(milliseconds: 1000),
                         curve: Curves.elasticOut,
                         builder: (context, scaleValue, child) {
                           // Dynamic inner circle size based on center radius
