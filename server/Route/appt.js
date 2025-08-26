@@ -61,9 +61,38 @@ router.post("/booked", async (req, res) => {
   }
 });
 
-router.get("/yourappt", async (req,res) => {
-
-  
+router.get("/yourappt/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("Fetching appointments for user ID:", userId);
+    
+    const result = await sql`
+      SELECT 
+        a.app_id as appointment_id,
+        a.doc_id,
+        a.user_id,
+        a.status,
+        a.time,
+        a.date,
+        a.reason,
+        a.email,
+        d.profession,
+        d.institute as location,
+        u.name,
+        CONCAT(a.date, ' ', a.time) as datetime
+      FROM appointment a
+      JOIN doctor d ON a.doc_id = d.doc_id
+      JOIN users u ON d.doc_id = u.id
+      WHERE a.user_id = ${userId}
+      ORDER BY a.date DESC, a.time DESC
+    `;
+    
+    console.log(`Found ${result.length} appointments`);
+    res.json(result);
+  } catch (err) {
+    console.error("Error retrieving appointments:", err);
+    res.status(500).json({ error: err.message });
+  }
 }); 
 
 // router.get("/data/:userId", async (req, res) => {

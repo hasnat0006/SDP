@@ -41,16 +41,33 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
   }
 
   Future<void> fetchAppointments() async {
-    final data = await GetAppointments();
+    final data = await GetAppointments(widget.userId);
     print("Fetched Appointments: $data");
 
     List<Appointment> appointments = data.map<Appointment>((item) {
+      // Map status from backend to enum
+      AppointmentStatus status = AppointmentStatus.booked;
+      String statusStr = (item['status'] ?? 'Pending').toLowerCase();
+      
+      switch (statusStr) {
+        case 'completed':
+          status = AppointmentStatus.completed;
+          break;
+        case 'cancelled':
+          status = AppointmentStatus.cancelled;
+          break;
+        case 'pending':
+        default:
+          status = AppointmentStatus.booked;
+          break;
+      }
+      
       return Appointment(
         name: item['name'] ?? '',
         profession: item['profession'] ?? 'Unknown',
         location: item['location'] ?? 'Not specified',
         dateTime: DateTime.tryParse(item['datetime'] ?? '') ?? DateTime.now(),
-        status: AppointmentStatus.booked,
+        status: status,
       );
     }).toList();
 

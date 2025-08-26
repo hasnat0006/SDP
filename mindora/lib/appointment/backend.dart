@@ -1,7 +1,4 @@
-import 'dart:convert';
 import '../backend/main_query.dart';
-import 'package:http/http.dart'
-    as http; // Import the method to interact with the backend
 
 // Function to book an appointment
 Future<void> bookAppointment({
@@ -58,16 +55,16 @@ Future<List<dynamic>> GetTherapist() async {
   }
 }
 
-Future<List<dynamic>> GetAppointments() async {
+Future<List<dynamic>> GetAppointments(String userId) async {
   try {
-    final data = await postToBackend('yourappt', {});
+    final data = await getFromBackend('yourappt/$userId');
 
-    if (data.isNotEmpty && data[0] is List) {
-      print('✅ Appointment data fetched and unwrapped');
-      return data[0]; // Return the actual therapist array
+    if (data is List) {
+      print('✅ Appointment data fetched');
+      return data; // Return the appointment array directly
     } else {
-      print('✅ Single therapist data fetched');
-      return data; // Return as is if it's not wrapped
+      print('✅ Single appointment data fetched');
+      return [data]; // Wrap single item in array
     }
   } catch (e) {
     print('❌ Error: $e');
