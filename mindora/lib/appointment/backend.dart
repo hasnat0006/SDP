@@ -57,17 +57,31 @@ Future<List<dynamic>> GetTherapist() async {
 
 Future<List<dynamic>> GetAppointments(String userId) async {
   try {
-    final data = await getFromBackend('yourappt/$userId');
-
-    if (data is List) {
-      print('✅ Appointment data fetched');
-      return data; // Return the appointment array directly
-    } else {
-      print('✅ Single appointment data fetched');
-      return [data]; // Wrap single item in array
-    }
+    print('🔍 Fetching appointments for user: $userId');
+    // Use getFromBackend instead of postToBackend for fetching data
+    final data = await getFromBackend('appointments/$userId');
+    print('📦 Raw appointments data: $data');
+    return data is List ? data : [];
   } catch (e) {
-    print('❌ Error: $e');
-    rethrow;
+    print('❌ Error fetching appointments: $e');
+    return [];
+  }
+}
+
+// Update the cancelAppointment function
+Future<bool> cancelAppointment(String appointmentId) async {
+  try {
+    print('🔄 Cancelling appointment: $appointmentId');
+
+    // Send the appointmentId in the request body instead of URL params
+    final response = await postToBackend('cancel-appointment', {
+      'appointmentId': appointmentId,
+    });
+
+    print('📦 Cancel response: $response');
+    return true;
+  } catch (e) {
+    print('❌ Error cancelling appointment: $e');
+    return false;
   }
 }

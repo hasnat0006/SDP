@@ -6,6 +6,7 @@ import 'backend.dart'; // Make sure this has GetAppointments()
 enum AppointmentStatus { booked, completed, cancelled }
 
 class Appointment {
+  final String id; // Add this line
   final String name;
   final String profession;
   final String location;
@@ -13,6 +14,7 @@ class Appointment {
   final AppointmentStatus status;
 
   Appointment({
+    required this.id, // Add this line
     required this.name,
     required this.profession,
     required this.location,
@@ -41,40 +43,63 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
   }
 
   Future<void> fetchAppointments() async {
-    final data = await GetAppointments(widget.userId);
-    print("Fetched Appointments: $data");
+    try {
+      print("🔍 Fetching appointments for user: ${widget.userId}");
+      final data = await GetAppointments(widget.userId);
+      print("📦 Raw appointment data: $data");
 
-    List<Appointment> appointments = data.map<Appointment>((item) {
-      // Map status from backend to enum
-      AppointmentStatus status = AppointmentStatus.booked;
-      String statusStr = (item['status'] ?? 'Pending').toLowerCase();
-      
-      switch (statusStr) {
-        case 'completed':
-          status = AppointmentStatus.completed;
-          break;
-        case 'cancelled':
-          status = AppointmentStatus.cancelled;
-          break;
-        case 'pending':
-        default:
-          status = AppointmentStatus.booked;
-          break;
+      if (data.isEmpty) {
+        print("⚠️ No appointments found");
+        setState(() {
+          appts = [];
+          isLoading = false;
+        });
+        return;
       }
-      
-      return Appointment(
-        name: item['name'] ?? '',
-        profession: item['profession'] ?? 'Unknown',
-        location: item['location'] ?? 'Not specified',
-        dateTime: DateTime.tryParse(item['datetime'] ?? '') ?? DateTime.now(),
-        status: status,
-      );
-    }).toList();
 
-    setState(() {
-      appts = appointments;
-      isLoading = false;
-    });
+      List<Appointment> appointments = data.map<Appointment>((item) {
+        print("🔄 Processing appointment item: $item");
+
+        // Map status from backend to enum
+        AppointmentStatus status = AppointmentStatus.booked;
+        String statusStr = (item['status'] ?? 'Pending').toLowerCase();
+
+        switch (statusStr) {
+          case 'completed':
+            status = AppointmentStatus.completed;
+            break;
+          case 'cancelled':
+            status = AppointmentStatus.cancelled;
+            break;
+          case 'pending':
+          default:
+            status = AppointmentStatus.booked;
+            break;
+        }
+        final appointment = Appointment(
+          id: item['appointment_id'].toString(), // Add this line
+          name: item['name'] ?? '',
+          profession: item['profession'] ?? 'Unknown',
+          location: item['location'] ?? 'Not specified',
+          dateTime: DateTime.parse(item['datetime']),
+          status: status,
+        );
+        print("✅ Created appointment object: $appointment");
+        return appointment;
+      }).toList();
+
+      print("📋 Final appointments list: $appointments");
+      setState(() {
+        appts = appointments;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("❌ Error in fetchAppointments: $e");
+      setState(() {
+        appts = [];
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -150,13 +175,29 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${appt.name} - ${appt.profession}',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.purple[900],
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${appt.name} - ${appt.profession}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.purple[900],
+                      ),
+                    ),
+                  ),
+                  if (appt.status == AppointmentStatus.booked)
+                    TextButton(
+                      onPressed: () => _showCancelDialog(appt),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(
@@ -252,5 +293,81 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
         ),
       ),
     );
+  }
+
+  // Add this method to show the cancel confirmation dialog
+  void _showCancelDialog(Appointment appt) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Cancel Appointment?',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Are you sure you want to cancel this appointment?',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('No', style: GoogleFonts.poppins(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              _cancelAppointment(appt);
+            },
+            child: Text(
+              'Yes, Cancel',
+              style: GoogleFonts.poppins(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Add this method to handle the cancellation
+  Future<void> _cancelAppointment(Appointment appt) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Cancel the appointment
+      final success = await cancelAppointment(appt.id.toString());
+
+      // Remove loading indicator
+      Navigator.pop(context);
+
+      if (success) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment cancelled successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Refresh the appointments list
+        await fetchAppointments();
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to cancel appointment'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // Remove loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 }

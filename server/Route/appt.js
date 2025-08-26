@@ -61,11 +61,11 @@ router.post("/booked", async (req, res) => {
   }
 });
 
-router.get("/yourappt/:userId", async (req, res) => {
+router.get("/appointments/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     console.log("Fetching appointments for user ID:", userId);
-    
+
     const result = await sql`
       SELECT 
         a.app_id as appointment_id,
@@ -79,21 +79,66 @@ router.get("/yourappt/:userId", async (req, res) => {
         d.profession,
         d.institute as location,
         u.name,
-        CONCAT(a.date, ' ', a.time) as datetime
+        TO_CHAR(
+          TO_TIMESTAMP(CONCAT(a.date, ' ', a.time), 'YYYY-MM-DD HH24:MI:SS'),
+          'YYYY-MM-DD HH24:MI:SS'
+        ) as datetime
       FROM appointment a
       JOIN doctor d ON a.doc_id = d.doc_id
-      JOIN users u ON d.doc_id = u.id
+      JOIN users u ON a.doc_id = u.id  -- Changed this join condition
       WHERE a.user_id = ${userId}
       ORDER BY a.date DESC, a.time DESC
     `;
-    
+
+    // Format the response
+    const formattedResult = result.map((appt) => ({
+      appointment_id: appt.appointment_id,
+      name: appt.name,
+      profession: appt.profession,
+      location: appt.location,
+      datetime: appt.datetime,
+      status: appt.status,
+      reason: appt.reason,
+      email: appt.email,
+    }));
+
     console.log(`Found ${result.length} appointments`);
-    res.json(result);
+    console.log("Formatted appointments:", formattedResult);
+    res.json(formattedResult);
   } catch (err) {
     console.error("Error retrieving appointments:", err);
     res.status(500).json({ error: err.message });
   }
-}); 
+});
+
+// Update the route to accept POST with body instead of URL params
+router.post("/cancel-appointment", async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    console.log("Cancelling appointment:", appointmentId);
+
+    if (!appointmentId) {
+      return res.status(400).json({ error: "Appointment ID is required" });
+    }
+
+    const result = await sql`
+      UPDATE appointment 
+      SET status = 'Cancelled'
+      WHERE app_id = ${appointmentId}
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    console.log("Appointment cancelled successfully");
+    res.json({ message: "Appointment cancelled successfully" });
+  } catch (err) {
+    console.error("Error cancelling appointment:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // router.get("/data/:userId", async (req, res) => {
 //   try {
