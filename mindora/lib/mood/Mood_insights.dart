@@ -987,21 +987,44 @@ const SizedBox(height: 10),
     Map<String, int> moodCounts = {};
     int totalEntries = 0;
 
-    if (chartData is Map<String, dynamic>) {
-      final weeklyData = chartData as Map<String, dynamic>;
-      
-      weeklyData.forEach((week, weekData) {
-        if (weekData is List) {
-          for (var entry in weekData) {
-            if (entry is Map && entry['mood_status'] != null) {
-              String moodStatus = entry['mood_status'].toString().toLowerCase();
+    // Enhanced data processing to handle different data structures
+    if (chartData != null) {
+      if (chartData is Map<String, dynamic>) {
+        // Handle weekly data structure
+        final weeklyData = chartData as Map<String, dynamic>;
+        
+        weeklyData.forEach((week, weekData) {
+          if (weekData is List) {
+            for (var entry in weekData) {
+              if (entry is Map && entry['mood_status'] != null) {
+                String moodStatus = entry['mood_status'].toString().toLowerCase().trim();
+                // Normalize mood status
+                if (moodStatus.isNotEmpty) {
+                  moodCounts[moodStatus] = (moodCounts[moodStatus] ?? 0) + 1;
+                  totalEntries++;
+                }
+              }
+            }
+          }
+        });
+      } else if (chartData is List) {
+        // Handle direct list structure
+        final dataList = chartData as List;
+        for (var entry in dataList) {
+          if (entry is Map && entry['mood_status'] != null) {
+            String moodStatus = entry['mood_status'].toString().toLowerCase().trim();
+            if (moodStatus.isNotEmpty) {
               moodCounts[moodStatus] = (moodCounts[moodStatus] ?? 0) + 1;
               totalEntries++;
             }
           }
         }
-      });
+      }
     }
+
+    print('📊 Monthly Data Debug:');
+    print('Total entries: $totalEntries');
+    print('Mood counts: $moodCounts');
 
     // Show loading state when monthly data is being loaded
     if (isLoadingMonthlyData) {
@@ -1148,12 +1171,9 @@ const SizedBox(height: 10),
           color: getMoodColor(mood),
           value: percentage,
           title: '', // Remove title from pie slices for cleaner look
-          radius: isTouched ? 100 : 85, // Increased size when touched
+          radius: isTouched ? 105 : 90, // Slightly larger for better visual
           titleStyle: const TextStyle(fontSize: 0), // Hide titles
-          borderSide: BorderSide(
-            color: const Color(0xFFD2B48C), // Light brown border
-            width: isTouched ? 1.5 : 1, // Reduced thickness
-          ),
+          borderSide: BorderSide.none, // Remove all borders
           badgeWidget: isTouched ? _buildTooltip(mood, percentage, i, sortedMoods.length) : null,
           badgePositionPercentageOffset: 1.1, // Closer to avoid going off-screen
         ),
@@ -1162,8 +1182,8 @@ const SizedBox(height: 10),
 
     return Container(
       width: double.infinity,
-      height: 480, // Increased height to accommodate breakdown box above
-      padding: const EdgeInsets.all(20),
+      height: 420, // Reduced height to prevent overflow
+      padding: const EdgeInsets.all(16), // Reduced padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -1191,323 +1211,145 @@ const SizedBox(height: 10),
           Text(
             "Tap a slice to see details",
             style: GoogleFonts.poppins(
-              fontSize: 13,
+              fontSize: 12,
               color: Colors.grey.shade600,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           
-          // Breakdown box positioned above the pie chart
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            curve: Curves.easeOut,
-            builder: (context, opacity, child) {
-              return Opacity(
-                opacity: opacity,
-                child: Transform.translate(
-                  offset: Offset(0, 20 * (1 - opacity)), // Slide down effect
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: math.max(8, 12),
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF9F4), // Light background
-                      border: Border.all(
-                        color: Colors.brown.shade600,
-                        width: 1.5,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Monthly Breakdown',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.brown.shade800,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Dynamic grid layout to prevent overflow
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            List<MapEntry<String, int>> moodList = sortedMoods.take(5).toList();
-                            
-                            // Dynamic calculation based on available width and content
-                            double availableWidth = constraints.maxWidth;
-                            int itemsPerRow;
-                            
-                            // Determine items per row based on available width
-                            if (availableWidth > 280) {
-                              itemsPerRow = 3;
-                            } else if (availableWidth > 200) {
-                              itemsPerRow = 2;
-                            } else {
-                              itemsPerRow = 1;
-                            }
-                            
-                            // Ensure we don't exceed the number of moods available
-                            if (itemsPerRow > moodList.length) {
-                              itemsPerRow = moodList.length;
-                            }
-                            
-                            List<Widget> rows = [];
-                            
-                            for (int i = 0; i < moodList.length; i += itemsPerRow) {
-                              List<Widget> rowItems = [];
-                              
-                              for (int j = i; j < i + itemsPerRow && j < moodList.length; j++) {
-                                final entry = moodList[j];
-                                final mood = entry.key;
-                                final count = entry.value;
-                                final percentage = (count / totalEntries * 100);
-                                
-                                rowItems.add(
-                                  Flexible(
-                                    flex: 1,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          // Color indicator
-                                          Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              color: getMoodColor(mood),
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: const Color(0xFFD2B48C),
-                                                width: 0.8,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          // Mood info
-                                          Flexible(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  mood.capitalize(),
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.brown.shade800,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                ),
-                                                Text(
-                                                  '${percentage.toStringAsFixed(1)}%',
-                                                  style: GoogleFonts.poppins(
-                                                    fontSize: 8,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.brown.shade600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                                
-                                // Remove manual spacing - let MainAxisAlignment handle it
-                              }
-                              
-                              rows.add(
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 2),
-                                  child: Row(
-                                    children: rowItems,
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  ),
-                                ),
-                              );
-                            }
-                            
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: rows,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+          // Organized Breakdown box
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F6F0),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE0D5C7),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Monthly Breakdown ($totalEntries entries)",
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown.shade700,
                   ),
                 ),
-              );
-            },
+                const SizedBox(height: 8),
+                // Organized grid layout
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      children: sortedMoods.map((entry) {
+                        final mood = entry.key.capitalize();
+                        final count = entry.value;
+                        final percentage = totalEntries > 0 ? (count / totalEntries * 100) : 0.0;
+                        
+                        return Container(
+                          constraints: BoxConstraints(
+                            minWidth: (constraints.maxWidth - 24) / 3, // 3 items per row max
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: getMoodColor(entry.key),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  "$mood ${percentage.toStringAsFixed(1)}%",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: Colors.brown.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           
-          // Centered pie chart without clipping
-          Center(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Make chart size responsive to screen width
-                double chartSize = math.min(
-                  constraints.maxWidth * 0.7,
-                  constraints.maxHeight * 0.4,
-                ).clamp(220.0, 280.0);
-                
-                // Dynamic center space radius based on chart size
-                double centerRadius = chartSize * 0.15; // 15% of chart size
-                
-                return Container(
-                  width: chartSize,
-                  height: chartSize,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Animated pie chart with sweep animation
-                      TweenAnimationBuilder<double>(
-                        key: ValueKey('pie_chart_$showPieAnimation'), // Unique key for pie chart
-                        tween: Tween<double>(begin: 0.0, end: showPieAnimation ? 1.0 : 0.0),
-                        duration: const Duration(milliseconds: 1500),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, animationValue, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFD2B48C),
-                                width: chartSize * 0.008, // Dynamic border width
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFD2B48C).withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: PieChart(
-                              PieChartData(
-                                sections: sections.map((section) {
-                                  return PieChartSectionData(
-                                    color: section.color,
-                                    value: section.value * animationValue, // Animate the values properly
-                                    title: section.title,
-                                    radius: section.radius,
-                                    titleStyle: section.titleStyle,
-                                    borderSide: section.borderSide,
-                                    badgeWidget: section.badgeWidget,
-                                    badgePositionPercentageOffset: section.badgePositionPercentageOffset,
-                                  );
-                                }).toList(),
-                                centerSpaceRadius: centerRadius,
-                                sectionsSpace: 1.5, // Reduced from 2 to 1.5
-                                pieTouchData: PieTouchData(
-                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                    setState(() {
-                                      if (!event.isInterestedForInteractions ||
-                                          pieTouchResponse == null ||
-                                          pieTouchResponse.touchedSection == null) {
-                                        touchedIndex = -1;
-                                        return;
-                                      }
-                                      touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                                    });
+          const SizedBox(height: 12),
+          
+          // Pie chart with proper animation
+          Expanded(
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 600),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: showPieAnimation ? 1.0 : 0.0),
+                    duration: const Duration(milliseconds: 1500),
+                    curve: Curves.easeInOutQuart,
+                    builder: (context, animationValue, child) {
+                      return PieChart(
+                        PieChartData(
+                          sections: sections.map((section) {
+                            return PieChartSectionData(
+                              color: section.color,
+                              value: section.value * animationValue, // Sweep animation
+                              title: '',
+                              radius: section.radius * (0.8 + 0.2 * animationValue), // Scale animation
+                              titleStyle: const TextStyle(fontSize: 0),
+                              borderSide: BorderSide.none,
+                              badgeWidget: section.badgeWidget,
+                              badgePositionPercentageOffset: section.badgePositionPercentageOffset,
+                            );
+                          }).toList(),
+                          centerSpaceRadius: 0,
+                          sectionsSpace: 0,
+                          pieTouchData: PieTouchData(
+                            touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                              setState(() {
+                                if (!event.isInterestedForInteractions ||
+                                    pieTouchResponse == null ||
+                                    pieTouchResponse.touchedSection == null) {
+                                  touchedIndex = -1;
+                                  return;
+                                }
+                                touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                              });
 
-                                    // Auto-hide tooltip after 3 seconds
-                                    if (touchedIndex != -1) {
-                                      Future.delayed(const Duration(seconds: 3), () {
-                                        if (mounted) {
-                                          setState(() {
-                                            touchedIndex = -1;
-                                          });
-                                        }
-                                      });
-                                    }
-                                  },
-                                ),
-                                startDegreeOffset: -90,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      // Inner circle with border - with scale animation
-                      TweenAnimationBuilder<double>(
-                        key: ValueKey('inner_circle_$showPieAnimation'), // Unique key for inner circle
-                        tween: Tween<double>(begin: 0.0, end: showPieAnimation ? 1.0 : 0.0),
-                        duration: const Duration(milliseconds: 1000),
-                        curve: Curves.elasticOut,
-                        builder: (context, scaleValue, child) {
-                          // Dynamic inner circle size based on center radius
-                          double innerSize = centerRadius * 1.6; // Slightly smaller than center space
-                          
-                          return Transform.scale(
-                            scale: scaleValue,
-                            child: Container(
-                              width: innerSize,
-                              height: innerSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFFFF9F4),
-                                border: Border.all(
-                                  color: const Color(0xFFD2B48C),
-                                  width: chartSize * 0.006, // Dynamic border width
-                                ),
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.analytics,
-                                      color: Colors.brown.shade700,
-                                      size: innerSize * 0.3, // Dynamic icon size
-                                      weight: 700,
-                                    ),
-                                    SizedBox(height: innerSize * 0.025),
-                                    Text(
-                                      '$totalEntries',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: innerSize * 0.15, // Dynamic font size
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.brown.shade800,
-                                      ),
-                                    ),
-                                    Text(
-                                      'entries',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: innerSize * 0.1, // Dynamic font size
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.brown.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                              if (touchedIndex != -1) {
+                                Future.delayed(const Duration(seconds: 3), () {
+                                  if (mounted) {
+                                    setState(() {
+                                      touchedIndex = -1;
+                                    });
+                                  }
+                                });
+                              }
+                            },
+                          ),
+                          startDegreeOffset: -90,
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ],
