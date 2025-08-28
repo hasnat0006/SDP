@@ -290,7 +290,10 @@ String getCurrentWeekRange() {
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 2, 2, 2)),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Navigate back to dashboard, skipping any intermediate pages
+              Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/dashboard');
+            },
           ),
           title: Text(
             "Mood Today",
@@ -321,7 +324,10 @@ return Scaffold(
     ),
     leading: IconButton(
       icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color.fromARGB(255, 2, 2, 2)),
-      onPressed: () => Navigator.pop(context),
+      onPressed: () {
+        // Navigate back to dashboard, skipping any intermediate pages
+        Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/dashboard');
+      },
     ),
     title: Text(
       "Mood Today",

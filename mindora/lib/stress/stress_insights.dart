@@ -186,7 +186,8 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
             color: Colors.black,
           ),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to StressTrackerPage
+            // Navigate back to dashboard, skipping any intermediate pages
+            Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/dashboard');
           },
         ),
         title: Text(
