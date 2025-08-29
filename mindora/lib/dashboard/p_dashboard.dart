@@ -585,7 +585,7 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    const Chatbot(), // Use MaterialPageRoute for simplicity
+                     Chatbot(userId: _userId), // Use MaterialPageRoute for simplicity
               ),
             );
           },

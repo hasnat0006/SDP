@@ -3,16 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'chatbubble.dart';
 import 'chatbubbleuser.dart';
 import 'chatbot_service.dart';
+import 'backend.dart';
 
 class Chatbot extends StatefulWidget {
-  const Chatbot({super.key});
+  final String userId;
+  const Chatbot({super.key, required this.userId});
 
   @override
   State<Chatbot> createState() => _ChatbotState();
 }
 
 class _ChatbotState extends State<Chatbot> {
-  final ChatbotService _chatbot = ChatbotService();
+  late final ChatbotService _chatbot;
   final TextEditingController _controller = TextEditingController();
   final List<Message> _messages = [];
   bool _isLoading = false;
@@ -20,6 +22,9 @@ class _ChatbotState extends State<Chatbot> {
   @override
   void initState() {
     super.initState();
+    // Initialize chatbot with user ID
+    _chatbot = ChatbotService(userId: widget.userId);
+
     // Add initial greeting
     _messages.add(
       Message(
@@ -28,13 +33,55 @@ class _ChatbotState extends State<Chatbot> {
         isUser: false,
       ),
     );
+
+    // Load chat history
+    _loadChatHistory();
+  }
+
+  Future<void> _loadChatHistory() async {
+    try {
+      final history = await getChatHistory(widget.userId);
+      if (history.isEmpty) return;
+
+      setState(() {
+        // Clear initial greeting if we have history
+        _messages.clear();
+
+        for (var item in history) {
+          if (item['conversation'] != null) {
+            final conversationData =
+                item['conversation'] as Map<String, dynamic>;
+            final messages = conversationData['messages'] as List<dynamic>;
+
+            for (var msg in messages) {
+              if (msg != null) {
+                _messages.add(
+                  Message(
+                    text: msg['content']?.toString() ?? '',
+                    isUser: msg['role'] == 'user',
+                    timestamp: msg['timestamp'] != null
+                        ? DateTime.parse(msg['timestamp'])
+                        : DateTime.now(),
+                  ),
+                );
+              }
+            }
+          }
+        }
+      });
+    } catch (e) {
+      print('Error loading chat history: $e');
+      print('Error details: ${e.toString()}');
+    }
   }
 
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
+    final userMessage = Message(text: text, isUser: true);
+
     setState(() {
-      _messages.add(Message(text: text, isUser: true));
+      _messages.add(userMessage);
       _isLoading = true;
       _controller.clear();
     });
@@ -141,9 +188,28 @@ class _ChatbotState extends State<Chatbot> {
   }
 }
 
+// Update Message class
 class Message {
   final String text;
   final bool isUser;
+  final DateTime timestamp;
 
-  Message({required this.text, required this.isUser});
+  Message({required this.text, required this.isUser, DateTime? timestamp})
+    : this.timestamp = timestamp ?? DateTime.now();
+
+  factory Message.fromJson(Map<String, dynamic> json) {
+    return Message(
+      text: json['content']?.toString() ?? '',
+      isUser: json['role'] == 'user',
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'content': text,
+    'role': isUser ? 'user' : 'assistant',
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
