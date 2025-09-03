@@ -5,6 +5,8 @@ import 'package:client/services/gemini_service.dart';
 import 'package:client/services/navigation_service.dart';
 import 'package:client/services/supabase_service.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/mood/services/notification.dart';
+import 'package:client/stress/services/notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -12,6 +14,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await NotificationService.initializeNotification();
+  
+  // Initialize mood and stress notifications
+  await MoodNotificationService.initializeMoodNotifications();
+  await StressNotificationService.initializeStressNotifications();
 
   // Initialize Supabase (non-blocking)
   await SupabaseService.initialize();
