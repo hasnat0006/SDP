@@ -54,7 +54,7 @@ router.get('/confirmed-appointments', async (req, res) => {
     const appointments = await sql`
       SELECT *, doc_id, user_id, status, date, time, reminder 
       FROM appointment 
-      WHERE status = 'confirmed'
+      WHERE status = 'Confirmed'
     `;
     
     console.log('📊 Found confirmed appointments:', appointments.length);
@@ -77,7 +77,7 @@ router.get('/confirmed-appointments/doctor/:docId', async (req, res) => {
     const appointments = await sql`
       SELECT *, doc_id, user_id, status, date, time, reminder 
       FROM appointment 
-      WHERE status = 'confirmed' AND doc_id = ${docId}
+      WHERE status = 'Confirmed' AND doc_id = ${docId}
     `;
     
     console.log('📊 Found confirmed appointments for doctor:', appointments.length);
@@ -98,7 +98,7 @@ router.get('/confirmed-appointments/user/:userId', async (req, res) => {
     const appointments = await sql`
       SELECT *, doc_id, user_id, status, date, time, reminder 
       FROM appointment 
-      WHERE status = 'confirmed' AND user_id = ${userId}
+      WHERE status = 'Confirmed' AND user_id = ${userId}
     `;
     
     console.log('📊 Found confirmed appointments for user:', appointments.length);
@@ -119,7 +119,7 @@ router.get('/my-appointments/:userId', async (req, res) => {
     const appointments = await sql`
       SELECT *, doc_id, user_id, status, date, time, reminder 
       FROM appointment 
-      WHERE status = 'confirmed' AND doc_id = ${userId}
+      WHERE status = 'Confirmed' AND doc_id = ${userId}
     `;
     
     console.log('📊 Found my appointments:', appointments.length);
@@ -137,14 +137,22 @@ router.get('/pending-appointments/doctor/:docId', async (req, res) => {
     const { docId } = req.params;
     console.log(`🔍 Fetching pending appointments for doctor ID: ${docId}`);
     
+    // Quick debug to see all statuses in the database
+    const allStatuses = await sql`
+      SELECT DISTINCT status FROM appointment
+    `;
+    console.log('📊 All status values in database:', allStatuses.map(row => row.status));
+    
     const appointments = await sql`
       SELECT *, doc_id, user_id, status, date, time, reminder 
       FROM appointment 
-      WHERE status = 'pending' AND doc_id = ${docId}
+      WHERE status = 'Pending' AND doc_id = ${docId}
     `;
     
     console.log('📊 Found pending appointments for doctor:', appointments.length);
-    console.log('📋 Pending appointments data:', JSON.stringify(appointments, null, 2));
+    if (appointments.length > 0) {
+      console.log('📋 First appointment status:', appointments[0].status);
+    }
     
     res.json(appointments);
   } catch (error) {
@@ -218,7 +226,7 @@ router.put('/cancel-appointment/:appId', async (req, res) => {
     // Update the appointment status to 'cancelled' using the primary key
     const result = await sql`
       UPDATE appointment 
-      SET status = 'cancelled'
+      SET status = 'Cancelled'
       WHERE app_id = ${appId}
     `;
     
@@ -284,7 +292,7 @@ router.put('/update-appointment-status/:appId', async (req, res) => {
     console.log(`🔍 Updating appointment status for ID: ${appId} to: ${status}`);
     
     // Validate status value
-    if (!status || !['confirmed', 'cancelled', 'rejected', 'pending'].includes(status)) {
+    if (!status || !['Confirmed', 'Cancelled', 'Rejected', 'Pending'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status value' });
     }
     
