@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const sql = require("../../DB/connection");
-const { sendMail } = require("./mail");
+const { sendMail, sendEmergencyAlert } = require("./mail");
 const router = express.Router();
 
 router.get("/check-user", async (req, res) => {
@@ -59,5 +59,29 @@ async function encryptPassword(password) {
   return await bcrypt.hash(password, saltRounds);
 }
 
+// Test endpoint for emergency alert
+router.get("/test-emergency-alert", async (req, res) => {
+  try {
+    const testData = [
+      { date: '2025-09-01', mood_status: 'Sad', mood_level: 4 },
+      { date: '2025-09-02', mood_status: 'Depressed', mood_level: 3 },
+      { date: '2025-09-03', mood_status: 'Angry', mood_level: 5 }
+    ];
+    
+    const result = await sendEmergencyAlert(
+      'zahin2296@gmail.com',
+      'TestUser',
+      'negative_mood_pattern',
+      testData
+    );
+    
+    res.json({ 
+      success: result, 
+      message: result ? 'Emergency alert sent successfully' : 'Failed to send emergency alert' 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;
