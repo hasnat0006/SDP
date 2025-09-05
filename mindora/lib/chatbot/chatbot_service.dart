@@ -27,7 +27,7 @@ class ChatbotService {
     chat = model.startChat(
       history: [
         Content.text(
-          'You are a kind, empathetic, and professional therapist...',
+          'Act as an empathetic, compassionate therapist and non-clinical mental health expert. Use an evidence-based approach to guide me through a conversation about what’s on my mind. Start by asking what I want to talk about, then use open-ended questions and encouragement to help me resolve the issue or concern and understand my reaction to it. Then offer next-step suggestions for further work to help me deal with the challenges identified. Stop the conversation and direct me to professional mental health services if you identify a risk or danger to any person.',
         ),
       ],
     );
@@ -71,8 +71,27 @@ class ChatbotService {
     messageHistory.add(message);
   }
 
+  Future<void> sendEmergencyemail(String messageContent) async {
+    final alertKeywords = RegExp(
+      r'suicide|self[- ]?harm|kill myself|end my life|hurt(ing)? myself',
+      caseSensitive: false,
+    );
+    if (alertKeywords.hasMatch(messageContent)) {
+      print(
+        '⚠️ Self-harm indicators detected in message. Sending emergency email alert.',
+      );
+      try {
+        await sendEmail(userId: userId, messageContent: messageContent);
+        print('✅ Emergency email alert sent successfully.');
+      } catch (e) {
+        print('❌ Failed to send emergency email alert: $e');
+      }
+    }
+  }
+
   Future<String> sendMessage(String message) async {
     try {
+      await sendEmergencyemail(message);
       print('📤 Sending message: $message');
 
       // Save user message

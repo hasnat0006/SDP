@@ -1,5 +1,6 @@
 const express = require("express");
 const sql = require("../DB/connection");
+const nodemailer = require("nodemailer");
 const router = express.Router();
 
 // Save chat message
@@ -38,7 +39,7 @@ router.get("/chat/history/:userId", async (req, res) => {
         date
       FROM chatbot
       WHERE user_id = ${userId}
-      ORDER BY date DESC, created_at ASC
+      ORDER BY date ASC
     `;
 
     if (!result || result.length === 0) {
@@ -53,26 +54,58 @@ router.get("/chat/history/:userId", async (req, res) => {
   }
 });
 
-// // Get chats by date
-// router.get("/chat/history/:userId/:date", async (req, res) => {
-//   try {
-//     const { userId, date } = req.params;
-//     console.log("Fetching chats for user:", userId, "date:", date);
+// New endpoint for sending emergency email alerts using nodemailer
+router.post("/alert/email", async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+    console.log(req.body);
+    if (!userId || !message) {
+      return res
+        .status(400)
+        .json({ error: "userId and message are required." });
+    }
 
-//     const result = await sql`
-//       SELECT conversation
-//       FROM chat_messages
-//       WHERE user_id = ${userId}
-//         AND date = ${date}
-//       ORDER BY created_at ASC
-//     `;
+    // Retrieve the user's emergency email from the users table
+    const userResult =
+      await sql`SELECT emergency_email FROM users WHERE id = ${userId}`;
+    if (
+      !userResult ||
+      userResult.length === 0 ||
+      !userResult[0].emergency_email
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Emergency email not found for the user." });
+    }
 
-//     console.log(`Found ${result.length} conversations for date ${date}`);
-//     res.json(result);
-//   } catch (err) {
-//     console.error("Error fetching chat history:", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+    const emergencyEmail = userResult[0].emergency_email;
+    console.log(`Sending emergency email to: ${emergencyEmail}`);
+
+    // Configure nodemailer transporter
+    let transporter = nodemailer.createTransport({
+      service: "gmail", // Change this if using a different email service
+      auth: {
+        user: process.env.EMAIL_USER, // Your email address
+        pass: process.env.EMAIL_PASS, // Your email password or app password
+      },
+    });
+
+    // Setup email options
+    let mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: emergencyEmail,
+      subject: "Emergency Alert from Chatbot",
+      text: message,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+    console.log("Emergency email alert sent successfully.");
+    res.status(200).json({ message: "Emergency email sent successfully." });
+  } catch (err) {
+    console.error("Error sending emergency email:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

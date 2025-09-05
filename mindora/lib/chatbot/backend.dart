@@ -38,6 +38,23 @@ Future<void> saveChatMessage({
   }
 }
 
+Future<void> sendEmail({
+  required String userId,
+  required String messageContent,
+}) async {
+  try {
+    await postToBackend('alert/email', {
+      'userId': userId,
+      'message':
+          'Emergency alert: The message "' +
+          messageContent +
+          '" indicates potential self-harm.',
+    });
+  } catch (e) {
+    print('Error sending email: $e');
+  }
+}
+
 Future<List<Map<String, dynamic>>> getChatHistory(String userId) async {
   try {
     final response = await getFromBackend('chat/history/$userId');

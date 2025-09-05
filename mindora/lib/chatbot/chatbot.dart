@@ -49,22 +49,19 @@ class _ChatbotState extends State<Chatbot> {
 
         for (var item in history) {
           if (item['conversation'] != null) {
-            final conversationData =
-                item['conversation'] as Map<String, dynamic>;
-            final messages = conversationData['messages'] as List<dynamic>;
-
+            final messages = List<Map<String, dynamic>>.from(
+              item['conversation'],
+            );
             for (var msg in messages) {
-              if (msg != null) {
-                _messages.add(
-                  Message(
-                    text: msg['content']?.toString() ?? '',
-                    isUser: msg['role'] == 'user',
-                    timestamp: msg['timestamp'] != null
-                        ? DateTime.parse(msg['timestamp'])
-                        : DateTime.now(),
-                  ),
-                );
-              }
+              _messages.add(
+                Message(
+                  text: msg['content']?.toString() ?? '',
+                  isUser: msg['role'] == 'user',
+                  timestamp: msg['timestamp'] != null
+                      ? DateTime.parse(msg['timestamp'])
+                      : DateTime.now(),
+                ),
+              );
             }
           }
         }
