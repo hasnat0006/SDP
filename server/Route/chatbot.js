@@ -81,18 +81,27 @@ router.post("/alert/email", async (req, res) => {
     const emergencyEmail = userResult[0].emergency_email;
     console.log(`Sending emergency email to: ${emergencyEmail}`);
 
-    // Configure nodemailer transporter
-    let transporter = nodemailer.createTransport({
-      service: "gmail", // Change this if using a different email service
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
       auth: {
-        user: process.env.EMAIL_USER, // Your email address
-        pass: process.env.EMAIL_PASS, // Your email password or app password
+        user: process.env.GMAIL,
+        pass: process.env.GMAIL_PASS,
       },
     });
+    // Configure nodemailer transporter
+    // let transporter = nodemailer.createTransport({
+    //   service: "gmail", // Change this if using a different email service
+    //   auth: {
+    //     user: process.env.EMAIL_USER, // Your email address
+    //     pass: process.env.EMAIL_PASS, // Your email password or app password
+    //   },
+    // });
 
     // Setup email options
     let mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: process.env.GMAIL,
       to: emergencyEmail,
       subject: "Emergency Alert from Chatbot",
       text: message,

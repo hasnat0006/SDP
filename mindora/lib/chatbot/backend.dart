@@ -48,7 +48,7 @@ Future<void> sendEmail({
       'message':
           'Emergency alert: The message "' +
           messageContent +
-          '" indicates potential self-harm.',
+          '" indicates potential self-harm. Please go to our app and book an appointment for your loved one.',
     });
   } catch (e) {
     print('Error sending email: $e');
