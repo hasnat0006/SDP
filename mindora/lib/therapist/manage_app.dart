@@ -333,26 +333,6 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   onPressed: () => _showRescheduleDialog(context, index),
                   child: const Text('View Details', style: TextStyle(color: Colors.brown)),
                 ),
-                // TEST BUTTON - Remove this later
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                  onPressed: () async {
-                    // Show immediate test notification for this appointment
-                    await AppointmentNotificationService.showImmediateTestNotification(appointments[index]);
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🧪 Test notification sent!'),
-                        backgroundColor: Colors.blue,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  child: const Text('🧪 Test', style: TextStyle(color: Colors.white)),
-                ),
                 Row(
                   children: [
                     const Text("Reminder"),
@@ -392,9 +372,6 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                               // Schedule notification for this appointment
                               await AppointmentNotificationService.scheduleAppointmentReminder(updatedAppointment);
                               print('✅ Scheduled notification for appointment: ${updatedAppointment.appId}');
-                              
-                              // Show immediate test notification to confirm it's working
-                              await AppointmentNotificationService.showImmediateTestNotification(updatedAppointment);
                             } else {
                               // Cancel notification for this appointment
                               await AppointmentNotificationService.cancelAppointmentNotification(updatedAppointment.appId);
@@ -620,7 +597,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                 child: const Text("Appointment Requests"),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())

@@ -27,17 +27,39 @@ class Appointment {
     // Store original date for parsing
     String originalDate = json['date']?.toString() ?? '';
     
-    // Format the date for display - use UTC date components only
+    // Format the date for display - use safer date parsing
     String formattedDate = '';
     if (json['date'] != null) {
       try {
-        // Parse the date string and extract UTC date components
-        DateTime utcDateTime = DateTime.parse(json['date']).toUtc();
+        String dateStr = json['date'].toString();
+        print('🔍 Raw date from server: "$dateStr"');
         
-        // Use UTC date components to avoid timezone issues
-        formattedDate = '${utcDateTime.day}/${utcDateTime.month}/${utcDateTime.year}';
+        // Handle different date formats that might come from the server
+        DateTime parsedDate;
         
-        print('🔍 Original date: ${json['date']} -> Formatted: $formattedDate');
+        if (dateStr.contains('T')) {
+          // ISO format like "2025-09-09T00:00:00.000Z"
+          parsedDate = DateTime.parse(dateStr);
+          // Convert to local timezone but use local date components
+          DateTime localDate = parsedDate.toLocal();
+          formattedDate = '${localDate.day}/${localDate.month}/${localDate.year}';
+        } else if (dateStr.contains('-') && dateStr.length >= 10) {
+          // Date format like "2025-09-09"
+          List<String> parts = dateStr.substring(0, 10).split('-');
+          if (parts.length == 3) {
+            int year = int.parse(parts[0]);
+            int month = int.parse(parts[1]);
+            int day = int.parse(parts[2]);
+            parsedDate = DateTime(year, month, day);
+            formattedDate = '$day/$month/$year';
+          }
+        } else {
+          // Fallback to original parsing
+          parsedDate = DateTime.parse(dateStr);
+          formattedDate = '${parsedDate.day}/${parsedDate.month}/${parsedDate.year}';
+        }
+        
+        print('🔍 Parsed date: "$dateStr" -> "$formattedDate"');
       } catch (e) {
         print('❌ Error parsing date: ${json['date']}, error: $e');
         formattedDate = json['date']?.toString() ?? '';
