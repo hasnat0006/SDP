@@ -12,7 +12,8 @@ class StressNotificationService {
         id: _dailyNotificationId.hashCode,
         channelKey: 'high_importance_channel',
         title: '🧘 Evening Check-in',
-        body: 'How was your stress level today? Take a moment to track your well-being.',
+        body:
+            'How was your stress level today? Take a moment to track your well-being.',
         notificationLayout: NotificationLayout.Default,
         category: NotificationCategory.Reminder,
         payload: {
@@ -22,7 +23,7 @@ class StressNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 7,
+        hour: 8,
         minute: 0,
         second: 0,
         millisecond: 0,
@@ -37,9 +38,9 @@ class StressNotificationService {
     await scheduleDailyStressReminder();
     print('✅ Daily stress reminder scheduled for 7:00 AM');
     print('🕐 Current time: ${DateTime.now()}');
-    
-    // Test immediate notification
-    await testImmediateNotification();
+
+    // Test immediate notification - commented out for production
+    // await testImmediateNotification();
   }
 
   /// Test function to create immediate notification
@@ -51,13 +52,11 @@ class StressNotificationService {
           id: 9998,
           channelKey: 'high_importance_channel',
           title: '🧪 TEST: Stress Notification',
-          body: 'This is a test stress notification. If you see this, notifications are working!',
+          body:
+              'This is a test stress notification. If you see this, notifications are working!',
           notificationLayout: NotificationLayout.Default,
           category: NotificationCategory.Reminder,
-          payload: {
-            'page': 'stress_tracker',
-            'test': 'true'
-          },
+          payload: {'page': 'stress_tracker', 'test': 'true'},
         ),
       );
       print('✅ Test stress notification created successfully!');
@@ -71,7 +70,7 @@ class StressNotificationService {
     try {
       final userData = await UserService.getUserData();
       final userId = userData['userId'] ?? '';
-      
+
       if (userId.isEmpty) {
         print('❌ No user ID found, skipping stress reminder check');
         return;
@@ -79,7 +78,7 @@ class StressNotificationService {
 
       // Check if stress is already logged for today
       final result = await StressTrackerBackend.getTodayStressData(userId);
-      
+
       if (result['success'] == true && result['data'] != null) {
         // Stress already logged today, don't send notification
         print('✅ Stress already logged today, skipping notification');
@@ -103,7 +102,8 @@ class StressNotificationService {
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         channelKey: 'high_importance_channel',
         title: '🌙 Stress Check-in',
-        body: 'You haven\'t logged your stress level today. How are you feeling?',
+        body:
+            'You haven\'t logged your stress level today. How are you feeling?',
         notificationLayout: NotificationLayout.Default,
         category: NotificationCategory.Reminder,
         payload: {
@@ -124,7 +124,7 @@ class StressNotificationService {
   static Future<void> showStressCompletedNotification(int stressLevel) async {
     String emoji = _getStressEmoji(stressLevel);
     String message = _getStressMessage(stressLevel);
-    
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
