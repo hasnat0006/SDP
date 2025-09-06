@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ChatbotBubbleuser extends StatelessWidget {
-  const ChatbotBubbleuser({super.key});
+class UserMessageBubble extends StatelessWidget {
+  final String text;
 
-  final String text = 'I had a really bad day at work. And I need to vent.';
+  const UserMessageBubble({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    final accent = const Color.fromARGB(255, 211, 154, 213); // Your soft purple
+    final accent = const Color.fromARGB(255, 211, 154, 213);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -41,7 +41,7 @@ class ChatbotBubbleuser extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          const Icon(Icons.done_all, color: Colors.white70, size: 18),
+          const Icon(Icons.done_all, color: Colors.grey, size: 18),
         ],
       ),
     );

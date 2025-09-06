@@ -1,7 +1,4 @@
-import 'dart:convert';
 import '../backend/main_query.dart';
-import 'package:http/http.dart'
-    as http; // Import the method to interact with the backend
 
 // Function to book an appointment
 Future<void> bookAppointment({
@@ -55,5 +52,36 @@ Future<List<dynamic>> GetTherapist() async {
   } catch (e) {
     print('❌ Error: $e');
     rethrow; // Rethrow the error to be handled elsewhere
+  }
+}
+
+Future<List<dynamic>> GetAppointments(String userId) async {
+  try {
+    print('🔍 Fetching appointments for user: $userId');
+    // Use getFromBackend instead of postToBackend for fetching data
+    final data = await getFromBackend('appointments/$userId');
+    print('📦 Raw appointments data: $data');
+    return data is List ? data : [];
+  } catch (e) {
+    print('❌ Error fetching appointments: $e');
+    return [];
+  }
+}
+
+// Update the cancelAppointment function
+Future<bool> cancelAppointment(String appointmentId) async {
+  try {
+    print('🔄 Cancelling appointment: $appointmentId');
+
+    // Send the appointmentId in the request body instead of URL params
+    final response = await postToBackend('cancel-appointment', {
+      'appointmentId': appointmentId,
+    });
+
+    print('📦 Cancel response: $response');
+    return true;
+  } catch (e) {
+    print('❌ Error cancelling appointment: $e');
+    return false;
   }
 }

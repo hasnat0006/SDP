@@ -1,145 +1,212 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:client/chatbot/chatbubble.dart';
-import 'package:client/chatbot/chatbubbleuser.dart';
+import 'chatbubble.dart';
+import 'chatbubbleuser.dart';
+import 'chatbot_service.dart';
+import 'backend.dart';
 
 class Chatbot extends StatefulWidget {
-  const Chatbot({super.key});
+  final String userId;
+  const Chatbot({super.key, required this.userId});
 
   @override
   State<Chatbot> createState() => _ChatbotState();
 }
 
 class _ChatbotState extends State<Chatbot> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
-
-  final Color purple = const Color.fromARGB(255, 211, 154, 213);
+  late final ChatbotService _chatbot;
+  final TextEditingController _controller = TextEditingController();
+  final List<Message> _messages = [];
+  bool _isLoading = false;
 
   @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    // Initialize chatbot with user ID
+    _chatbot = ChatbotService(userId: widget.userId);
+
+    // Add initial greeting
+    _messages.add(
+      Message(
+        text:
+            "Hello! I'm here to listen and support you. How are you feeling today?",
+        isUser: false,
+      ),
+    );
+
+    // Load chat history
+    _loadChatHistory();
   }
 
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    // TODO: handle your message sending logic here
-    _controller.clear();
-    _focusNode.requestFocus();
+  Future<void> _loadChatHistory() async {
+    try {
+      final history = await getChatHistory(widget.userId);
+      if (history.isEmpty) return;
+
+      setState(() {
+        // Clear initial greeting if we have history
+        _messages.clear();
+
+        for (var item in history) {
+          if (item['conversation'] != null) {
+            final messages = List<Map<String, dynamic>>.from(
+              item['conversation'],
+            );
+            for (var msg in messages) {
+              _messages.add(
+                Message(
+                  text: msg['content']?.toString() ?? '',
+                  isUser: msg['role'] == 'user',
+                  timestamp: msg['timestamp'] != null
+                      ? DateTime.parse(msg['timestamp'])
+                      : DateTime.now(),
+                ),
+              );
+            }
+          }
+        }
+      });
+    } catch (e) {
+      print('Error loading chat history: $e');
+      print('Error details: ${e.toString()}');
+    }
+  }
+
+  Future<void> _sendMessage(String text) async {
+    if (text.trim().isEmpty) return;
+
+    final userMessage = Message(text: text, isUser: true);
+
+    setState(() {
+      _messages.add(userMessage);
+      _isLoading = true;
+      _controller.clear();
+    });
+
+    try {
+      final response = await _chatbot.sendMessage(text);
+      setState(() {
+        _messages.add(Message(text: response, isUser: false));
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _messages.add(
+          Message(
+            text:
+                "I'm sorry, I'm having trouble responding right now. Please try again.",
+            isUser: false,
+          ),
+        );
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Matching AppBar style with Booked Appointments
       appBar: AppBar(
-        backgroundColor: purple,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        backgroundColor: const Color.fromARGB(255, 211, 154, 213),
+        title: Text(
+          'Virtual Therapist',
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
-
-      // Soft background that aligns with your appointments card vibe
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFFF7F4F2),
-              Colors.purple[50]!.withOpacity(0.8),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          children: [
-            // Messages area
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                children: [
-                  // Example bubbles (use your own stream/list)
-                  ChatbotBubble(),
-                  const SizedBox(height: 12),
-                  ChatbotBubbleuser(),
-                  const SizedBox(height: 12),
-                  // Add more ChatbotBubble/ChatbotBubbleuser as needed...
-                ],
-              ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final message = _messages[index];
+                return message.isUser
+                    ? UserMessageBubble(text: message.text)
+                    : BotMessageBubble(text: message.text);
+              },
             ),
-
-            // Input area — pill, elevated, comfy spacing
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Material(
-                  elevation: 4,
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          onSubmitted: (_) => _sendMessage(),
-                          style: GoogleFonts.poppins(fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Write a message...',
-                            hintStyle: GoogleFonts.poppins(
-                              color: Colors.grey[500],
-                              fontSize: 14,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
+          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(),
+            ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: 'Type your message...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
                       ),
-                      const SizedBox(width: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(24),
-                          onTap: _sendMessage,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: purple,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            padding: const EdgeInsets.all(10),
-                            child: const Icon(
-                              Icons.send_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
                       ),
-                    ],
+                    ),
+                    onSubmitted: (text) => _sendMessage(text),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  color: const Color.fromARGB(255, 211, 154, 213),
+                  onPressed: () => _sendMessage(_controller.text),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// Update Message class
+class Message {
+  final String text;
+  final bool isUser;
+  final DateTime timestamp;
+
+  Message({required this.text, required this.isUser, DateTime? timestamp})
+    : this.timestamp = timestamp ?? DateTime.now();
+
+  factory Message.fromJson(Map<String, dynamic> json) {
+    return Message(
+      text: json['content']?.toString() ?? '',
+      isUser: json['role'] == 'user',
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'])
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'content': text,
+    'role': isUser ? 'user' : 'assistant',
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
