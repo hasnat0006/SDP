@@ -112,7 +112,7 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
     try {
       // Update appointment status to confirmed
       print('🔍 Calling updateAppointmentStatus...');
-      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'confirmed');
+      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'Confirmed');
       print('✅ Update appointment status result: $success');
       
       if (success) {
@@ -239,7 +239,7 @@ class _PendingRequestsPageState extends State<PendingRequestsPage> {
     );
 
     try {
-      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'cancelled');
+      final success = await AppointmentService.updateAppointmentStatus(appointmentId, 'Cancelled');
       
       // Close loading dialog
       Navigator.pop(context);

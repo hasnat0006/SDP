@@ -101,4 +101,50 @@ class NavigationService {
       debugPrint('Error handling task notification: $e');
     }
   }
+
+  // Navigate to appointments page with appointment information
+  static Future<void> navigateToAppointmentFromNotification(
+    Map<String, String?> payload,
+  ) async {
+    if (context == null) return;
+
+    try {
+      // Extract appointment information from payload
+      final patientName = payload["patient_name"] ?? "";
+      final appointmentTime = payload["appointment_time"] ?? "";
+      final appointmentType = payload["type"] ?? "";
+
+      // Show a snackbar with appointment info and navigation action
+      if (patientName.isNotEmpty && appointmentTime.isNotEmpty && context != null) {
+        ScaffoldMessenger.of(context!).showSnackBar(
+          SnackBar(
+            content: Text(
+              appointmentType == "appointment_reminder"
+                  ? "Reminder: Appointment with $patientName at $appointmentTime"
+                  : appointmentType == "appointment_starting"
+                  ? "Starting now: Appointment with $patientName"
+                  : "Appointment: $patientName at $appointmentTime",
+            ),
+            backgroundColor: const Color(0xFF4A148C),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'View Appointments',
+              textColor: Colors.white,
+              onPressed: () {
+                // Navigate to appointments page
+                // You can customize this route based on your app's navigation structure
+                navigateTo('/appointments');
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error handling appointment notification: $e');
+    }
+  }
 }
