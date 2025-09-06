@@ -23,8 +23,8 @@ class MoodNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 11,
-        minute: 22,
+        hour: 7,
+        minute: 0,
         second: 0,
         millisecond: 0,
         repeats: true, // Repeat daily
@@ -92,7 +92,7 @@ class MoodNotificationService {
 
       // Only send notification if it's 8 AM or later and no mood logged
       final now = DateTime.now();
-      if (now.hour >= 8) {
+      if (now.hour >= 7) {
         await _showMoodReminderNotification();
       }
     } catch (e) {

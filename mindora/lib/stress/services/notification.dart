@@ -22,8 +22,8 @@ class StressNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 11,
-        minute: 19,
+        hour: 7,
+        minute: 0,
         second: 0,
         millisecond: 0,
         repeats: true, // Repeat daily
@@ -35,7 +35,7 @@ class StressNotificationService {
   static Future<void> initializeStressNotifications() async {
     // Schedule the daily reminder
     await scheduleDailyStressReminder();
-    print('✅ Daily stress reminder scheduled for 11:19 AM');
+    print('✅ Daily stress reminder scheduled for 7:00 AM');
     print('🕐 Current time: ${DateTime.now()}');
     
     // Test immediate notification
@@ -86,9 +86,9 @@ class StressNotificationService {
         return;
       }
 
-      // Only send notification if it's 8 PM or later and no stress logged
+      // Only send notification if it's 7 AM or later and no stress logged
       final now = DateTime.now();
-      if (now.hour >= 20) {
+      if (now.hour >= 7) {
         await _showStressReminderNotification();
       }
     } catch (e) {
