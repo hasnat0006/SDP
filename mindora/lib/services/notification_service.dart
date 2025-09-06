@@ -78,12 +78,23 @@ class NotificationService {
     if (payload["navigate"] == "true" || payload.containsKey("task_id")) {
       await _navigateToTask(payload);
     }
+    
+    // Handle appointment notification navigation
+    if (payload["navigate"] == "true" || payload.containsKey("appointment_id")) {
+      await _navigateToAppointment(payload);
+    }
   }
 
   // Navigate to the task list page and potentially focus on a specific task
   static Future<void> _navigateToTask(Map<String, String?> payload) async {
     // Use the navigation service to handle the task navigation
     await NavigationService.navigateToTaskFromNotification(payload);
+  }
+
+  // Navigate to appointments page when appointment notification is tapped
+  static Future<void> _navigateToAppointment(Map<String, String?> payload) async {
+    // Use the navigation service to handle the appointment navigation
+    await NavigationService.navigateToAppointmentFromNotification(payload);
   }
 
   static Future<void> showNotification({

@@ -289,10 +289,16 @@ router.put('/update-appointment-status/:appId', async (req, res) => {
     const { appId } = req.params;
     const { status } = req.body;
     
-    console.log(`🔍 Updating appointment status for ID: ${appId} to: ${status}`);
+    console.log(`🔍 Updating appointment status for ID: ${appId} to: "${status}"`);
+    console.log(`🔍 Received request body:`, JSON.stringify(req.body, null, 2));
+    console.log(`🔍 Status type: ${typeof status}`);
+    console.log(`🔍 Status length: ${status ? status.length : 'undefined'}`);
+    console.log(`🔍 Status characters: ${status ? JSON.stringify(status.split('')) : 'undefined'}`);
     
     // Validate status value
     if (!status || !['Confirmed', 'Cancelled', 'Rejected', 'Pending'].includes(status)) {
+      console.log(`❌ Status validation failed. Received: "${status}"`);
+      console.log(`❌ Valid statuses: ['Confirmed', 'Cancelled', 'Rejected', 'Pending']`);
       return res.status(400).json({ error: 'Invalid status value' });
     }
     

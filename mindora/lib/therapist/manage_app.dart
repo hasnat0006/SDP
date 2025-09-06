@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:client/services/user_service.dart';
+import '../services/appointment_notification_service.dart';
 import 'pending_req.dart';
 import 'backend.dart';
 
@@ -63,6 +64,26 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
       }
       
       print('✅ Fetched ${fetched.length} appointments');
+      
+      // Schedule notifications for appointments with reminders enabled
+      if (_userType == 'doctor') {
+        final appointmentsWithReminders = fetched.where((apt) => apt.reminder == 'yes' || apt.reminder == 'on').toList();
+        await AppointmentNotificationService.scheduleMultipleAppointmentReminders(fetched);
+        print('✅ Scheduled appointment notifications for doctor - ${appointmentsWithReminders.length} appointments');
+        
+        // Show a snackbar to let you know notifications were scheduled
+        if (mounted && appointmentsWithReminders.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🔔 Scheduled ${appointmentsWithReminders.length} appointment reminder(s)'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          });
+        }
+      }
       
       if (mounted) {
         setState(() {
@@ -312,11 +333,31 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                   onPressed: () => _showRescheduleDialog(context, index),
                   child: const Text('View Details', style: TextStyle(color: Colors.brown)),
                 ),
+                // TEST BUTTON - Remove this later
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  onPressed: () async {
+                    // Show immediate test notification for this appointment
+                    await AppointmentNotificationService.showImmediateTestNotification(appointments[index]);
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('🧪 Test notification sent!'),
+                        backgroundColor: Colors.blue,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: const Text('🧪 Test', style: TextStyle(color: Colors.white)),
+                ),
                 Row(
                   children: [
                     const Text("Reminder"),
                     Switch(
-                      value: appointments[index].reminder == 'on',
+                      value: appointments[index].reminder == 'yes' || appointments[index].reminder == 'on',
                       activeColor: Colors.green,
                       onChanged: (value) async {
                         final newReminderStatus = value ? 'on' : 'off';
@@ -328,20 +369,38 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                         );
                         
                         if (success) {
+                          // Create updated appointment object
+                          final updatedAppointment = Appointment(
+                            appId: appointments[index].appId,
+                            userId: appointments[index].userId,
+                            userName: appointments[index].userName,
+                            date: appointments[index].date,
+                            originalDate: appointments[index].originalDate,
+                            time: appointments[index].time,
+                            status: appointments[index].status,
+                            reminder: newReminderStatus,
+                          );
+                          
                           // Update the local state
                           setState(() {
-                            // Create a new appointment object with updated reminder
-                            appointments[index] = Appointment(
-                              appId: appointments[index].appId,
-                              userId: appointments[index].userId,
-                              userName: appointments[index].userName,
-                              date: appointments[index].date,
-                              originalDate: appointments[index].originalDate, // Add this line
-                              time: appointments[index].time,
-                              status: appointments[index].status,
-                              reminder: newReminderStatus,
-                            );
+                            appointments[index] = updatedAppointment;
                           });
+                          
+                          // Handle notifications based on reminder status and user type
+                          if (_userType == 'doctor') {
+                            if (value) {
+                              // Schedule notification for this appointment
+                              await AppointmentNotificationService.scheduleAppointmentReminder(updatedAppointment);
+                              print('✅ Scheduled notification for appointment: ${updatedAppointment.appId}');
+                              
+                              // Show immediate test notification to confirm it's working
+                              await AppointmentNotificationService.showImmediateTestNotification(updatedAppointment);
+                            } else {
+                              // Cancel notification for this appointment
+                              await AppointmentNotificationService.cancelAppointmentNotification(updatedAppointment.appId);
+                              print('✅ Cancelled notification for appointment: ${updatedAppointment.appId}');
+                            }
+                          }
                           
                           // Show success message
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -444,6 +503,12 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
             print('❌ Error parsing appointment date for stats: $e');
           }
           
+          // Cancel the notification for this appointment if user is doctor
+          if (_userType == 'doctor') {
+            await AppointmentNotificationService.cancelAppointmentNotification(appointments[index].appId);
+            print('✅ Cancelled notification for cancelled appointment: ${appointments[index].appId}');
+          }
+          
           // Remove from local list
           setState(() {
             appointments.removeAt(index);
@@ -534,7 +599,7 @@ class _ManageAppointmentsState extends State<ManageAppointments> {
                 ),
                 onPressed: () async {
                   // Navigate to pending requests page and wait for result
-                  final result = await Navigator.push(
+                  await Navigator.push(
                     context,
                     PageRouteBuilder(
                       pageBuilder: (context, animation, secondaryAnimation) => const PendingRequestsPage(),

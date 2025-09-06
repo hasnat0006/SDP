@@ -414,10 +414,17 @@ class AppointmentService {
     static Future<bool> updateAppointmentStatus(String appointmentId, String status) async {
         try {
             print('🌐 Making request to update appointment status: $baseUrl/update-appointment-status/$appointmentId');
+            print('🔍 Status value being sent: "$status"');
+            print('🔍 Status length: ${status.length}');
+            print('🔍 Status characters: ${status.runes.toList()}');
+            
+            final requestBody = json.encode({'status': status});
+            print('🔍 Request body: $requestBody');
+            
             final response = await http.put(
                 Uri.parse('$baseUrl/update-appointment-status/$appointmentId'),
                 headers: {'Content-Type': 'application/json'},
-                body: json.encode({'status': status}),
+                body: requestBody,
             );
             
             print('📡 Update status response status: ${response.statusCode}');
