@@ -29,6 +29,84 @@ const sendMail = async (to, subject, otp) => {
     }
 };
 
+const sendEmergencyAlert = async (to, userName, alertType, moodData) => {
+    let subject = "🚨 Mindora Emergency Alert - Mood Concern Detected";
+    let text = "";
+
+    if (alertType === "negative_mood_pattern") {
+        text = `Dear Emergency Contact,
+
+This is an automated alert from ***Mindora*** regarding **${userName}**'s mental health status.
+
+⚠️ CONCERN DETECTED: Prolonged Negative Mood Pattern
+
+We have detected that **${userName}** has experienced 5 or more days of negative moods (Sad, Angry, Depressed) with high intensity (level 3 or higher) in the past week.
+
+Recent mood pattern:
+${moodData.map(mood => {
+    const dateOnly = new Date(mood.date).toLocaleDateString('en-GB');
+    return `• ${dateOnly}: ${mood.mood_status} (Intensity Level: ${mood.mood_level})`;
+}).join('\n')}
+
+This pattern may indicate that **${userName}** could benefit from additional support or professional assistance.
+
+Please consider reaching out to **${userName}** to check on their wellbeing. You can also book therapy appointments for **${userName}** through ***Mindora*** - please sign up if you haven't already.
+
+For immediate mental health crisis support in Bangladesh:
+• Kaan Pete Roi Helpline: 09611-677678
+• Suicide Prevention Hotline Bangladesh: 01779554391
+• Moner Bondhu: 01833-334343
+
+This alert was sent automatically by ***Mindora***'s mental health monitoring system.
+
+Best regards,
+***Mindora*** Mental Health Team`;
+    } else if (alertType === "sudden_negative_shift") {
+        text = `Dear Emergency Contact,
+
+This is an automated alert from ***Mindora*** regarding **${userName}**'s mental health status.
+
+⚠️ CONCERN DETECTED: Sudden Negative Mood Shift
+
+We have detected a concerning pattern where **${userName}** had 3 or more consecutive days of positive/neutral moods, followed by a sudden shift to negative moods (Sad, Angry, Depressed) with high intensity (level 3+) for 3 or more consecutive days.
+
+Recent mood pattern:
+${moodData.map(mood => {
+    const dateOnly = new Date(mood.date).toLocaleDateString('en-GB');
+    return `• ${dateOnly}: ${mood.mood_status} (Intensity Level: ${mood.mood_level})`;
+}).join('\n')}
+
+This sudden shift in mood patterns may indicate that **${userName}** could benefit from additional support or professional assistance.
+
+Please consider reaching out to **${userName}** to check on their wellbeing. You can also book therapy appointments for **${userName}** through ***Mindora*** - please sign up if you haven't already.
+
+For immediate mental health crisis support in Bangladesh:
+• Kaan Pete Roi Helpline: 09611-677678
+• Suicide Prevention Hotline Bangladesh: 01779554391
+• Moner Bondhu: 01833-334343
+
+This alert was sent automatically by ***Mindora***'s mental health monitoring system.
+
+Best regards,
+***Mindora*** Mental Health Team`;
+    }
+
+    try {
+        await transporter.sendMail({
+            from: process.env.GMAIL,
+            to,
+            subject,
+            text,
+        });
+        console.log(`🚨 Emergency alert sent successfully to ${to} for user ${userName}`);
+        return true;
+    } catch (error) {
+        console.error("❌ Error sending emergency alert:", error);
+        return false;
+    }
+};
+
 module.exports = {
-    sendMail
+    sendMail,
+    sendEmergencyAlert
 };

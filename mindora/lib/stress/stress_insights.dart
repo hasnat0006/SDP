@@ -186,7 +186,8 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
             color: Colors.black,
           ),
           onPressed: () {
-            Navigator.pop(context); // Navigate back to StressTrackerPage
+            // Navigate back to dashboard, skipping any intermediate pages
+            Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == '/dashboard');
           },
         ),
         title: Text(
@@ -800,7 +801,7 @@ class _StressInsightsPageState extends State<StressInsightsPage> {
       {'name': 'Meditation', 'icon': Icons.spa, 'duration': '10 mins'},
     ];
     
-    // If we have specific symptoms, provide targeted activities
+    // If specific symptoms, provide targeted activities
     if (symptoms.isNotEmpty) {
       for (String symptom in symptoms) {
         switch (symptom.toLowerCase()) {
