@@ -16,6 +16,7 @@ class Chatbot extends StatefulWidget {
 class _ChatbotState extends State<Chatbot> {
   late final ChatbotService _chatbot;
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   final List<Message> _messages = [];
   bool _isLoading = false;
 
@@ -66,10 +67,23 @@ class _ChatbotState extends State<Chatbot> {
           }
         }
       });
+      _scrollToBottom();
     } catch (e) {
       print('Error loading chat history: $e');
       print('Error details: ${e.toString()}');
     }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _sendMessage(String text) async {
@@ -82,6 +96,7 @@ class _ChatbotState extends State<Chatbot> {
       _isLoading = true;
       _controller.clear();
     });
+    _scrollToBottom();
 
     try {
       final response = await _chatbot.sendMessage(text);
@@ -89,6 +104,7 @@ class _ChatbotState extends State<Chatbot> {
         _messages.add(Message(text: response, isUser: false));
         _isLoading = false;
       });
+      _scrollToBottom();
     } catch (e) {
       setState(() {
         _messages.add(
@@ -121,6 +137,7 @@ class _ChatbotState extends State<Chatbot> {
         children: [
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
@@ -154,6 +171,8 @@ class _ChatbotState extends State<Chatbot> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    minLines: 1,
+                    maxLines: 5,
                     decoration: InputDecoration(
                       hintText: 'Type your message...',
                       border: OutlineInputBorder(
