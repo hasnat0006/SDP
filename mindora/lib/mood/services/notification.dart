@@ -7,6 +7,7 @@ class MoodNotificationService {
 
   /// Schedule daily mood reminder notification at 8:00 AM
   static Future<void> scheduleDailyMoodReminder() async {
+    print('📅 Creating scheduled mood notification...');
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: _dailyNotificationId.hashCode,
@@ -22,20 +23,49 @@ class MoodNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 8,
-        minute: 0,
+        hour: 11,
+        minute: 22,
         second: 0,
         millisecond: 0,
         repeats: true, // Repeat daily
       ),
     );
+    print('✅ Scheduled mood notification created for 11:17 AM');
   }
 
   /// Initialize mood notification service - call this once in main.dart
   static Future<void> initializeMoodNotifications() async {
     // Schedule the daily reminder
     await scheduleDailyMoodReminder();
-    print('✅ Daily mood reminder scheduled for 8:00 AM');
+    print('✅ Daily mood reminder scheduled for 11:22 AM');
+    print('🕐 Current time: ${DateTime.now()}');
+    
+    // Test immediate notification
+    await testImmediateNotification();
+  }
+
+  /// Test function to create immediate notification
+  static Future<void> testImmediateNotification() async {
+    try {
+      print('📱 Testing immediate mood notification...');
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 9999,
+          channelKey: 'high_importance_channel',
+          title: '🧪 TEST: Mood Notification',
+          body: 'This is a test mood notification. If you see this, notifications are working!',
+          notificationLayout: NotificationLayout.Default,
+          category: NotificationCategory.Reminder,
+          payload: {
+            'page': 'mood_spinner',
+            'test': 'true'
+          },
+        ),
+      );
+      print('✅ Test mood notification created successfully!');
+    } catch (e) {
+      print('❌ Error creating test notification: $e');
+    }
   }
 
   /// Check if user has logged mood today and show notification if not

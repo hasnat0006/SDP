@@ -22,8 +22,8 @@ class StressNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 20,
-        minute: 0,
+        hour: 11,
+        minute: 19,
         second: 0,
         millisecond: 0,
         repeats: true, // Repeat daily
@@ -35,7 +35,35 @@ class StressNotificationService {
   static Future<void> initializeStressNotifications() async {
     // Schedule the daily reminder
     await scheduleDailyStressReminder();
-    print('✅ Daily stress reminder scheduled for 8:00 PM');
+    print('✅ Daily stress reminder scheduled for 11:19 AM');
+    print('🕐 Current time: ${DateTime.now()}');
+    
+    // Test immediate notification
+    await testImmediateNotification();
+  }
+
+  /// Test function to create immediate notification
+  static Future<void> testImmediateNotification() async {
+    try {
+      print('📱 Testing immediate stress notification...');
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 9998,
+          channelKey: 'high_importance_channel',
+          title: '🧪 TEST: Stress Notification',
+          body: 'This is a test stress notification. If you see this, notifications are working!',
+          notificationLayout: NotificationLayout.Default,
+          category: NotificationCategory.Reminder,
+          payload: {
+            'page': 'stress_tracker',
+            'test': 'true'
+          },
+        ),
+      );
+      print('✅ Test stress notification created successfully!');
+    } catch (e) {
+      print('❌ Error creating test notification: $e');
+    }
   }
 
   /// Check if user has logged stress today and show notification if not
