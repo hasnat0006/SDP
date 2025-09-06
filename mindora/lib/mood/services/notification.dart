@@ -23,7 +23,7 @@ class MoodNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 7,
+        hour: 8,
         minute: 0,
         second: 0,
         millisecond: 0,
@@ -39,33 +39,6 @@ class MoodNotificationService {
     await scheduleDailyMoodReminder();
     print('✅ Daily mood reminder scheduled for 11:22 AM');
     print('🕐 Current time: ${DateTime.now()}');
-    
-    // Test immediate notification
-    await testImmediateNotification();
-  }
-
-  /// Test function to create immediate notification
-  static Future<void> testImmediateNotification() async {
-    try {
-      print('📱 Testing immediate mood notification...');
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: 9999,
-          channelKey: 'high_importance_channel',
-          title: '🧪 TEST: Mood Notification',
-          body: 'This is a test mood notification. If you see this, notifications are working!',
-          notificationLayout: NotificationLayout.Default,
-          category: NotificationCategory.Reminder,
-          payload: {
-            'page': 'mood_spinner',
-            'test': 'true'
-          },
-        ),
-      );
-      print('✅ Test mood notification created successfully!');
-    } catch (e) {
-      print('❌ Error creating test notification: $e');
-    }
   }
 
   /// Check if user has logged mood today and show notification if not
@@ -73,17 +46,17 @@ class MoodNotificationService {
     try {
       final userData = await UserService.getUserData();
       final userId = userData['userId'] ?? '';
-      
+
       if (userId.isEmpty) {
         print('❌ No user ID found, skipping mood reminder check');
         return;
       }
 
       final today = DateTime.now();
-      
+
       // Check if mood is already logged for today
       final result = await MoodTrackerBackend.getMoodDataForDate(userId, today);
-      
+
       if (result['success'] == true && result['data'] != null) {
         // Mood already logged today, don't send notification
         print('✅ Mood already logged today, skipping notification');
