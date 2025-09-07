@@ -23,7 +23,7 @@ const analyzeMoodPatterns = (moodData) => {
   // Check for Condition 1: 5 or More Days of Negative Moods with High Intensity
   const negativeMoods = ['sad', 'angry', 'depressed', 'stressed'];
   const negativeHighIntensityDays = last7Days.filter(mood => 
-    negativeMoods.includes(mood.mood_status.toLowerCase()) && mood.mood_level >= 2
+    negativeMoods.includes(mood.mood_status.toLowerCase()) && mood.mood_level >= 3
   );
   
   console.log('� ANALYZE - Negative high-intensity days found:', negativeHighIntensityDays.length);
