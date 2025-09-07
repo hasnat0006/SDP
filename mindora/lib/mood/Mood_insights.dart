@@ -1176,9 +1176,13 @@ const SizedBox(height: 10),
         PieChartSectionData(
           color: getMoodColor(mood),
           value: percentage,
-          title: '', // Remove title from pie slices for cleaner look
+          title: '${percentage.toStringAsFixed(1)}%', // Show percentage on each slice
           radius: isTouched ? 105 : 90, // Slightly larger for better visual
-          titleStyle: const TextStyle(fontSize: 0), // Hide titles
+          titleStyle: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.brown.shade800,
+          ), // Style the percentage text
           borderSide: BorderSide.none, // Remove all borders
           badgeWidget: isTouched ? _buildTooltip(mood, percentage, i, sortedMoods.length) : null,
           badgePositionPercentageOffset: 1.1, // Closer to avoid going off-screen
@@ -1316,9 +1320,9 @@ const SizedBox(height: 10),
                             return PieChartSectionData(
                               color: section.color,
                               value: section.value * animationValue, // Sweep animation
-                              title: '',
+                              title: section.title, // Keep the percentage title
                               radius: section.radius * (0.8 + 0.2 * animationValue), // Scale animation
-                              titleStyle: const TextStyle(fontSize: 0),
+                              titleStyle: section.titleStyle, // Keep the title style
                               borderSide: BorderSide.none,
                               badgeWidget: section.badgeWidget,
                               badgePositionPercentageOffset: section.badgePositionPercentageOffset,
