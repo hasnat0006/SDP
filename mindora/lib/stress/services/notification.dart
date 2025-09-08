@@ -76,7 +76,7 @@ class StressNotificationService {
       content: NotificationContent(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         channelKey: 'high_importance_channel',
-        title: '🌙 Stress Check-in',
+        title: 'Morning Stress Check-in',
         body:
             'You haven\'t logged your stress level today. How are you feeling?',
         notificationLayout: NotificationLayout.Default,
