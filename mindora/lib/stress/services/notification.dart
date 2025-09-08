@@ -11,7 +11,7 @@ class StressNotificationService {
       content: NotificationContent(
         id: _dailyNotificationId.hashCode,
         channelKey: 'high_importance_channel',
-        title: '🧘 Evening Check-in',
+        title: '🧘 Morning Check-in',
         body:
             'How was your stress level today? Take a moment to track your well-being.',
         notificationLayout: NotificationLayout.Default,
