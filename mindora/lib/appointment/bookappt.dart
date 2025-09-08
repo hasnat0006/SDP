@@ -2,6 +2,7 @@ import 'package:client/appointment/backend.dart';
 import 'package:client/appointment/bookform.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import 'therapistcard.dart'; // Import the TherapistCard widget
 
 class Therapist {
@@ -44,7 +45,9 @@ class _BookAppt extends State<BookAppt> {
   final Color purple = const Color.fromARGB(255, 211, 154, 213);
 
   List<Therapist> therapistinfo = [];
+  List<Therapist> filteredTherapists = [];
   bool isLoading = true;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -57,6 +60,7 @@ class _BookAppt extends State<BookAppt> {
   void dispose() {
     searchController.dispose();
     focusNode.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -91,6 +95,7 @@ class _BookAppt extends State<BookAppt> {
 
       setState(() {
         therapistinfo = therapists; // Set the list of therapists
+        filteredTherapists = therapists; // Initialize filtered list
         isLoading = false; // Stop the loading spinner once data is fetched
       });
     } catch (e) {
@@ -171,7 +176,30 @@ class _BookAppt extends State<BookAppt> {
                           vertical: 14,
                         ),
                       ),
-                      onChanged: (value) => setState(() {}),
+                      onChanged: (value) {
+                        if (_debounce?.isActive ?? false) _debounce?.cancel();
+                        _debounce = Timer(
+                          const Duration(milliseconds: 500),
+                          () {
+                            setState(() {
+                              filteredTherapists = therapistinfo.where((t) {
+                                final searchLower = value.toLowerCase().trim();
+                                final nameLower = t.name.toLowerCase();
+                                final institutionLower = t.institution
+                                    .toLowerCase();
+                                final specialLower = t.special.toLowerCase();
+                                final bioLower = t.shortbio.toLowerCase();
+
+                                return searchLower.isEmpty ||
+                                    nameLower.contains(searchLower) ||
+                                    institutionLower.contains(searchLower) ||
+                                    specialLower.contains(searchLower) ||
+                                    bioLower.contains(searchLower);
+                              }).toList();
+                            });
+                          },
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -191,16 +219,8 @@ class _BookAppt extends State<BookAppt> {
                               crossCount = 4;
                             }
 
-                            final filtered = therapistinfo.where((t) {
-                              final q = searchController.text
-                                  .trim()
-                                  .toLowerCase();
-                              if (q.isEmpty) return true;
-                              return t.name.toLowerCase().contains(q) ||
-                                  t.institution.toLowerCase().contains(q) ||
-                                  t.special.toLowerCase().contains(q) ||
-                                  t.shortbio.toLowerCase().contains(q);
-                            }).toList();
+                            // Use the filtered list instead of filtering again
+                            final filtered = filteredTherapists;
 
                             return GridView.builder(
                               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
