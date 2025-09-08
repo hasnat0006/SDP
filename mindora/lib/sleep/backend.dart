@@ -8,7 +8,7 @@ import 'package:http/http.dart'
     as http; // Import the method to interact with the backend
 
 Future<void> sleepInput({
-  required double hours,
+  required int hours,
   required DateTime date,
   required String userId,
 }) async {
@@ -28,6 +28,22 @@ Future<void> sleepInput({
 }
 
 Future<List<dynamic>> fetchSleepTime({required String userId}) async {
-  final data = await postToBackend('getsleephours', {'userId': userId});
+  final data = await getFromBackend('getsleephours/$userId');
   return [data];
+}
+
+Future<bool> hasSleepRecord({
+  required String userId,
+  required DateTime date,
+}) async {
+  final datefinal = DateFormat('yyyy-MM-dd').format(date);
+  final data = await getFromBackend('check/$userId/$datefinal');
+
+  print("User data: ");
+  print(data.length);
+
+  if (data.length == 0)
+    return true;
+  else
+    return false;
 }
