@@ -22,7 +22,7 @@ class StressNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 7,
+        hour: 8,
         minute: 0,
         second: 0,
         millisecond: 0,
@@ -37,33 +37,6 @@ class StressNotificationService {
     await scheduleDailyStressReminder();
     print('✅ Daily stress reminder scheduled for 7:00 AM');
     print('🕐 Current time: ${DateTime.now()}');
-    
-    // Test immediate notification
-    await testImmediateNotification();
-  }
-
-  /// Test function to create immediate notification
-  static Future<void> testImmediateNotification() async {
-    try {
-      print('📱 Testing immediate stress notification...');
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: 9998,
-          channelKey: 'high_importance_channel',
-          title: '🧪 TEST: Stress Notification',
-          body: 'This is a test stress notification. If you see this, notifications are working!',
-          notificationLayout: NotificationLayout.Default,
-          category: NotificationCategory.Reminder,
-          payload: {
-            'page': 'stress_tracker',
-            'test': 'true'
-          },
-        ),
-      );
-      print('✅ Test stress notification created successfully!');
-    } catch (e) {
-      print('❌ Error creating test notification: $e');
-    }
   }
 
   /// Check if user has logged stress today and show notification if not
@@ -88,7 +61,7 @@ class StressNotificationService {
 
       // Only send notification if it's 7 AM or later and no stress logged
       final now = DateTime.now();
-      if (now.hour >= 7) {
+      if (now.hour >= 8) {
         await _showStressReminderNotification();
       }
     } catch (e) {
@@ -102,7 +75,7 @@ class StressNotificationService {
       content: NotificationContent(
         id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
         channelKey: 'high_importance_channel',
-        title: '🌙 Stress Check-in',
+        title: 'Morning Stress Check-in',
         body: 'You haven\'t logged your stress level today. How are you feeling?',
         notificationLayout: NotificationLayout.Default,
         category: NotificationCategory.Reminder,
