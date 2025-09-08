@@ -11,7 +11,7 @@ class StressNotificationService {
       content: NotificationContent(
         id: _dailyNotificationId.hashCode,
         channelKey: 'high_importance_channel',
-        title: '🧘 Evening Check-in',
+        title: '🧘 Morning Check-in',
         body: 'How was your stress level today? Take a moment to track your well-being.',
         notificationLayout: NotificationLayout.Default,
         category: NotificationCategory.Reminder,
@@ -61,7 +61,7 @@ class StressNotificationService {
 
       // Only send notification if it's 7 AM or later and no stress logged
       final now = DateTime.now();
-      if (now.hour >= 8) {
+      if (now.hour >= 7) {
         await _showStressReminderNotification();
       }
     } catch (e) {
