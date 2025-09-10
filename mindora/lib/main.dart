@@ -7,11 +7,13 @@ import 'package:client/services/supabase_service.dart';
 import 'package:client/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import './sleep/service/notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await NotificationService.initializeNotification();
+  await SleepNotificationService.initializeSleepNotifications();
 
   // Initialize Supabase (non-blocking)
   await SupabaseService.initialize();
