@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
-String get apiUrl => dotenv.env['PRODUCTION_URL'] ?? 'http://127.0.0.1:5000';
+String get apiUrl => dotenv.env['EMULATOR_URL'] ?? 'http://127.0.0.1:5000';
 
 Future<dynamic> getFromBackend(String endpoint) async {
   try {

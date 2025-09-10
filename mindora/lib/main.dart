@@ -9,6 +9,8 @@ import 'package:client/mood/services/notification.dart';
 import 'package:client/stress/services/notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import './sleep/service/notification.dart';
+import './appointment/service/notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +20,8 @@ void main() async {
   // Initialize mood and stress notifications
   await MoodNotificationService.initializeMoodNotifications();
   await StressNotificationService.initializeStressNotifications();
-
+  await SleepNotificationService.initializeSleepNotifications();
+  await AppointmentNotificationService.scheduleAppointmentReminder();
   // Initialize Supabase (non-blocking)
   await SupabaseService.initialize();
 
