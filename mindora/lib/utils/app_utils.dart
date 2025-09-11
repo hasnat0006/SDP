@@ -1,4 +1,5 @@
 import '../services/user_service.dart';
+import '../services/notification_manager.dart';
 
 /// Example utility class showing how to use stored user data throughout the app
 class AppUtils {
@@ -50,6 +51,8 @@ class AppUtils {
 
   /// Logout user and clear stored data
   static Future<void> logoutUser() async {
+    // Dispose real-time notifications
+    NotificationManager.dispose();
     await UserService.clearUserData();
     // Navigate to login page
     print('User logged out and data cleared');

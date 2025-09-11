@@ -5,6 +5,7 @@ import 'package:client/services/gemini_service.dart';
 import 'package:client/services/navigation_service.dart';
 import 'package:client/services/supabase_service.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/services/notification_manager.dart';
 import 'package:client/mood/services/notification.dart';
 import 'package:client/stress/services/notification.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +91,11 @@ class _AuthCheckerState extends State<AuthChecker>
     setState(() {
       _shouldNavigateToMain = isLoggedIn;
     });
+
+    // Initialize real-time notifications if user is logged in
+    if (isLoggedIn) {
+      await NotificationManager.initialize();
+    }
 
     // Wait for progress bar to complete if it hasn't already
     if (!_progressController.isCompleted) {
