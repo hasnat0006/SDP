@@ -48,6 +48,8 @@ class AppointmentNotificationService {
         if (timeDifference.inMinutes == 30) {
           // Schedule the notification
           await _showAppointmentReminderNotification(appointment);
+
+          
         }
       }
     } catch (e) {
