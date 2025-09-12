@@ -198,11 +198,38 @@ class _ToDoPageState extends State<ToDoPage> {
   }
 
   void _showTaskSuggestions() async {
-    // Show loading indicator
+    // Show loading indicator with user-friendly text
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 20),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.purple[600]!),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Generating Your Wellness Tasks...',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.purple[700],
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'AI is analyzing your mood, stress, and sleep data to create personalized wellness tasks just for you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -244,6 +271,11 @@ class _ToDoPageState extends State<ToDoPage> {
 
               // Refresh tasks from backend to show the newly added tasks
               await _loadTasks();
+
+              // Force UI refresh
+              setState(() {
+                // This ensures the UI is rebuilt with the new tasks
+              });
 
               // Schedule notifications for tasks with due dates
               for (final task in addedTasks) {
@@ -345,21 +377,14 @@ class _ToDoPageState extends State<ToDoPage> {
       // Mark task as completed in backend
       await _taskBackend.completeTask(userId, task.id);
 
-      // Update local state
-      final completedTask = task.copyWith(isCompleted: true);
-      setState(() {
-        completedTasks.add(completedTask);
-        tasks.removeAt(index);
-      });
+      // Refresh tasks from backend to get the updated state
+      await _loadTasks();
 
       // Cancel notifications for completed task
       TaskNotificationService.cancelTaskNotifications(task.id);
 
       // Show completion notification
       TaskNotificationService.showTaskCompletedNotification(task);
-
-      // Backup to local storage
-      _saveTasks();
     } catch (e) {
       print('Error completing task: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -384,16 +409,11 @@ class _ToDoPageState extends State<ToDoPage> {
       // Delete task from backend
       await _taskBackend.deleteTask(userId, task.id);
 
-      // Update local state
-      setState(() {
-        tasks.removeAt(index);
-      });
+      // Refresh tasks from backend
+      await _loadTasks();
 
       // Cancel notifications for deleted task
       TaskNotificationService.cancelTaskNotifications(task.id);
-
-      // Backup to local storage
-      _saveTasks();
     } catch (e) {
       print('Error deleting task: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -418,13 +438,8 @@ class _ToDoPageState extends State<ToDoPage> {
       // Delete completed task from backend
       await _taskBackend.deleteTask(userId, task.id);
 
-      // Update local state
-      setState(() {
-        completedTasks.removeAt(index);
-      });
-
-      // Backup to local storage
-      _saveTasks();
+      // Refresh tasks from backend
+      await _loadTasks();
     } catch (e) {
       print('Error deleting completed task: $e');
       ScaffoldMessenger.of(context).showSnackBar(
