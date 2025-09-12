@@ -59,4 +59,95 @@ class TaskBackend {
     print('Completed task: $taskId');
     return;
   }
+
+  Future<List<Task>> getWellnessBasedSuggestions(String userId) async {
+    try {
+      final response = await getFromBackend(
+        'suggested-tasks/wellness?user_id=$userId',
+      );
+      print('Fetched wellness suggestions for user $userId: $response');
+
+      if (response['success'] == true && response['suggestions'] != null) {
+        return (response['suggestions'] as List<dynamic>)
+            .map((data) => Task.fromJson(data as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Failed to get wellness suggestions');
+      }
+    } catch (error) {
+      print('Error fetching wellness suggestions: $error');
+      // Return empty list if API fails, fallback will be handled in the service
+      return [];
+    }
+  }
+
+  Future<List<Task>> addMultipleTasks(String userId, List<Task> tasks) async {
+    try {
+      // Prepare tasks data for bulk insert
+      final tasksData = tasks
+          .map(
+            (task) => {
+              'title': task.title,
+              'description': task.description,
+              'priority': task.priority.toString().split('.').last,
+              'dueDate': task.dueDate?.toIso8601String(),
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          )
+          .toList();
+
+      final response = await postToBackend('tasks/add-multiple-tasks', {
+        'user_id': userId,
+        'tasks': tasksData,
+      });
+
+      print('Bulk task addition response: $response');
+
+      if (response['success'] == true && response['added'] != null) {
+        final addedTasks = (response['added'] as List<dynamic>)
+            .map((data) => Task.fromJson(data as Map<String, dynamic>))
+            .toList();
+
+        if (response['errors'] != null &&
+            (response['errors'] as List).isNotEmpty) {
+          print('Some tasks had errors: ${response['errors']}');
+        }
+
+        print('Successfully added ${addedTasks.length} tasks via bulk insert');
+        return addedTasks;
+      } else {
+        throw Exception('Failed to add multiple tasks');
+      }
+    } catch (error) {
+      print(
+        'Error in bulk task addition, falling back to individual adds: $error',
+      );
+
+      // Fallback to individual task addition
+      List<Task> addedTasks = [];
+
+      for (Task task in tasks) {
+        try {
+          // Create a new task without the suggestion ID to let database generate new ID
+          final taskToAdd = Task(
+            id: '', // Let database generate ID
+            title: task.title,
+            description: task.description,
+            priority: task.priority,
+            dueDate: task.dueDate,
+            createdAt: DateTime.now(), // Use current time
+          );
+
+          final addedTask = await addTask(userId, taskToAdd);
+          addedTasks.add(addedTask);
+          print('Successfully added suggested task: ${addedTask.title}');
+        } catch (taskError) {
+          print('Error adding task "${task.title}": $taskError');
+          // Continue with other tasks even if one fails
+        }
+      }
+
+      return addedTasks;
+    }
+  }
 }

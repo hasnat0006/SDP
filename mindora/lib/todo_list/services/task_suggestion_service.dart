@@ -1,6 +1,27 @@
 import '../models/task_model.dart';
+import '../backend.dart';
 
 class TaskSuggestionService {
+  static final TaskBackend _backend = TaskBackend();
+
+  // Get AI-powered wellness-based task suggestions
+  static Future<List<Task>> getWellnessBasedSuggestions(String userId) async {
+    try {
+      final suggestions = await _backend.getWellnessBasedSuggestions(userId);
+
+      if (suggestions.isNotEmpty) {
+        return suggestions;
+      } else {
+        // Fallback to dummy suggestions if API fails
+        return getDummyTaskSuggestions().take(3).toList();
+      }
+    } catch (error) {
+      print('Error getting wellness suggestions: $error');
+      // Fallback to dummy suggestions
+      return getDummyTaskSuggestions().take(3).toList();
+    }
+  }
+
   static List<Task> getDummyTaskSuggestions() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

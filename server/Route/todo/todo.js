@@ -135,4 +135,67 @@ router.post("/complete-task", async (req, res) => {
   }
 });
 
+router.post("/add-multiple-tasks", async (req, res) => {
+  const { user_id, tasks } = req.body;
+  console.log(
+    "Adding multiple tasks for user:",
+    user_id,
+    "Count:",
+    tasks?.length
+  );
+
+  if (!user_id || !tasks || !Array.isArray(tasks) || tasks.length === 0) {
+    return res.status(400).json({
+      error: "User ID and tasks array are required",
+    });
+  }
+
+  try {
+    const addedTasks = [];
+    const errors = [];
+
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      const { title, description, priority, dueDate, createdAt } = task;
+
+      if (!title || !description || !priority) {
+        errors.push(
+          `Task ${
+            i + 1
+          }: Missing required fields (title, description, priority)`
+        );
+        continue;
+      }
+
+      try {
+        const timestamp = createdAt || new Date().toISOString();
+
+        const result = await sql`
+          INSERT INTO todo_list (user_id, title, description, priority, "dueDate", "createdAt", "isCompleted") 
+          VALUES (${user_id}, ${title}, ${description}, ${priority}, ${
+          dueDate || null
+        }, ${timestamp}, false)
+          RETURNING *
+        `;
+
+        addedTasks.push(result[0]);
+        console.log(`Task ${i + 1} added:`, result[0].title);
+      } catch (taskError) {
+        console.error(`Error adding task ${i + 1}:`, taskError);
+        errors.push(`Task ${i + 1} (${title}): ${taskError.message}`);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      added: addedTasks,
+      errors: errors,
+      message: `Successfully added ${addedTasks.length} out of ${tasks.length} tasks`,
+    });
+  } catch (error) {
+    console.error("Error adding multiple tasks:", error);
+    res.status(500).json({ error: "Failed to add tasks" });
+  }
+});
+
 module.exports = router;

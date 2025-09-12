@@ -197,40 +197,126 @@ class _ToDoPageState extends State<ToDoPage> {
     });
   }
 
-  void _showTaskSuggestions() {
-    final suggestions = TaskSuggestionService.getPersonalizedSuggestions(
-      userMood: 'neutral', // You can get this from user data
-      stressLevel: 5, // You can get this from user data
-    );
-
+  void _showTaskSuggestions() async {
+    // Show loading indicator
     showDialog(
       context: context,
-      builder: (context) => TaskSuggestionPopup(
-        suggestions: suggestions,
-        onAcceptTasks: (selectedTasks) {
-          setState(() {
-            tasks.addAll(selectedTasks);
-          });
-          _saveTasks();
-
-          // Schedule notifications for tasks with due dates
-          for (final task in selectedTasks) {
-            if (task.dueDate != null) {
-              TaskNotificationService.scheduleTaskDueNotification(task);
-            }
-          }
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${selectedTasks.length} task(s) added successfully!',
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
-        },
-      ),
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    try {
+      // Get current user ID
+      final userId = await UserService.getUserId();
+      if (userId == null) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in to get personalized task suggestions'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Get wellness-based suggestions from AI
+      final suggestions =
+          await TaskSuggestionService.getWellnessBasedSuggestions(userId);
+
+      Navigator.pop(context); // Close loading dialog
+
+      showDialog(
+        context: context,
+        builder: (context) => TaskSuggestionPopup(
+          suggestions: suggestions,
+          onAcceptTasks: (selectedTasks) async {
+            // Add selected tasks to the backend database
+            try {
+              print(
+                'Adding ${selectedTasks.length} selected wellness tasks to database...',
+              );
+
+              // Add multiple tasks efficiently
+              final addedTasks = await _taskBackend.addMultipleTasks(
+                userId,
+                selectedTasks,
+              );
+
+              // Refresh tasks from backend to show the newly added tasks
+              await _loadTasks();
+
+              // Schedule notifications for tasks with due dates
+              for (final task in addedTasks) {
+                if (task.dueDate != null) {
+                  TaskNotificationService.scheduleTaskDueNotification(task);
+                }
+              }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '${addedTasks.length} AI wellness task(s) saved to database successfully!',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+
+              print(
+                'Successfully added ${addedTasks.length} wellness tasks to database',
+              );
+            } catch (e) {
+              print('Error adding suggested tasks to database: $e');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Error saving tasks to database: ${e.toString()}',
+                  ),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+      print('Error getting task suggestions: $e');
+
+      // Fallback to dummy suggestions
+      final fallbackSuggestions =
+          TaskSuggestionService.getDummyTaskSuggestions().take(3).toList();
+
+      showDialog(
+        context: context,
+        builder: (context) => TaskSuggestionPopup(
+          suggestions: fallbackSuggestions,
+          onAcceptTasks: (selectedTasks) {
+            setState(() {
+              tasks.addAll(selectedTasks);
+            });
+            _saveTasks();
+
+            // Schedule notifications for tasks with due dates
+            for (final task in selectedTasks) {
+              if (task.dueDate != null) {
+                TaskNotificationService.scheduleTaskDueNotification(task);
+              }
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${selectedTasks.length} task(s) added successfully!',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+        ),
+      );
+    }
   }
 
   void addTask(Task task) {
@@ -448,6 +534,13 @@ class _ToDoPageState extends State<ToDoPage> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.psychology, color: Colors.white),
+            tooltip: 'AI Wellness Suggestions',
+            onPressed: () {
+              _showTaskSuggestions();
+            },
+          ),
           IconButton(
             icon: Icon(Icons.notifications, color: Colors.white),
             onPressed: () {

@@ -43,11 +43,11 @@ class _TaskSuggestionPopupState extends State<TaskSuggestionPopup> {
           children: [
             Row(
               children: [
-                Icon(Icons.lightbulb, color: Colors.amber, size: 28),
+                Icon(Icons.psychology, color: Colors.purple[600], size: 28),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Suggested Tasks for Today',
+                    'AI Wellness Suggestions',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -55,11 +55,37 @@ class _TaskSuggestionPopupState extends State<TaskSuggestionPopup> {
                     ),
                   ),
                 ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 14,
+                        color: Colors.green[700],
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'AI',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             SizedBox(height: 15),
             Text(
-              'Based on your profile, here are some tasks we recommend for today:',
+              'Based on your mood, stress, and sleep data, here are personalized wellness tasks:',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             SizedBox(height: 20),
