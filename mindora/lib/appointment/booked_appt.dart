@@ -11,6 +11,7 @@ class Appointment {
   final String profession;
   final String location;
   final DateTime dateTime;
+  final String time;
   final AppointmentStatus status;
 
   Appointment({
@@ -19,6 +20,7 @@ class Appointment {
     required this.profession,
     required this.location,
     required this.dateTime,
+    required this.time,
     this.status = AppointmentStatus.booked,
   });
 }
@@ -76,12 +78,19 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
             status = AppointmentStatus.booked;
             break;
         }
+
+        // Parse the datetime (only the date part) and time separately
+        final appointmentDate = DateTime.parse(item['datetime']); // YYYY-MM-DD
+        final appointmentTime =
+            item['time'] ?? 'Unknown Time'; // Get time from 'time' field
+
         final appointment = Appointment(
-          id: item['appointment_id'].toString(), // Add this line
+          id: item['appointment_id'].toString(),
           name: item['name'] ?? '',
           profession: item['profession'] ?? 'Unknown',
           location: item['location'] ?? 'Not specified',
-          dateTime: DateTime.parse(item['datetime']),
+          dateTime: appointmentDate, // Store the date part here
+          time: appointmentTime, // Store the time part here
           status: status,
         );
         print("✅ Created appointment object: $appointment");
@@ -215,10 +224,7 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
                     label: DateFormat('MMMM d, yyyy').format(appt.dateTime),
                   ),
                   const SizedBox(width: 8),
-                  _chip(
-                    icon: Icons.access_time,
-                    label: DateFormat('hh:mm a').format(appt.dateTime),
-                  ),
+                  _chip(icon: Icons.access_time, label: appt.time),
                 ],
               ),
               const SizedBox(height: 8),

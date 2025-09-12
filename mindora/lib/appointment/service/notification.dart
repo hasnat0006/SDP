@@ -32,8 +32,14 @@ class AppointmentNotificationService {
         // Assuming each appointment has a 'time' field in the format '10:00 AM'
         final appointmentTimeString = appointment['time'];
 
+        print("Appointment time is: ");
+        print(appointmentTimeString);
+
         // Parse the appointment time into a DateTime object (same day as now)
         final appointmentTime = _parseAppointmentTime(appointmentTimeString);
+
+        print("After formatting: ");
+        print(appointmentTime);
 
         // Calculate the time difference between the appointment time and now
         final timeDifference = appointmentTime.difference(now);
@@ -42,6 +48,8 @@ class AppointmentNotificationService {
         if (timeDifference.inMinutes == 30) {
           // Schedule the notification
           await _showAppointmentReminderNotification(appointment);
+
+          
         }
       }
     } catch (e) {

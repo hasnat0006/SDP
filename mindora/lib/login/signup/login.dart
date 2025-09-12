@@ -1,6 +1,7 @@
 import 'package:client/login/signup/backend.dart';
 import 'package:client/navbar/navbar.dart';
 import 'package:client/services/user_service.dart';
+import 'package:client/services/notification_manager.dart';
 import 'package:flutter/material.dart';
 import 'signup1.dart';
 import 'forgetpass.dart';
@@ -224,6 +225,9 @@ class _LoginPageState extends State<LoginPage> {
                   );
 
                   print('User data stored - ID: $userId, Type: $userType');
+
+                  // Initialize real-time notifications
+                  await NotificationManager.reinitialize();
 
                   // Navigate to dashboard
                   Navigator.pushReplacement(

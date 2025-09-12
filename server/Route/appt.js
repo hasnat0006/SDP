@@ -78,11 +78,7 @@ router.get("/appointments/:userId", async (req, res) => {
         a.email,
         d.profession,
         d.institute as location,
-        u.name,
-        TO_CHAR(
-          TO_TIMESTAMP(CONCAT(a.date, ' ', a.time), 'YYYY-MM-DD HH24:MI:SS'),
-          'YYYY-MM-DD HH24:MI:SS'
-        ) as datetime
+        u.name
       FROM appointment a
       JOIN doctor d ON a.doc_id = d.doc_id
       JOIN users u ON a.doc_id = u.id  -- Changed this join condition
@@ -96,7 +92,8 @@ router.get("/appointments/:userId", async (req, res) => {
       name: appt.name,
       profession: appt.profession,
       location: appt.location,
-      datetime: appt.datetime,
+      time: appt.time,
+      datetime: appt.date,
       status: appt.status,
       reason: appt.reason,
       email: appt.email,
