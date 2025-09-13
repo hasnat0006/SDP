@@ -275,8 +275,13 @@ class _BookAppt extends State<BookAppt> {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundImage: AssetImage(t.imagepath),
+              backgroundImage: t.imagepath.startsWith('http')
+                  ? NetworkImage(t.imagepath)
+                  : AssetImage(t.imagepath) as ImageProvider,
               backgroundColor: Colors.white,
+              onBackgroundImageError: (exception, stackTrace) {
+                print('Error loading therapist image: $exception');
+              },
             ),
             const SizedBox(width: 12),
             Expanded(
