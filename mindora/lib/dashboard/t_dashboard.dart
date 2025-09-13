@@ -4,7 +4,6 @@ import 'package:client/therapist/backend.dart';
 import 'package:client/profile/backend.dart'; // Add this import
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:math';
 import '../therapist/manage_app.dart';
 
 class DoctorDashboard extends StatefulWidget {
@@ -23,13 +22,32 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   bool isLoadingAppointments = true;
   List<int> monthlyStats = List.generate(12, (index) => 0);
   bool isLoadingStats = true;
+  bool _isLoading = true; // Add overall loading state
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _loadTodayAppointments();
-    _loadMonthlyStats();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Load user data first
+      await _loadUserData();
+
+      // Then load other data in parallel
+      await Future.wait([_loadTodayAppointments(), _loadMonthlyStats()]);
+    } catch (e) {
+      print('Error loading dashboard data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -42,15 +60,19 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           _userName = userData['userName'] ?? 'Doctor';
         });
       }
-      print('Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName');
-      
+      print(
+        'Loaded doctor data - ID: $_userId, Type: $_userType, Name: $_userName',
+      );
+
       // Load user profile data to get the actual name
       if (_userId.isNotEmpty) {
         await _loadUserProfile();
       }
-      
+
       if (_userType == 'patient') {
-        print('⚠️ Patient account detected in doctor dashboard - skipping appointment loading');
+        print(
+          '⚠️ Patient account detected in doctor dashboard - skipping appointment loading',
+        );
         return;
       }
     } catch (e) {
@@ -63,14 +85,16 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     try {
       final ProfileBackend profileBackend = ProfileBackend();
       final response = await profileBackend.getUserProfile(_userId, _userType);
-      
+
       if (response['success'] == true || response.containsKey('name')) {
         setState(() {
           _userProfileData = response;
         });
         print('Doctor profile loaded successfully: ${response['name']}');
       } else {
-        print('Failed to load doctor profile: ${response['message'] ?? 'Unknown error'}');
+        print(
+          'Failed to load doctor profile: ${response['message'] ?? 'Unknown error'}',
+        );
       }
     } catch (e) {
       print('Error loading doctor profile: $e');
@@ -80,19 +104,18 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   // Add this method to get profile image
   ImageProvider _getProfileImage() {
     final profileImageUrl = _userProfileData?['profileImage'];
-    if (profileImageUrl != null && 
+    if (profileImageUrl != null &&
         profileImageUrl.toString().isNotEmpty &&
         profileImageUrl.toString().startsWith('http')) {
       return NetworkImage(profileImageUrl);
     }
-    
+
     // Fallback to default asset image
     return const AssetImage('assets/demo_profile.jpg');
   }
 
   Future<void> _loadTodayAppointments() async {
     try {
-      
       if (_userType == 'patient') {
         print('⚠️ Skipping appointment loading for patient account');
         if (mounted) {
@@ -102,20 +125,21 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         }
         return;
       }
-      
-      
-      final appointments = await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
-      
-     
+
+      final appointments =
+          await AppointmentService.fetchConfirmedAppointmentsForDoctor(_userId);
+
       final today = DateTime.now();
       final todayStr = '${today.day}/${today.month}/${today.year}';
-      
+
       List<Map<String, String>> todayAppts = [];
       for (var appt in appointments) {
         if (appt.date == todayStr) {
           // Fetch patient details for each appointment
-          final patientDetails = await AppointmentService.fetchPatientDetails(appt.userId);
-          
+          final patientDetails = await AppointmentService.fetchPatientDetails(
+            appt.userId,
+          );
+
           todayAppts.add({
             'date': appt.date,
             'time': appt.time,
@@ -123,11 +147,11 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             'age': patientDetails?.age ?? '',
             'gender': patientDetails?.gender ?? '',
             'profession': patientDetails?.profession ?? '',
-            'reason': 'Consultation', 
+            'reason': 'Consultation',
           });
         }
       }
-      
+
       if (mounted) {
         setState(() {
           todayAppointments = todayAppts;
@@ -147,10 +171,9 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   Future<void> _loadMonthlyStats() async {
     try {
       if (_userId.isEmpty) {
-        
         await _loadUserData();
       }
-      
+
       if (_userType == 'patient') {
         print('⚠️ Skipping stats loading for patient account');
         if (mounted) {
@@ -160,9 +183,11 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         }
         return;
       }
-      
-      final stats = await AppointmentService.fetchMonthlyAppointmentStats(_userId);
-      
+
+      final stats = await AppointmentService.fetchMonthlyAppointmentStats(
+        _userId,
+      );
+
       if (mounted) {
         setState(() {
           monthlyStats = stats;
@@ -183,14 +208,16 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   final List<Map<String, String>> appointments = const [];
 
   Widget _buildHeader() {
-    final String formattedDate = DateFormat('EEE, dd MMM yyyy').format(DateTime.now());
-    
+    final String formattedDate = DateFormat(
+      'EEE, dd MMM yyyy',
+    ).format(DateTime.now());
+
     // Get the doctor's actual name from profile data
     String doctorName = _userProfileData?['name'] ?? _userName;
     if (doctorName.isEmpty) {
       doctorName = 'Doctor';
     }
-    
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFD1A1E3),
@@ -255,7 +282,12 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               width: buttonWidth,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 160, 191, 229), // Purple
+                  backgroundColor: const Color.fromARGB(
+                    255,
+                    160,
+                    191,
+                    229,
+                  ), // Purple
                   elevation: 6,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -264,29 +296,27 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                   padding: EdgeInsets.zero,
                 ),
                 onPressed: () async {
-                  
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ManageAppointments(),
                     ),
                   );
-                  
-                  
-                  print('🔄 Returned from manage appointments, refreshing dashboard...');
+
+                  print(
+                    '🔄 Returned from manage appointments, refreshing dashboard...',
+                  );
                   if (mounted) {
-                   
                     setState(() {
                       isLoadingStats = true;
-                    });
-                    await _loadMonthlyStats();
-                    
-                   
-                    setState(() {
                       isLoadingAppointments = true;
                     });
-                    await _loadTodayAppointments();
-                    
+
+                    await Future.wait([
+                      _loadMonthlyStats(),
+                      _loadTodayAppointments(),
+                    ]);
+
                     print('✅ Dashboard data refreshed');
                   }
                 },
@@ -358,7 +388,18 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   Widget _buildBarChart() {
     final Color barColor = const Color.fromARGB(255, 163, 234, 176);
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final now = DateTime.now();
     final currentMonth = now.month;
@@ -387,7 +428,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       );
     }
 
-    
     final List<int> data = monthlyStats;
     final int maxVal = data.isEmpty ? 1 : data.reduce((a, b) => a > b ? a : b);
     final int displayMaxVal = maxVal == 0 ? 1 : maxVal;
@@ -434,7 +474,9 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(12, (i) {
-                final double barHeight = displayMaxVal > 0 ? (data[i] / displayMaxVal) * 120 : 0;
+                final double barHeight = displayMaxVal > 0
+                    ? (data[i] / displayMaxVal) * 120
+                    : 0;
                 return Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -468,7 +510,9 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                         months[i],
                         style: TextStyle(
                           fontSize: 12,
-                          color: i < currentMonth ? Colors.black87 : Colors.grey[400],
+                          color: i < currentMonth
+                              ? Colors.black87
+                              : Colors.grey[400],
                         ),
                       ),
                     ],
@@ -488,7 +532,10 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       child: Text(
         "Upcoming Today",
         style: TextStyle(
-            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
       ),
     );
   }
@@ -508,12 +555,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.black87,
-            ),
-          ),
+          child: Text(value, style: const TextStyle(color: Colors.black87)),
         ),
       ],
     );
@@ -537,20 +579,30 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("${appt["date"]} at ${appt["time"]}",
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54)),
+          Text(
+            "${appt["date"]} at ${appt["time"]}",
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(appt["name"] ?? "",
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(
+                appt["name"] ?? "",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green[100],
                   borderRadius: BorderRadius.circular(20),
@@ -576,7 +628,8 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                         0: IntrinsicColumnWidth(),
                         1: FlexColumnWidth(),
                       },
-                      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                      defaultVerticalAlignment:
+                          TableCellVerticalAlignment.middle,
                       children: [
                         _buildTableRow("Patient Name:", appt["name"] ?? ""),
                         _buildTableRow("Age:", appt["age"] ?? ""),
@@ -649,19 +702,40 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F4F1),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              _buildGridButtons(context),
-              _buildBarChart(),
-              _buildUpcomingTitle(),
-              _buildAppointmentsList(context),
-            ],
-          ),
-        ),
+        child: _isLoading
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFFD1A1E3),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading your dashboard...',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18.0,
+                  vertical: 16,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    _buildGridButtons(context),
+                    _buildBarChart(),
+                    _buildUpcomingTitle(),
+                    _buildAppointmentsList(context),
+                  ],
+                ),
+              ),
       ),
     );
   }

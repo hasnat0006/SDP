@@ -232,10 +232,9 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
     }
   }
 
-  void _addNewPost(ForumPost newPost) {
-    setState(() {
-      posts.insert(0, newPost);
-    });
+  void _refreshPosts() {
+    // Refresh the entire forum page data
+    _loadAllData();
   }
 
   void _quickShare() {
@@ -243,7 +242,7 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreatePostPage(onPostCreated: _addNewPost),
+        builder: (context) => CreatePostPage(onPostCreated: _refreshPosts),
       ),
     );
   }
@@ -285,7 +284,10 @@ class _ForumPageState extends State<ForumPage> with TickerProviderStateMixin {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MyPostsPage()),
+                MaterialPageRoute(
+                  builder: (context) =>
+                      MyPostsPage(onPostChanged: _refreshPosts),
+                ),
               );
             },
           ),

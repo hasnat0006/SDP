@@ -81,6 +81,19 @@ class TaskBackend {
     }
   }
 
+  Future<Map<String, int>> getTaskStatistics(String userId) async {
+    try {
+      final allTasks = await fetchTasks(userId);
+      final totalTasks = allTasks.length;
+      final completedTasks = allTasks.where((task) => task.isCompleted).length;
+
+      return {'total': totalTasks, 'completed': completedTasks};
+    } catch (error) {
+      print('Error fetching task statistics: $error');
+      return {'total': 0, 'completed': 0};
+    }
+  }
+
   Future<List<Task>> addMultipleTasks(String userId, List<Task> tasks) async {
     try {
       // Prepare tasks data for bulk insert

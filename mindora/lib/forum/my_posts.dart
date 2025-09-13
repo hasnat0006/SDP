@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'forum_models.dart';
 
 class MyPostsPage extends StatefulWidget {
-  const MyPostsPage({super.key});
+  final Function()? onPostChanged;
+
+  const MyPostsPage({super.key, this.onPostChanged});
 
   @override
   State<MyPostsPage> createState() => _MyPostsPageState();
@@ -82,6 +84,7 @@ class _MyPostsPageState extends State<MyPostsPage>
 
         if (response['success']) {
           _fetchUserPosts(); // Refresh the posts
+          widget.onPostChanged?.call(); // Notify parent to refresh
           _showSnackBar('Post updated successfully!');
         } else {
           _showSnackBar('Failed to update post: ${response['message']}');
@@ -120,6 +123,7 @@ class _MyPostsPageState extends State<MyPostsPage>
 
         if (response['success']) {
           _fetchUserPosts(); // Refresh the posts
+          widget.onPostChanged?.call(); // Notify parent to refresh
           _showSnackBar('Post deleted successfully!');
         } else {
           _showSnackBar('Failed to delete post: ${response['message']}');

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'forum_models.dart';
 
 class CreatePostPage extends StatefulWidget {
-  final Function(ForumPost) onPostCreated;
+  final Function() onPostCreated;
   final String? initialContent;
 
   const CreatePostPage({
@@ -103,15 +103,18 @@ class _CreatePostPageState extends State<CreatePostPage>
       setState(() {
         _isPosting = false;
       });
+
+      // Call the callback to refresh the forum page
+      widget.onPostCreated();
+
+      Navigator.pop(context);
+      _showSnackBar('Your post has been shared anonymously ✨');
     } else {
       setState(() {
         _isPosting = false;
       });
       _showSnackBar('Failed to create post: ${posting['message']}');
     }
-
-    Navigator.pop(context);
-    _showSnackBar('Your post has been shared anonymously ✨');
   }
 
   void _showSnackBar(String message) {
