@@ -5,10 +5,11 @@ import 'package:client/journal/journal.dart';
 import 'package:client/mood/mood_spinner.dart';
 import 'package:client/mood/Mood_insights.dart';
 import 'package:client/mood/backend.dart';
+import 'package:client/journal/mood_detector.dart';
 import 'package:client/services/user_service.dart';
 import 'package:client/profile/backend.dart'; // Add this import
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+// import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../todo_list/todo_list_main.dart';
 import '../stress/stress_tracker.dart';
@@ -342,7 +343,7 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         _buildFreudScore(),
         const SizedBox(width: 16),
-        _buildMoodBarChart(),
+        _buildTodayMoodContainer(),
       ],
     );
   }
@@ -379,45 +380,35 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildMoodBarChart() {
+  Widget _buildTodayMoodContainer() {
+    String mood = 'neutral';
+    String moodText = 'No mood entry for today';
+  Color moodColor = MoodDetector.getMoodColor('neutral');
+  Color moodBgColor = moodColor.withOpacity(0.2);
+  // IconData moodIcon = MoodDetector.getMoodIcon('neutral');
+
+    if (_todayMoodData != null && _todayMoodData!['mood_status'] != null) {
+      mood = MoodDetector.detectMood(_todayMoodData!['mood_status'].toString());
+      moodText = MoodDetector.getMoodDisplayName(mood);
+      moodColor = MoodDetector.getMoodColor(mood);
+      moodBgColor = moodColor.withOpacity(0.2);
+    }
+
     return Expanded(
       child: Container(
         height: 120,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.orange[200],
+          color: moodBgColor,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: moodColor, width: 3),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Mood', style: TextStyle(fontWeight: FontWeight.bold)),
-            const Text('Sad'),
+            Text('Mood', style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Expanded(
-              child: BarChart(
-                BarChartData(
-                  barGroups: List.generate(
-                    7,
-                    (index) => BarChartGroupData(
-                      x: index,
-                      barRods: [
-                        BarChartRodData(
-                          toY:
-                              (index + 1) *
-                              2.0, // Example data, replace with actual mood scores
-                          color: Colors.deepPurple,
-                          width: 20,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ],
-                    ),
-                  ),
-                  titlesData: FlTitlesData(show: false),
-                  borderData: FlBorderData(show: false),
-                  gridData: FlGridData(show: false),
-                ),
-              ),
-            ),
+            Text(moodText, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),
