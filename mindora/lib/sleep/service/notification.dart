@@ -23,8 +23,8 @@ class SleepNotificationService {
         },
       ),
       schedule: NotificationCalendar(
-        hour: 19,
-        minute: 55,
+        hour: 8,
+        minute: 0,
         second: 0,
         millisecond: 0,
         repeats: true, // Repeat daily

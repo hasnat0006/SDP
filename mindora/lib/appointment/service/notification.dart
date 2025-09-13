@@ -45,11 +45,9 @@ class AppointmentNotificationService {
         final timeDifference = appointmentTime.difference(now);
 
         // Check if the appointment is within 30 minutes
-        if (timeDifference.inMinutes == 30) {
+        if (timeDifference.inMinutes == 10) {
           // Schedule the notification
           await _showAppointmentReminderNotification(appointment);
-
-          
         }
       }
     } catch (e) {
