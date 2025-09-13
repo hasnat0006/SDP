@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'backend.dart';
+import '../navbar/navbar.dart';
 
 class BookForm extends StatefulWidget {
   final String name;
@@ -104,7 +105,17 @@ class _BookForm extends State<BookForm> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    Navigator.pop(context); // Close the dialog
+                    // Navigate to dashboard by replacing all routes
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MainNavBar(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                   child: const Text("OK"),
                 ),
               ],
@@ -158,12 +169,28 @@ class _BookForm extends State<BookForm> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  widget.imagepath,
-                  width: 160,
-                  height: 160,
-                  fit: BoxFit.cover,
-                ),
+                child: widget.imagepath.startsWith('http')
+                    ? Image.network(
+                        widget.imagepath,
+                        width: 160,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading therapist image: $error');
+                          return Image.asset(
+                            'assets/demo_profile.jpg',
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        widget.imagepath,
+                        width: 160,
+                        height: 160,
+                        fit: BoxFit.cover,
+                      ),
               ),
               const SizedBox(height: 16),
               Text(

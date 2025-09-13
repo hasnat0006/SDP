@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'backend.dart'; // Make sure this has GetAppointments()
 
-enum AppointmentStatus { booked, completed, cancelled }
+enum AppointmentStatus { pending, confirmed, completed, cancelled }
 
 class Appointment {
   final String id; // Add this line
@@ -21,7 +21,7 @@ class Appointment {
     required this.location,
     required this.dateTime,
     required this.time,
-    this.status = AppointmentStatus.booked,
+    this.status = AppointmentStatus.pending,
   });
 }
 
@@ -63,7 +63,7 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
         print("🔄 Processing appointment item: $item");
 
         // Map status from backend to enum
-        AppointmentStatus status = AppointmentStatus.booked;
+        AppointmentStatus status = AppointmentStatus.pending;
         String statusStr = (item['status'] ?? 'Pending').toLowerCase();
 
         switch (statusStr) {
@@ -73,9 +73,12 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
           case 'cancelled':
             status = AppointmentStatus.cancelled;
             break;
+          case 'confirmed':
+            status = AppointmentStatus.confirmed;
+            break;
           case 'pending':
           default:
-            status = AppointmentStatus.booked;
+            status = AppointmentStatus.pending;
             break;
         }
 
@@ -197,7 +200,8 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
                       ),
                     ),
                   ),
-                  if (appt.status == AppointmentStatus.booked)
+                  if (appt.status == AppointmentStatus.pending ||
+                      appt.status == AppointmentStatus.confirmed)
                     TextButton(
                       onPressed: () => _showCancelDialog(appt),
                       style: TextButton.styleFrom(
@@ -266,10 +270,15 @@ class _BookedAppointmentsState extends State<BookedAppointments> {
     late final String text;
 
     switch (status) {
-      case AppointmentStatus.booked:
+      case AppointmentStatus.pending:
+        bg = const Color(0xFFFFF3CD);
+        fg = const Color(0xFF856404);
+        text = 'Pending';
+        break;
+      case AppointmentStatus.confirmed:
         bg = const Color(0xFFE7F6EC);
         fg = const Color(0xFF227A40);
-        text = 'Booked';
+        text = 'Confirmed';
         break;
       case AppointmentStatus.completed:
         bg = const Color(0xFFE6E9FF);

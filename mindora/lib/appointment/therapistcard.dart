@@ -59,7 +59,12 @@ class TherapistCard extends StatelessWidget {
               ),
               child: CircleAvatar(
                 radius: 40,
-                backgroundImage: AssetImage(imagepath),
+                backgroundImage: imagepath.startsWith('http')
+                    ? NetworkImage(imagepath)
+                    : AssetImage(imagepath) as ImageProvider,
+                onBackgroundImageError: (exception, stackTrace) {
+                  print('Error loading therapist card image: $exception');
+                },
               ),
             ),
 

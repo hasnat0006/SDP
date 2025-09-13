@@ -80,7 +80,7 @@ class _BookAppt extends State<BookAppt> {
               item['name'] ??
               'Unknown', // Using bdn as name since name field doesn't exist
           institution: item['institute'] ?? 'Unknown Institution',
-          imagepath: item['image_path'] ?? 'assets/default_image.png',
+          imagepath: item['profileImage'] ?? 'assets/default_image.png',
           shortbio: item['shortbio'] ?? 'No bio available',
           education: item['education'] ?? 'No education details',
           description: item['description'] ?? 'No description available',
@@ -275,8 +275,13 @@ class _BookAppt extends State<BookAppt> {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundImage: AssetImage(t.imagepath),
+              backgroundImage: t.imagepath.startsWith('http')
+                  ? NetworkImage(t.imagepath)
+                  : AssetImage(t.imagepath) as ImageProvider,
               backgroundColor: Colors.white,
+              onBackgroundImageError: (exception, stackTrace) {
+                print('Error loading therapist image: $exception');
+              },
             ),
             const SizedBox(width: 12),
             Expanded(

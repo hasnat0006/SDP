@@ -34,6 +34,8 @@ class _DashboardPageState extends State<DashboardPage> {
   String _stressButtonText = 'Log your details for today';
   Map<String, dynamic>? _todayMoodData;
   String _moodButtonText = 'Log your details for today';
+  Map<String, dynamic>? _todaySleepData;
+  String _sleepButtonText = 'Log your sleep for today';
   Map<String, dynamic>? _userProfileData; // Add this line
   int _totalTasks = 0;
   int _completedTasks = 0;
@@ -63,9 +65,9 @@ class _DashboardPageState extends State<DashboardPage> {
       if (_userId.isNotEmpty) {
         await Future.wait([
           _loadUserProfile(),
-          _loadTodayStressData(),
           _loadTodayMoodData(),
           _loadTodoStatistics(),
+          _loadTodaySleepData(),
         ]);
       }
 
@@ -194,6 +196,32 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _loadTodaySleepData() async {
+    try {
+      final result = await MoodTrackerBackend.getSleepDataForDate(
+        _userId,
+        DateTime.now(),
+      );
+      if (result['success']) {
+        setState(() {
+          _todaySleepData = result['data'];
+          _sleepButtonText = _getSleepButtonText();
+        });
+      } else {
+        setState(() {
+          _todaySleepData = null;
+          _sleepButtonText = 'Log your sleep for today';
+        });
+      }
+    } catch (e) {
+      print('Error loading today\'s sleep data: $e');
+      setState(() {
+        _todaySleepData = null;
+        _sleepButtonText = 'Log your sleep for today';
+      });
+    }
+  }
+
   String _getMoodButtonText() {
     if (_todayMoodData == null) {
       return 'Log your details for today';
@@ -231,6 +259,19 @@ class _DashboardPageState extends State<DashboardPage> {
       return 'No tasks yet';
     }
     return '$_completedTasks/$_totalTasks Completed';
+  }
+
+  String _getSleepButtonText() {
+    if (_todaySleepData == null) {
+      return 'Log your sleep for today';
+    }
+
+    final hours = _todaySleepData!['sleep_hours'] ?? 0;
+    if (hours == 0) {
+      return 'Invalid sleep data';
+    }
+
+    return '${hours}hours of sleep logged';
   }
 
   void _handleMoodTrackerTap() {
@@ -511,7 +552,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.bedtime,
           'Sleep Quality',
-          'Insomniac (~2h Avg)',
+          _sleepButtonText,
           context,
           onTap: () {
             Navigator.push(
@@ -579,7 +620,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.event_available,
           'Your Appointments',
-          '1 booked appointment',
+          'Check your booked appointments',
           context,
           onTap: () {
             Navigator.push(
