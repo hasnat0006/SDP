@@ -73,7 +73,11 @@ class ChatbotService {
 
   Future<void> sendEmergencyemail(String messageContent) async {
     final alertKeywords = RegExp(
-      r'suicide|self[- ]?harm|kill myself|end my life|hurt(ing)? myself',
+      r'suicide|suicidal|self[- ]?harm|kill myself|end my life|'
+      r'hurt(ing)? myself|want to die|wanna die|die|death|dying|'
+      r'overdose|cutting|self[- ]?injury|self[- ]?mutilation|'
+      r'take my own life|no reason to live|better off dead|'
+      r'cannot go on|end it all',
       caseSensitive: false,
     );
     if (alertKeywords.hasMatch(messageContent)) {
