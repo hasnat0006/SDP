@@ -8,6 +8,7 @@ import 'package:client/mood/backend.dart';
 import 'package:client/journal/mood_detector.dart';
 import 'package:client/services/user_service.dart';
 import 'package:client/profile/backend.dart'; // Add this import
+import 'package:client/profile/user_profile.dart';
 import 'package:flutter/material.dart';
 // import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -304,12 +305,22 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: _getProfileImage(), // Use dynamic profile image
-            onBackgroundImageError: (exception, stackTrace) {
-              print('Error loading profile image: $exception');
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UserProfilePage(),
+                ),
+              );
             },
+            child: CircleAvatar(
+              radius: 30,
+              backgroundImage: _getProfileImage(), // Use dynamic profile image
+              onBackgroundImageError: (exception, stackTrace) {
+                print('Error loading profile image: $exception');
+              },
+            ),
           ),
           const SizedBox(width: 16),
           Column(
