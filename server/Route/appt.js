@@ -9,10 +9,10 @@ router.use(express.urlencoded({ extended: true })); // parses form-data
 router.post("/therapists", async (req, res) => {
   try {
     const result = await sql`
-        SELECT doc_id, bdn, institute, name, shortbio, education, description, special, exp, dob, accept_patient, profession, gender, profileImage
-        FROM doctor, users WHERE 
-          users.id = doctor.doc_id AND
-         type = 'doctor'`;
+        SELECT d.doc_id, d.bdn, d.institute, u.name, d.shortbio, d.education, d.description, d.special, d.exp, d.dob, d.accept_patient, d.profession, d.gender, u.profileImage
+        FROM doctor d, users u WHERE 
+          u.id = d.doc_id AND
+          u.type = 'doctor'`;
     if (result.length === 0) {
       return res.status(404).json({ error: "No therapists found" });
     }
