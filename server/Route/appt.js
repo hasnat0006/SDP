@@ -9,7 +9,7 @@ router.use(express.urlencoded({ extended: true })); // parses form-data
 router.post("/therapists", async (req, res) => {
   try {
     const result = await sql`
-        SELECT doc_id, bdn, institute, name, shortbio, education, description, special, exp, dob, accept_patient, profession, gender 
+        SELECT doc_id, bdn, institute, name, shortbio, education, description, special, exp, dob, accept_patient, profession, gender, image_path
         FROM doctor, users WHERE 
           users.id = doctor.doc_id AND
          type = 'doctor'`;

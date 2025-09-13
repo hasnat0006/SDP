@@ -33,6 +33,8 @@ class _DashboardPageState extends State<DashboardPage> {
   String _stressButtonText = 'Log your details for today';
   Map<String, dynamic>? _todayMoodData;
   String _moodButtonText = 'Log your details for today';
+  Map<String, dynamic>? _todaySleepData;
+  String _sleepButtonText = 'Log your sleep for today';
   Map<String, dynamic>? _userProfileData; // Add this line
 
   @override
@@ -49,12 +51,13 @@ class _DashboardPageState extends State<DashboardPage> {
         _userType = userData['userType'] ?? '';
       });
       print('Loaded user data - ID: $_userId, Type: $_userType');
-      
+
       // Load user profile data including profile image
       if (_userId.isNotEmpty) {
         await _loadUserProfile();
         await _loadTodayStressData();
         await _loadTodayMoodData();
+        await _loadTodaySleepData();
       }
     } catch (e) {
       print('Error loading user data: $e');
@@ -66,14 +69,16 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final ProfileBackend profileBackend = ProfileBackend();
       final response = await profileBackend.getUserProfile(_userId, _userType);
-      
+
       if (response['success'] == true || response.containsKey('name')) {
         setState(() {
           _userProfileData = response;
         });
         print('User profile loaded successfully');
       } else {
-        print('Failed to load user profile: ${response['message'] ?? 'Unknown error'}');
+        print(
+          'Failed to load user profile: ${response['message'] ?? 'Unknown error'}',
+        );
       }
     } catch (e) {
       print('Error loading user profile: $e');
@@ -83,12 +88,12 @@ class _DashboardPageState extends State<DashboardPage> {
   // Add this method to get profile image
   ImageProvider _getProfileImage() {
     final profileImageUrl = _userProfileData?['profileImage'];
-    if (profileImageUrl != null && 
+    if (profileImageUrl != null &&
         profileImageUrl.toString().isNotEmpty &&
         profileImageUrl.toString().startsWith('http')) {
       return NetworkImage(profileImageUrl);
     }
-    
+
     // Fallback to default asset image
     return const AssetImage('assets/demo_profile.jpg');
   }
@@ -120,10 +125,10 @@ class _DashboardPageState extends State<DashboardPage> {
     if (_todayStressData == null) {
       return 'Log your details for today';
     }
-    
+
     final stressLevel = _todayStressData!['stress_level'] ?? 1;
     String levelText;
-    
+
     switch (stressLevel) {
       case 1:
         levelText = 'Very Low';
@@ -143,13 +148,16 @@ class _DashboardPageState extends State<DashboardPage> {
       default:
         levelText = 'Unknown';
     }
-    
+
     return 'Level $stressLevel | $levelText';
   }
 
   Future<void> _loadTodayMoodData() async {
     try {
-      final result = await MoodTrackerBackend.getMoodDataForDate(_userId, DateTime.now());
+      final result = await MoodTrackerBackend.getMoodDataForDate(
+        _userId,
+        DateTime.now(),
+      );
       if (result['success']) {
         setState(() {
           _todayMoodData = result['data'];
@@ -170,15 +178,54 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _loadTodaySleepData() async {
+    try {
+      final result = await MoodTrackerBackend.getSleepDataForDate(
+        _userId,
+        DateTime.now(),
+      );
+      if (result['success']) {
+        setState(() {
+          _todaySleepData = result['data'];
+          _sleepButtonText = _getSleepButtonText();
+        });
+      } else {
+        setState(() {
+          _todaySleepData = null;
+          _sleepButtonText = 'Log your sleep for today';
+        });
+      }
+    } catch (e) {
+      print('Error loading today\'s sleep data: $e');
+      setState(() {
+        _todaySleepData = null;
+        _sleepButtonText = 'Log your sleep for today';
+      });
+    }
+  }
+
   String _getMoodButtonText() {
     if (_todayMoodData == null) {
       return 'Log your details for today';
     }
-    
+
     final moodStatus = _todayMoodData!['mood_status'] ?? 'Unknown';
     final moodLevel = _todayMoodData!['mood_level'] ?? 1;
-    
+
     return '$moodStatus | Level $moodLevel';
+  }
+
+  String _getSleepButtonText() {
+    if (_todaySleepData == null) {
+      return 'Log your sleep for today';
+    }
+
+    final hours = _todaySleepData!['sleep_hours'] ?? 0;
+    if (hours == 0) {
+      return 'Invalid sleep data';
+    }
+
+    return '${hours}hours of sleep logged';
   }
 
   void _handleMoodTrackerTap() {
@@ -189,10 +236,15 @@ class _DashboardPageState extends State<DashboardPage> {
         MaterialPageRoute(
           builder: (context) => MoodInsightsPage(
             moodLabel: _todayMoodData!['mood_status'] ?? 'Unknown',
-            moodEmoji: _getMoodEmoji(_todayMoodData!['mood_status'] ?? 'Unknown'),
+            moodEmoji: _getMoodEmoji(
+              _todayMoodData!['mood_status'] ?? 'Unknown',
+            ),
             moodIntensity: _todayMoodData!['mood_level'] ?? 1,
-            selectedCauses: (_todayMoodData!['reason'] as List<dynamic>?)
-                ?.map((e) => e.toString()).toList() ?? [],
+            selectedCauses:
+                (_todayMoodData!['reason'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [],
           ),
         ),
       );
@@ -203,20 +255,19 @@ class _DashboardPageState extends State<DashboardPage> {
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               const MoodSpinner(),
-          transitionsBuilder:
-              (context, animation, secondaryAnimation, child) {
-                const begin = Offset(1.0, 0.0);
-                const end = Offset.zero;
-                const curve = Curves.ease;
-                final tween = Tween(
-                  begin: begin,
-                  end: end,
-                ).chain(CurveTween(curve: curve));
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
-                );
-              },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
+            final tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
         ),
       ).then((_) {
         // Refresh data when returning from mood tracker
@@ -260,9 +311,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // No data for today, navigate to tracker for input
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => const StressTrackerPage(),
-        ),
+        MaterialPageRoute(builder: (context) => const StressTrackerPage()),
       ).then((_) {
         // Refresh data when returning from stress tracker
         _loadTodayStressData();
@@ -296,7 +345,7 @@ class _DashboardPageState extends State<DashboardPage> {
     // Get today's date and format it
     final DateTime now = DateTime.now();
     final String formattedDate = DateFormat('E, dd MMM yyyy').format(now);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFD1A1E3),
@@ -331,11 +380,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               Text(
-                _userProfileData?['name'] != null 
+                _userProfileData?['name'] != null
                     ? "Welcome back,\n ${_userProfileData!['name']}!"
                     : _userType.isNotEmpty
-                        ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
-                        : "Welcome back, User!",
+                    ? "Welcome back, ${_userType[0].toUpperCase()}${_userType.substring(1)}!"
+                    : "Welcome back, User!",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -394,9 +443,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildTodayMoodContainer() {
     String mood = 'neutral';
     String moodText = 'No mood entry for today';
-  Color moodColor = MoodDetector.getMoodColor('neutral');
-  Color moodBgColor = moodColor.withOpacity(0.2);
-  // IconData moodIcon = MoodDetector.getMoodIcon('neutral');
+    Color moodColor = MoodDetector.getMoodColor('neutral');
+    Color moodBgColor = moodColor.withOpacity(0.2);
+    // IconData moodIcon = MoodDetector.getMoodIcon('neutral');
 
     if (_todayMoodData != null && _todayMoodData!['mood_status'] != null) {
       mood = MoodDetector.detectMood(_todayMoodData!['mood_status'].toString());
@@ -439,7 +488,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.bedtime,
           'Sleep Quality',
-          'Insomniac (~2h Avg)',
+          _sleepButtonText,
           context,
           onTap: () {
             Navigator.push(
@@ -475,7 +524,9 @@ class _DashboardPageState extends State<DashboardPage> {
               context,
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) =>
-                    JournalPage(userId: _userId), // Pass the userId parameter here
+                    JournalPage(
+                      userId: _userId,
+                    ), // Pass the userId parameter here
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                       const begin = Offset(1.0, 0.0);
@@ -505,7 +556,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _trackerTile(
           Icons.event_available,
           'Your Appointments',
-          '1 booked appointment',
+          'Check your booked appointments',
           context,
           onTap: () {
             Navigator.push(
@@ -629,8 +680,9 @@ class _DashboardPageState extends State<DashboardPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                     Chatbot(userId: _userId), // Use MaterialPageRoute for simplicity
+                builder: (context) => Chatbot(
+                  userId: _userId,
+                ), // Use MaterialPageRoute for simplicity
               ),
             );
           },

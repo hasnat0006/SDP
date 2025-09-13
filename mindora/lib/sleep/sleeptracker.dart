@@ -107,6 +107,12 @@ class _SleeptrackerState extends State<Sleeptracker> {
   }
 
   Future<void> sleepConfirm({required int hours}) async {
+    // Check if hours is 0 and show invalid data popup
+    if (hours == 0) {
+      await _showInvalidSleepDataPopup();
+      return;
+    }
+
     try {
       // 1. Capture now
       final now = DateTime.now();
@@ -200,6 +206,44 @@ class _SleeptrackerState extends State<Sleeptracker> {
               },
               child: Text(
                 'Close',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple[700],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showInvalidSleepDataPopup() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Invalid Sleep Data',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'You cannot log 0 hours of sleep. Please track your sleep properly.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  ctx,
+                ).pop(); // Close the popup and stay on sleep tracker
+              },
+              child: Text(
+                'OK',
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   color: Colors.purple[700],
